@@ -1590,10 +1590,23 @@ function loadData(){
             if(p.featured) _featCounts[p.catId]++;
           }
         });
+        // Reset review images in case localStorage has wrong/corrupted img URLs from previous sessions
+        const _revImgMap = {
+          'r1': 'https://graph.facebook.com/guddu.hore/picture?type=large',
+          'r2': 'https://graph.facebook.com/shawonahmed.official2/picture?type=large',
+          'r3': 'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large',
+          'r4': 'https://graph.facebook.com/seostationaoyon/picture?type=large',
+          'r5': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70',
+          'r6': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70',
+          'r7': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70',
+          'r8': 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=70',
+          'r9': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=70'
+        };
+        if(Array.isArray(STATE.data.reviews)) STATE.data.reviews.forEach(r=>{ if(_revImgMap[r.id]) r.img = _revImgMap[r.id]; });
         STATE.data.meta.version = 5;
       }
       // v4 migration: real profile images for known reviewers; shorten social names
-      if((parsed.meta?.version||0) < 4){
+      if((STATE.data.meta.version||0) < 4){
         const _imgUp={'r1':'https://graph.facebook.com/guddu.hore/picture?type=large','r2':'https://graph.facebook.com/shawonahmed.official2/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
         if(Array.isArray(STATE.data.reviews)) STATE.data.reviews.forEach(r=>{ if(_imgUp[r.id]) r.img=_imgUp[r.id]; });
         if(Array.isArray(STATE.data.site?.contact?.social)) STATE.data.site.contact.social.forEach(s=>{
@@ -1605,12 +1618,12 @@ function loadData(){
         STATE.data.meta.version = 4;
       }
       // v3 migration: add academyEmail to contact
-      if((parsed.meta?.version||0) < 3){
+      if((STATE.data.meta.version||0) < 3){
         if(!STATE.data.site.contact.academyEmail) STATE.data.site.contact.academyEmail = 'visionflow.academy.bd@gmail.com';
         STATE.data.meta.version = 3;
       }
       // v2 migration: seed real contact, team, courses, stats; clear fake portfolio video IDs; fix admin email
-      if((parsed.meta?.version||0) < 2){
+      if((STATE.data.meta.version||0) < 2){
         STATE.data.site.contact = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact));
         STATE.data.site.agency  = Object.assign({}, STATE.data.site.agency||{},  {logo: DEFAULT_DATA.site.agency.logo});
         STATE.data.site.academy = Object.assign({}, STATE.data.site.academy||{}, JSON.parse(JSON.stringify(DEFAULT_DATA.site.academy)));
@@ -1838,11 +1851,14 @@ function renderPortfolio(){
   if(STATE.activePortfolioCat === 'all'){
     // Grouped showcase: featured items per category with See More button
     const sections = cats.map(cat => {
-      const featured = allItems.filter(p => p.catId===cat.id && p.featured);
-      const total = allItems.filter(p => p.catId===cat.id).length;
-      const cards = featured.length
-        ? featured.map(p => _portfolioCard(p, p.subcat||cat.name)).join('')
-        : `<div class="portfolio-no-featured">No featured items — mark items as featured in the Admin Panel to show them here.</div>`;
+      const catItems = allItems.filter(p => p.catId===cat.id);
+      const featured = catItems.filter(p => p.featured);
+      // Fall back to first 2 items if admin has not set any featured items yet
+      const displayItems = featured.length > 0 ? featured : catItems.slice(0, 2);
+      const total = catItems.length;
+      const cards = displayItems.length
+        ? displayItems.map(p => _portfolioCard(p, p.subcat||cat.name)).join('')
+        : `<div class="portfolio-no-featured">No portfolio items in this category yet.</div>`;
       return `
       <div class="portfolio-all-section">
         <div class="portfolio-all-header">
@@ -2176,12 +2192,16 @@ function renderHeroStats(){
   const el = $('#hero-stats-grid');
   if(!el) return;
   const stats = STATE.data.site?.stats || [];
-  el.innerHTML = stats.map(s => `
-    <div class="hero-stat">
-      <div class="hero-stat-num" data-target="${parseInt(s.target||0,10)}" data-suffix="${esc(s.suffix||'+')}">0</div>
+  el.innerHTML = stats.map(s => {
+    const tgt = parseInt(s.target||0, 10);
+    const suf = s.suffix||'+';
+    // If counters are already in view (e.g. renderAll from admin), show final value immediately to avoid blink
+    const initial = _countersInView ? (tgt.toLocaleString()+suf) : '0';
+    return `<div class="hero-stat">
+      <div class="hero-stat-num" data-target="${tgt}" data-suffix="${esc(suf)}">${initial}</div>
       <div class="hero-stat-label">${esc(s.label||'')}</div>
-    </div>`).join('');
-  // Re-run counter observer for newly rendered elements
+    </div>`;
+  }).join('');
   animateCounters();
 }
 </script>
@@ -3372,22 +3392,27 @@ function initTickerPreview(){
   document.querySelectorAll('a.ticker-person, a.ticker-brand').forEach(item=>{
     const isBrand = item.classList.contains('ticker-brand');
     const img = item.querySelector('img');
-    const imgSrc = img ? img.src : '';
     const name = isBrand
       ? (item.dataset.name || item.textContent.trim())
       : (item.querySelector('.ticker-person-name')?.textContent || '');
     const role = item.querySelector('.ticker-person-role')?.textContent || '';
     const cls = isBrand ? 'brand-card' : '';
     const href = item.getAttribute('href') || '#';
-    const html = (imgSrc ? `<img src="${imgSrc}" alt="${name}">` : '')
-      + `<div class="thc-name">${name}</div>`
-      + (role ? `<div class="thc-role">${role}</div>` : '')
-      + `<a href="${href}" target="_blank" rel="noopener" class="thc-visit">Visit Profile <i class="fas fa-external-link-alt" style="font-size:.65em"></i></a>`;
+
+    function buildPopupHTML(){
+      // Check at show-time whether the image actually loaded (onerror sets display:none)
+      const imgOk = img && img.style.display !== 'none' && img.src;
+      const imgHtml = imgOk ? `<img src="${img.src}" alt="${name}" onerror="this.remove()">` : '';
+      return imgHtml
+        + `<div class="thc-name">${name}</div>`
+        + (role ? `<div class="thc-role">${role}</div>` : '')
+        + `<a href="${href}" target="_blank" rel="noopener" class="thc-visit">Visit Profile <i class="fas fa-external-link-alt" style="font-size:.65em"></i></a>`;
+    }
 
     function showPopup(cx, cy){
       clearTimeout(hideTimer);
       popup.className = cls;
-      popup.innerHTML = html;
+      popup.innerHTML = buildPopupHTML();
       popup.style.display='block';
       requestAnimationFrame(()=>{ popup.classList.add('visible'); positionAt(cx,cy); });
     }
