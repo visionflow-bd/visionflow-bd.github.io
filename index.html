@@ -14,10 +14,11 @@
 <meta name="author" content="Vision Flow" />
 <meta name="theme-color" content="#050810" />
 <link rel="canonical" href="https://visionflow-bd.github.io/Agency-Academy/" />
+<link rel="sitemap" type="application/xml" href="https://visionflow-bd.github.io/Agency-Academy/sitemap.xml" />
 
 <!-- Open Graph -->
-<meta property="og:title" content="Vision Flow — Premium Agency & Academy" />
-<meta property="og:description" content="Professional digital services and practical training academy with real-time admin panel." />
+<meta property="og:title" content="Vision Flow — Premium Digital Agency & Academy | Bangladesh" />
+<meta property="og:description" content="500+ clients served. Video editing, web & app dev, AI automation, SEO, graphic design — and a practical academy where students work on real client projects from Week 1." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://visionflow-bd.github.io/Agency-Academy/" />
 <meta property="og:site_name" content="Vision Flow" />
@@ -26,8 +27,8 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Vision Flow — Premium Agency & Academy" />
-<meta name="twitter:description" content="Professional digital services and practical training academy." />
+<meta name="twitter:title" content="Vision Flow — Premium Digital Agency & Academy | Bangladesh" />
+<meta name="twitter:description" content="500+ clients, 5000+ projects. Video editing, web dev, AI automation, SEO & a real-world academy from Bangladesh." />
 <meta name="twitter:image" content="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80" />
 
 <!-- PWA -->
@@ -42,7 +43,9 @@
   "@type": "Organization",
   "name": "Vision Flow",
   "url": "https://visionflow-bd.github.io/Agency-Academy/",
-  "logo": "https://visionflow-bd.github.io/Agency-Academy/",
+  "logo": {"@type":"ImageObject","url":"https://visionflow-bd.github.io/Agency-Academy/"},
+  "foundingDate": "2020",
+  "areaServed": "Worldwide",
   "description": "Premium digital agency and practical academy from Bangladesh delivering video editing, web & app development, AI automation, SEO, graphic design and training.",
   "address": {"@type":"PostalAddress","addressCountry":"BD","addressLocality":"Dhaka"},
   "contactPoint": {"@type":"ContactPoint","email":"visionflow.agency.bd@gmail.com","telephone":"+8801997248406","contactType":"customer service"},
@@ -900,7 +903,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
     <div class="modal-body">
       <div id="firebase-status" style="margin-bottom:16px"></div>
       <form onsubmit="adminLogin(event)">
-        <div class="form-row"><label>Email</label><input required type="email" id="admin-email" placeholder="admin@visionflow-bd.com" autocomplete="username"/></div>
+        <div class="form-row"><label>Email</label><input required type="email" id="admin-email" placeholder="shihabjessore7@gmail.com" autocomplete="username"/></div>
         <div class="form-row"><label>Password</label><input required type="password" id="admin-password" placeholder="••••••••" autocomplete="current-password"/></div>
         <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px"><i class="fas fa-sign-in-alt"></i> Sign In</button>
       </form>
@@ -995,10 +998,10 @@ const DEFAULT_DATA = {
       ]
     },
     stats: [
-      { target: 200, suffix: '+', label: 'Happy Clients' },
-      { target: 500, suffix: '+', label: 'Projects Delivered' },
-      { target: 15,  suffix: '+', label: 'Countries Served' },
-      { target: 98,  suffix: '%', label: 'Client Retention' }
+      { target: 500,  suffix: '+', label: 'Happy Clients' },
+      { target: 5000, suffix: '+', label: 'Projects Delivered' },
+      { target: 15,   suffix: '+', label: 'Countries Served' },
+      { target: 98,   suffix: '%', label: 'Client Retention' }
     ]
   },
 
@@ -1238,7 +1241,7 @@ app.post('/login', async (req, res) => {
     {id:"t3", name:"MD Wahiduzzaman Khan", role:"Creative Director", bio:"Software engineer turned creative powerhouse — Professional Video Editing, Visual Storytelling & Graphic Design. The eye that defines Vision Flow's visual identity.", img:"", social:[]},
     {id:"t4", name:"MD Naimur Rahman Emon", role:"Senior Video Editor", bio:"All-round professional editor mastering SaaS, UI/UX, Geo Layer & Documentary formats. Adobe Premiere Pro & After Effects specialist with millions of views delivered.", img:"", social:[]},
     {id:"t5", name:"MD Arafat Hossain", role:"General Manager", bio:"Ultra-level AI Expert & Prompt Engineer. Oversees team operations, account management and automation pipelines that power Vision Flow's efficiency at scale.", img:"", social:[]},
-    {id:"t6", name:"MD Kamruzzaman Papon", role:"Professional Video Editor", bio:"Cinematic storyteller delivering premium edits across commercial, social & documentary formats with sharp attention to pacing, colour and detail.", img:"", social:[]},
+    {id:"t6", name:"MD Kamruzzaman Papon", role:"Software Engineer & Video Editor", bio:"Software engineer and cinematic storyteller — combines technical depth with creative precision to deliver premium edits across commercial, social & documentary formats.", img:"", social:[]},
     {id:"t7", name:"MD Jasif Khan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.", img:"", social:[]}
   ],
 
@@ -1389,13 +1392,23 @@ function loadData(){
       if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
       if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
       if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
-      // v2 migration: seed real contact, team, courses; clear fake portfolio video IDs
+      // v2 migration: seed real contact, team, courses, stats; clear fake portfolio video IDs; fix admin email
       if((parsed.meta?.version||0) < 2){
         STATE.data.site.contact = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact));
         STATE.data.site.academy = Object.assign({}, STATE.data.site.academy||{}, JSON.parse(JSON.stringify(DEFAULT_DATA.site.academy)));
         STATE.data.team    = JSON.parse(JSON.stringify(DEFAULT_DATA.team));
         STATE.data.courses = JSON.parse(JSON.stringify(DEFAULT_DATA.courses));
+        STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
         (STATE.data.portfolio||[]).forEach(p => { if(p.video) p.video = ''; });
+        // Migrate admin email from old placeholder to real Gmail
+        const _storedAuth = JSON.parse(localStorage.getItem(LS_KEYS.authLocal)||'null');
+        if(!_storedAuth || _storedAuth.email === 'shihabjessore7@gmail.com'){
+          localStorage.setItem(LS_KEYS.authLocal, JSON.stringify({
+            email: 'shihabjessore7@gmail.com',
+            passHash: _storedAuth?.passHash || '',
+            salt: _storedAuth?.salt || ''
+          }));
+        }
         STATE.data.meta.version = 2;
       }
       saveLocal();
@@ -2810,7 +2823,7 @@ function renderAdminAccount(sec){
   const raw = localStorage.getItem(LS_KEYS.authLocal);
   let local = null;
   try{ local = JSON.parse(raw||'null'); }catch{}
-  if(!local) local = { email:'admin@visionflow-bd.com', passHash:'' };
+  if(!local) local = { email:'shihabjessore7@gmail.com', passHash:'' };
   sec.innerHTML = `
     <h3>Account & Security</h3>
     <div class="hint">Manage your local admin login (works even when Firebase is offline). Passwords are stored hashed (SHA-256) in your browser.</div>
@@ -2972,7 +2985,7 @@ async function bootFirebase(){
     window.__fb.onAuthStateChanged(STATE.fbAuth, user => {
       if(user){
         const localCfg = JSON.parse(localStorage.getItem(LS_KEYS.authLocal)||'null');
-        const adminEmail = (localCfg && localCfg.email ? localCfg.email : 'admin@visionflow-bd.com').toLowerCase();
+        const adminEmail = (localCfg && localCfg.email ? localCfg.email : 'shihabjessore7@gmail.com').toLowerCase();
         if(user.email && user.email.toLowerCase() === adminEmail){
           STATE.isAdmin = true;
           if($('#admin-login-modal').classList.contains('open')){
