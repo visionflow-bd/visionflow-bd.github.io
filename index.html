@@ -2912,13 +2912,19 @@ async function bootFirebase(){
       }
     }, err => console.warn('Firestore listen error', err));
 
-    // Auth state listener
+    // Auth state listener — verify email matches configured admin before granting access
     window.__fb.onAuthStateChanged(STATE.fbAuth, user => {
       if(user){
-        STATE.isAdmin = true;
-        if($('#admin-login-modal').classList.contains('open')){
-          openAdminPanel();
-          showToast('Welcome admin (cloud sync active)','success');
+        const localCfg = JSON.parse(localStorage.getItem(LS_KEYS.authLocal)||'null');
+        const adminEmail = (localCfg && localCfg.email ? localCfg.email : 'admin@visionflow-bd.com').toLowerCase();
+        if(user.email && user.email.toLowerCase() === adminEmail){
+          STATE.isAdmin = true;
+          if($('#admin-login-modal').classList.contains('open')){
+            openAdminPanel();
+            showToast('Welcome admin (cloud sync active)','success');
+          }
+        } else {
+          window.__fb.signOut(STATE.fbAuth);
         }
       } else {
         STATE.isAdmin = sessionStorage.getItem('vf:admin')==='1';
