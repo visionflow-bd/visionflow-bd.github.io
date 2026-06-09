@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Flow — Agency & Academy</title>
+    <meta name="description" content="Vision Flow — Professional digital agency and practical academy. Video editing, app development, AI automation, custom coding, SEO, graphic design, and training.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+    <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050810'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='Arial' font-size='26' font-weight='900' fill='%2306b6d4'%3EVF%3C/text%3E%3C/svg%3E" />
+
+    <style>
+        /* ================= DESIGN TOKENS ================= */
+        :root {
+            --bg-deep: #030712;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-light: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.2);
+            --accent: #06b6d4;
+            --accent-glow: rgba(6,182,212,0.2);
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --max-w: 1280px;
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+            --glass-bg: rgba(15,23,42,0.7);
+            --glass-border: rgba(255,255,255,0.1);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(6,182,212,0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139,92,246,0.05), transparent 25%);
+            background-attachment: fixed;
+        }
+
+        h1,h2,h3,h4,h5,h6 { font-family:'Outfit',sans-serif; line-height:1.2; font-weight:700; }
+        a { color:inherit; text-decoration:none; }
+        button { cursor:pointer; font-family:inherit; border:none; background:none; }
+        img { max-width:100%; display:block; border-radius:inherit; }
+
+        .container { width:min(100%, var(--max-w)); margin:0 auto; padding:0 24px; }
+        section { padding:100px 0; position:relative; scroll-margin-top:80px; }
+        .section-header { text-align:center; margin-bottom:60px; max-width:700px; margin-inline:auto; }
+        .section-header h2 { font-size:2.5rem; margin-bottom:16px; background:linear-gradient(to right,#fff,#94a3b8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .section-header p { color:var(--text-secondary); font-size:1.1rem; }
+
+        /* ================= GLASSMORPHISM ================= */
+        .glass {
+            background:var(--glass-bg);
+            backdrop-filter:blur(16px);
+            -webkit-backdrop-filter:blur(16px);
+            border:1px solid var(--glass-border);
+            box-shadow:0 4px 30px rgba(0,0,0,0.1);
+        }
+
+        .badge {
+            display:inline-block;
+            padding:6px 14px;
+            border-radius:999px;
+            background:var(--accent-glow);
+            color:var(--accent);
+            font-size:0.8rem;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            border:1px solid rgba(6,182,212,0.3);
+            margin-bottom:16px;
+        }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:10px;
+            padding:14px 28px; border-radius:var(--radius-sm);
+            font-weight:600; font-size:1rem; transition:var(--transition);
+            position:relative; overflow:hidden;
+        }
+        .btn-primary {
+            background:linear-gradient(135deg, var(--accent), var(--blue));
+            color:#fff;
+            box-shadow:0 10px 20px rgba(6,182,212,0.2);
+            border:1px solid rgba(255,255,255,0.1);
+        }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 15px 25px rgba(6,182,212,0.3); }
+        .btn-outline {
+            background:rgba(255,255,255,0.03);
+            border:1px solid var(--border-hover);
+            color:#fff;
+        }
+        .btn-outline:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.3); transform:translateY(-2px); }
+
+        /* ================= NAVBAR ================= */
+        .navbar {
+            position:fixed; top:0; left:0; right:0; z-index:100;
+            padding:16px 0; transition:var(--transition);
+            border-bottom:1px solid transparent;
+        }
+        .navbar.scrolled {
+            background:rgba(3,7,18,0.9);
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border-light);
+            padding:12px 0;
+        }
+        .nav-inner { display:flex; align-items:center; justify-content:space-between; }
+        .logo-wrap { display:flex; align-items:center; gap:12px; font-size:1.2rem; font-weight:800; font-family:'Outfit'; }
+        .logo-mark {
+            width:44px; height:44px; border-radius:var(--radius-sm);
+            background:var(--bg-dark); display:grid; place-items:center;
+            border:1px solid var(--border-light); overflow:hidden;
+            font-size:1rem; font-weight:900; font-family:'Outfit'; color:var(--accent);
+        }
+        .logo-mark img { width:100%; height:100%; object-fit:cover; }
+        .mode-badge {
+            font-size:0.65rem; padding:3px 8px; border-radius:999px;
+            background:rgba(255,255,255,0.1); letter-spacing:0.5px; text-transform:uppercase;
+            cursor:pointer; transition:var(--transition);
+        }
+        .mode-badge:hover { opacity:0.8; }
+        .nav-links { display:flex; gap:4px; align-items:center; }
+        .nav-link {
+            padding:8px 16px; border-radius:var(--radius-sm); font-weight:500;
+            color:var(--text-secondary); transition:var(--transition); font-size:0.95rem;
+        }
+        .nav-link:hover, .nav-link.active { color:#fff; background:rgba(255,255,255,0.08); }
+
+        /* ================= HAMBURGER & MOBILE MENU ================= */
+        .hamburger-btn {
+            display:none; align-items:center; justify-content:center;
+            width:44px; height:44px; border-radius:var(--radius-sm);
+            background:rgba(255,255,255,0.05); border:1px solid var(--border-light);
+            color:#fff; font-size:1.1rem; transition:var(--transition); z-index:101;
+        }
+        .hamburger-btn:hover { background:rgba(255,255,255,0.12); }
+
+        .mobile-menu {
+            position:fixed; top:0; right:-100%; width:min(300px,85vw); height:100vh;
+            background:var(--bg-dark); border-left:1px solid var(--border-light);
+            z-index:200; transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
+            padding:80px 20px 40px; display:flex; flex-direction:column; gap:6px;
+            overflow-y:auto; box-shadow:-20px 0 60px rgba(0,0,0,0.5);
+        }
+        .mobile-menu.open { right:0; }
+        .mobile-menu .nav-link { display:block; width:100%; text-align:left; padding:14px 16px; font-size:1rem; }
+        .mobile-menu-mode { display:flex; gap:8px; margin-top:16px; }
+        .mobile-menu-mode .btn { flex:1; padding:10px; font-size:0.85rem; justify-content:center; }
+        .mobile-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.65);
+            z-index:199; opacity:0; pointer-events:none; transition:opacity 0.3s;
+        }
+        .mobile-overlay.show { opacity:1; pointer-events:all; }
+
+        @media (max-width: 768px) {
+            .hamburger-btn { display:flex; }
+            .nav-links { display:none !important; }
+        }
+
+        /* ================= HERO ================= */
+        .hero { min-height:100vh; display:flex; align-items:center; padding-top:80px; position:relative; }
+        .hero-bg {
+            position:absolute; inset:0;
+            background:
+                radial-gradient(circle at top right, rgba(139,92,246,0.15), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(6,182,212,0.15), transparent 40%);
+            z-index:-1;
+        }
+        .hero-content { max-width:800px; margin:0 auto; text-align:center; }
+        .hero h1 { font-size:clamp(3rem,6vw,5rem); margin-bottom:24px; letter-spacing:-1px; line-height:1.1; }
+        .hero h1 span.gradient-text {
+            background:linear-gradient(135deg,#06b6d4,#8b5cf6,#3b82f6);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .hero p { font-size:clamp(1.1rem,2vw,1.3rem); color:var(--text-secondary); margin-bottom:40px; max-width:600px; margin-inline:auto; }
+        .hero-actions { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+
+        /* Stats */
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:24px; margin-top:80px; }
+        .stat-card { text-align:center; padding:30px; border-radius:var(--radius-md); transition:transform 0.3s; }
+        .stat-card:hover { transform:translateY(-5px); }
+        .stat-num { font-size:3rem; font-weight:900; font-family:'Outfit'; background:linear-gradient(135deg,#fff,#94a3b8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px; }
+        .stat-label { color:var(--text-secondary); font-weight:500; }
+
+        /* Services */
+        .grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:24px; }
+        .service-card {
+            padding:40px 30px; border-radius:var(--radius-md); transition:var(--transition);
+            position:relative; overflow:hidden; display:flex; flex-direction:column;
+        }
+        .service-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:2px;
+            background:linear-gradient(90deg,var(--accent),var(--purple)); opacity:0; transition:var(--transition);
+        }
+        .service-card:hover { background:var(--bg-card-hover); transform:translateY(-5px); border-color:rgba(255,255,255,0.2); }
+        .service-card:hover::before { opacity:1; }
+        .service-icon { width:60px; height:60px; border-radius:var(--radius-sm); background:rgba(255,255,255,0.05); display:grid; place-items:center; font-size:1.5rem; color:var(--accent); margin-bottom:24px; border:1px solid var(--border-light); }
+        .service-card h3 { font-size:1.4rem; margin-bottom:8px; }
+        .course-price { display:inline-block; padding:4px 12px; background:rgba(6,182,212,0.15); color:var(--accent); border-radius:999px; font-size:0.85rem; font-weight:700; margin-bottom:12px; border:1px solid rgba(6,182,212,0.3); }
+        .service-card p { color:var(--text-secondary); margin-bottom:24px; flex-grow:1; }
+        .service-cta { margin-top:auto; width:100%; justify-content:center; padding:12px; font-size:0.9rem; }
+
+        /* Portfolio */
+        .filter-group { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-bottom:40px; }
+        .filter-btn {
+            padding:8px 20px; border-radius:999px; border:1px solid var(--border-light);
+            background:rgba(255,255,255,0.03); color:var(--text-secondary); font-weight:500; transition:var(--transition);
+        }
+        .filter-btn:hover, .filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 4px 15px rgba(6,182,212,0.3); }
+        .portfolio-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:24px; }
+        .portfolio-item { border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-light); background:var(--bg-card); transition:var(--transition); display:none; }
+        .portfolio-item.show { display:block; animation:fadeIn 0.5s ease; }
+        .portfolio-item:hover { transform:translateY(-5px); border-color:rgba(255,255,255,0.2); }
+        .port-img { height:220px; background:#1e293b; position:relative; overflow:hidden; }
+        .port-img img { width:100%; height:100%; object-fit:cover; transition:transform 0.5s; }
+        .portfolio-item:hover .port-img img { transform:scale(1.05); }
+        .port-img-placeholder { width:100%; height:100%; display:grid; place-items:center; color:var(--text-muted); font-size:2.5rem; background:linear-gradient(135deg,#1e293b,#0f172a); }
+        .port-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(3,7,18,0.9),transparent); display:flex; align-items:flex-end; padding:20px; }
+        .port-cat { background:var(--accent); color:#fff; padding:4px 10px; border-radius:4px; font-size:0.7rem; font-weight:700; text-transform:uppercase; }
+        .port-content { padding:24px; }
+        .port-content h3 { font-size:1.2rem; margin-bottom:8px; }
+        .port-content p { color:var(--text-secondary); font-size:0.95rem; margin-bottom:16px; }
+        .port-tech { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+        .port-tech span { font-size:0.75rem; padding:4px 10px; background:rgba(255,255,255,0.05); border-radius:4px; color:var(--text-muted); }
+        .port-links { display:flex; gap:10px; }
+        .port-links .btn { padding:8px 16px; font-size:0.85rem; flex:1; }
+
+        /* Reviews */
+        .review-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px; }
+        .review-card { padding:30px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:20px; }
+        .review-stars { color:#f59e0b; }
+        .review-text { font-size:1.05rem; font-style:italic; color:var(--text-secondary); flex-grow:1; }
+        .review-author { display:flex; align-items:center; gap:16px; }
+        .review-avatar { width:50px; height:50px; border-radius:50%; background:var(--bg-dark); border:2px solid var(--accent); overflow:hidden; display:grid; place-items:center; font-weight:700; font-size:1.1rem; }
+        .review-avatar img { width:100%; height:100%; object-fit:cover; }
+        .author-info h4 { font-size:1rem; margin-bottom:2px; }
+        .author-info span { font-size:0.85rem; color:var(--text-muted); }
+
+        /* Team */
+        .team-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:30px; }
+        .team-card { text-align:center; padding:40px 20px; border-radius:var(--radius-lg); background:linear-gradient(to bottom,rgba(255,255,255,0.02),rgba(255,255,255,0.05)); border:1px solid var(--border-light); transition:var(--transition); }
+        .team-card:hover { transform:translateY(-10px); border-color:var(--accent); background:rgba(255,255,255,0.05); }
+        .team-avatar { width:120px; height:120px; border-radius:50%; margin:0 auto 20px; border:3px solid rgba(255,255,255,0.1); padding:4px; overflow:hidden; background:var(--bg-dark); display:grid; place-items:center; font-size:2.5rem; font-weight:700; }
+        .team-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+        .team-card h3 { font-size:1.3rem; margin-bottom:4px; }
+        .team-role { color:var(--accent); font-weight:600; font-size:0.9rem; margin-bottom:10px; }
+        .team-bio { color:var(--text-muted); font-size:0.85rem; margin-bottom:16px; line-height:1.5; }
+        .team-socials { display:flex; justify-content:center; gap:10px; }
+        .team-socials a { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.05); display:grid; place-items:center; color:var(--text-secondary); transition:var(--transition); }
+        .team-socials a:hover { background:var(--accent); color:#fff; transform:translateY(-3px); }
+
+        /* Footer */
+        .footer { border-top:1px solid var(--border-light); padding:60px 0 30px; margin-top:60px; background:#020617; }
+        .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr; gap:40px; margin-bottom:60px; }
+        .footer-about p { color:var(--text-muted); margin-top:16px; max-width:300px; }
+        .footer-links h4 { margin-bottom:20px; font-size:1.1rem; }
+        .footer-links ul { list-style:none; display:grid; gap:12px; }
+        .footer-links a { color:var(--text-secondary); transition:var(--transition); }
+        .footer-links a:hover { color:var(--accent); padding-left:5px; }
+        .footer-bottom { padding-top:30px; border-top:1px solid var(--border-light); display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; color:var(--text-muted); }
+        .admin-link { color:var(--text-muted); opacity:0.4; transition:0.3s; }
+        .admin-link:hover { opacity:1; color:#fff; }
+
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ================= ADMIN LOGIN OVERLAY ================= */
+        #admin-login-overlay {
+            position:fixed; inset:0; background:rgba(3,7,18,0.97);
+            backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+            display:none; place-items:center; z-index:9999; padding:24px;
+        }
+        #admin-login-box {
+            background:#fff; border-radius:20px; padding:48px 40px;
+            width:min(420px,100%); text-align:center;
+            box-shadow:0 30px 80px rgba(0,0,0,0.5);
+            animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+        .alb-icon { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#8b5cf6); display:grid; place-items:center; font-size:1.8rem; color:#fff; margin:0 auto 24px; }
+        #admin-login-box h2 { font-size:1.6rem; color:#0f172a; margin-bottom:8px; }
+        .alb-subtitle { color:#64748b; font-size:0.95rem; margin-bottom:28px; }
+        .alb-input-wrap { position:relative; margin-bottom:8px; }
+        .alb-input-wrap input { width:100%; padding:14px 50px 14px 16px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; font-family:inherit; transition:0.2s; background:#f8fafc; color:#0f172a; }
+        .alb-input-wrap input:focus { outline:none; border-color:#0ea5e9; background:#fff; box-shadow:0 0 0 4px rgba(14,165,233,0.1); }
+        #toggle-pass-vis { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:1rem; cursor:pointer; transition:0.2s; background:none; border:none; padding:4px; }
+        #toggle-pass-vis:hover { color:#0ea5e9; }
+        .alb-hint { font-size:0.8rem; color:#94a3b8; margin-bottom:20px; text-align:left; padding:8px 12px; background:#f8fafc; border-radius:6px; border-left:3px solid #f59e0b; }
+        .alb-hint code { background:#fff; padding:1px 5px; border-radius:3px; font-family:monospace; color:#0369a1; border:1px solid #e2e8f0; }
+        #admin-pass-btn { width:100%; padding:14px; background:linear-gradient(135deg,#0ea5e9,#8b5cf6); color:#fff; border:none; border-radius:10px; font-size:1rem; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; transition:0.2s; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+        #admin-pass-btn:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
+        #admin-pass-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+        #admin-pass-error { color:#ef4444; font-size:0.9rem; min-height:22px; margin-bottom:12px; font-weight:500; }
+        .alb-cancel { font-size:0.9rem; color:#94a3b8; text-decoration:none; transition:0.2s; display:block; }
+        .alb-cancel:hover { color:#0ea5e9; }
+
+        /* ================= ADMIN VIEW ================= */
+        #admin-view { min-height:100vh; background:#f8fafc; color:#0f172a; }
+        .admin-top { background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:50; flex-wrap:wrap; gap:12px; }
+        .admin-brand { display:flex; align-items:center; gap:12px; font-weight:800; font-family:'Outfit'; font-size:1.2rem; }
+        .admin-actions { display:flex; gap:10px; flex-wrap:wrap; }
+        .btn-admin { padding:8px 16px; border-radius:6px; font-weight:600; font-size:0.9rem; border:1px solid #cbd5e1; background:#fff; color:#334155; transition:0.2s; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+        .btn-admin:hover { background:#f1f5f9; }
+        .btn-admin.primary { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+        .btn-admin.primary:hover { background:#0284c7; }
+        .btn-admin.danger { background:#fef2f2; color:#b91c1c; border-color:#fca5a5; }
+        .btn-admin.danger:hover { background:#b91c1c; color:#fff; }
+        .admin-layout { display:grid; grid-template-columns:240px 1fr; max-width:1400px; margin:0 auto; padding:30px 24px; gap:24px; align-items:start; }
+        .admin-sidebar { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:10px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); position:sticky; top:90px; }
+        .admin-tab { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:11px 14px; border-radius:8px; color:#475569; font-weight:600; margin-bottom:3px; font-size:0.9rem; transition:0.2s; cursor:pointer; border:none; background:none; font-family:inherit; }
+        .admin-tab:hover { background:#f1f5f9; }
+        .admin-tab.active { background:#e0f2fe; color:#0369a1; }
+        .admin-tab i { width:16px; text-align:center; }
+        .admin-panel { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:32px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); display:none; }
+        .admin-panel.active { display:block; }
+        .admin-panel h2 { margin-bottom:8px; color:#0f172a; font-size:1.4rem; }
+        .admin-panel .panel-desc { color:#64748b; font-size:0.9rem; margin-bottom:24px; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+        .form-group { display:flex; flex-direction:column; gap:6px; }
+        .form-group.full { grid-column:1/-1; }
+        .form-label { font-weight:600; font-size:0.875rem; color:#334155; }
+        .form-label small { color:#94a3b8; font-weight:400; }
+        .form-control { padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:0.95rem; background:#f8fafc; color:#0f172a; transition:0.2s; }
+        .form-control:focus { outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,0.1); background:#fff; }
+        textarea.form-control { min-height:260px; resize:vertical; font-family:'Courier New',monospace; font-size:0.82rem; line-height:1.6; }
+        .panel-divider { border:none; border-top:1px solid #e2e8f0; margin:28px 0; }
+        .security-notice { margin-top:24px; padding:16px 20px; background:#fffbeb; border-radius:8px; border-left:4px solid #f59e0b; }
+        .security-notice p { color:#92400e; font-size:0.875rem; line-height:1.6; }
+        .security-notice code { background:#fff; padding:2px 6px; border-radius:4px; font-family:monospace; color:#b45309; border:1px solid #fde68a; }
+
+        /* Toast */
+        .toast { position:fixed; bottom:24px; left:50%; transform:translate(-50%,20px); background:#10b981; color:#fff; padding:12px 24px; border-radius:8px; font-weight:600; box-shadow:0 10px 15px -3px rgba(0,0,0,0.2); opacity:0; pointer-events:none; transition:0.35s; z-index:10000; white-space:nowrap; }
+        .toast.show { opacity:1; transform:translate(-50%,0); }
+
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 768px) {
+            .grid-3, .portfolio-grid, .review-grid { grid-template-columns:1fr; }
+            .hero h1 { font-size:2.5rem; }
+            .footer-grid { grid-template-columns:1fr; }
+            .admin-layout { grid-template-columns:1fr; }
+            .form-grid { grid-template-columns:1fr; }
+            .admin-sidebar { position:static; display:flex; overflow-x:auto; padding-bottom:8px; gap:4px; }
+            .admin-tab { white-space:nowrap; flex-shrink:0; }
+            #admin-login-box { padding:36px 28px; }
+            .section-header h2 { font-size:2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ================= APP VIEW ================= -->
+<div id="app-view">
+
+    <nav class="navbar" id="navbar">
+        <div class="container nav-inner">
+            <a href="#" class="logo-wrap" onclick="switchMode('agency'); return false;">
+                <div class="logo-mark" id="nav-logo-mark">VF</div>
+                <span id="nav-site-name">Vision Flow</span>
+                <span class="mode-badge" id="nav-mode-badge" onclick="toggleMode(event)" title="Click to switch mode">Agency</span>
+            </a>
+            <div class="nav-links" id="desktop-nav">
+                <button class="nav-link" onclick="scrollToId('about')">About</button>
+                <button class="nav-link" onclick="scrollToId('services')">Services</button>
+                <button class="nav-link" onclick="scrollToId('portfolio')">Portfolio</button>
+                <button class="nav-link" onclick="scrollToId('team')">Team</button>
+                <button class="btn btn-primary" style="margin-left:12px;padding:8px 20px;" onclick="scrollToId('contact')">Let's Talk</button>
+            </div>
+            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu" role="navigation">
+        <button class="nav-link" onclick="scrollToId('about'); closeMobileMenu()"><i class="fa-solid fa-circle-info" style="width:18px;color:var(--accent)"></i> About</button>
+        <button class="nav-link" onclick="scrollToId('services'); closeMobileMenu()"><i class="fa-solid fa-briefcase" style="width:18px;color:var(--accent)"></i> Services</button>
+        <button class="nav-link" onclick="scrollToId('portfolio'); closeMobileMenu()"><i class="fa-solid fa-images" style="width:18px;color:var(--accent)"></i> Portfolio</button>
+        <button class="nav-link" onclick="scrollToId('team'); closeMobileMenu()"><i class="fa-solid fa-users" style="width:18px;color:var(--accent)"></i> Team</button>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%;justify-content:center;" onclick="scrollToId('contact'); closeMobileMenu()"><i class="fa-solid fa-envelope"></i> Let's Talk</button>
+        <div class="mobile-menu-mode">
+            <button class="btn btn-outline" onclick="switchMode('agency'); closeMobileMenu()"><i class="fa-solid fa-building"></i> Agency</button>
+            <button class="btn btn-outline" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);" onclick="switchMode('academy'); closeMobileMenu()"><i class="fa-solid fa-graduation-cap"></i> Academy</button>
+        </div>
+    </div>
+    <div id="mobile-overlay" class="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="badge" id="hero-eyebrow">Agency. Academy. Digital Excellence.</div>
+                <h1 id="hero-title">Building Digital <span class="gradient-text">Growth Systems</span> for the Future.</h1>
+                <p id="hero-subtitle">Professional digital services and hands-on academy from Bangladesh to the world. We don't just build, we scale.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="scrollToId('portfolio')"><i class="fa-solid fa-rocket"></i> View Our Work</button>
+                    <button class="btn btn-outline" onclick="scrollToId('services')"><i class="fa-solid fa-layer-group"></i> Explore Services</button>
+                    <button class="btn btn-outline" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);" onclick="switchMode('academy');scrollToId('services');"><i class="fa-solid fa-graduation-cap"></i> View Academy</button>
+                </div>
+            </div>
+            <div class="stats-grid" id="stats-container"></div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" class="glass" style="border-radius:0;border-left:none;border-right:none;">
+        <div class="container">
+            <div class="section-header">
+                <h2>Who We Are</h2>
+                <p id="about-text">We are a fully integrated digital agency and academy providing top-tier video editing, development, AI automation, and marketing to national and international clients.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section id="services">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="services-title">Our Capabilities</h2>
+                <p>End-to-end digital solutions designed to elevate your brand.</p>
+            </div>
+            <div class="grid-3" id="services-container"></div>
+        </div>
+    </section>
+
+    <!-- Portfolio -->
+    <section id="portfolio" style="background:var(--bg-dark);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Selected Work</h2>
+                <p>A glimpse into projects we've delivered for global clients.</p>
+            </div>
+            <div class="filter-group" id="portfolio-filters">
+                <button class="filter-btn active" data-filter="all">All Work</button>
+            </div>
+            <div class="portfolio-grid" id="portfolio-container"></div>
+        </div>
+    </section>
+
+    <!-- Reviews -->
+    <section id="reviews">
+        <div class="container">
+            <div class="section-header">
+                <h2>Client Feedback</h2>
+                <p>Hear from the brands and individuals we've worked with.</p>
+            </div>
+            <div class="review-grid" id="reviews-container"></div>
+        </div>
+    </section>
+
+    <!-- Team -->
+    <section id="team" style="background:var(--bg-dark);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Meet Our Team</h2>
+                <p>The creative minds and technical experts behind Vision Flow.</p>
+            </div>
+            <div class="team-grid" id="team-container"></div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="glass" style="border-radius:0;border-left:none;border-right:none;">
+        <div class="container" style="text-align:center;max-width:600px;">
+            <h2>Ready to Start Your Project?</h2>
+            <p style="color:var(--text-secondary);margin:20px 0 40px;">Whether you need an agency for a full build or an academy to master your skills, we are ready for you.</p>
+            <div style="display:flex;flex-direction:column;gap:16px;align-items:center;">
+                <a id="contact-email" href="mailto:contact@visionflow.studio" class="btn btn-primary" style="width:100%;max-width:320px;"><i class="fa-solid fa-envelope"></i> Email Us</a>
+                <a id="contact-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="width:100%;max-width:320px;background:rgba(37,211,102,0.1);border-color:rgba(37,211,102,0.4);color:#25d366;"><i class="fa-brands fa-whatsapp"></i> WhatsApp Us</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <div class="logo-wrap">
+                        <div class="logo-mark" id="footer-logo-mark" style="width:36px;height:36px;font-size:0.85rem;">VF</div>
+                        <span id="footer-site-name">Vision Flow</span>
+                    </div>
+                    <p>Providing world-class digital services and practical academy training from Bangladesh to the globe.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Explore</h4>
+                    <ul>
+                        <li><a href="javascript:void(0)" onclick="scrollToId('services')">Services</a></li>
+                        <li><a href="javascript:void(0)" onclick="scrollToId('portfolio')">Portfolio</a></li>
+                        <li><a href="javascript:void(0)" onclick="scrollToId('team')">Team</a></li>
+                        <li><a href="javascript:void(0)" onclick="scrollToId('contact')">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Follow Us</h4>
+                    <ul id="footer-socials"></ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="current-year"></span> <span id="copyright-name">Vision Flow</span>. All rights reserved.</p>
+                <a href="#admin" class="admin-link"><i class="fa-solid fa-lock"></i> Admin</a>
+            </div>
+        </div>
+    </footer>
+</div>
+
+
+<!-- ================= ADMIN VIEW ================= -->
+<div id="admin-view" style="display:none;">
+    <div class="admin-top">
+        <div class="admin-brand">
+            <i class="fa-solid fa-gauge" style="color:#0ea5e9;"></i> Vision Flow Admin
+        </div>
+        <div class="admin-actions">
+            <button class="btn-admin primary" onclick="adminSave()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            <button class="btn-admin" onclick="adminExport()"><i class="fa-solid fa-download"></i> Export</button>
+            <label class="btn-admin" style="cursor:pointer;">
+                <i class="fa-solid fa-upload"></i> Import
+                <input type="file" id="importFile" accept=".json" hidden onchange="adminImport(event)">
+            </label>
+            <button class="btn-admin danger" onclick="adminLockExit()"><i class="fa-solid fa-lock"></i> Lock &amp; Exit</button>
+        </div>
+    </div>
+
+    <div class="admin-layout">
+        <div class="admin-sidebar" id="admin-tabs">
+            <button class="admin-tab active" data-target="panel-basics"><i class="fa-solid fa-sliders"></i> Basics &amp; Contact</button>
+            <button class="admin-tab" data-target="panel-security"><i class="fa-solid fa-shield-halved"></i> Security</button>
+            <button class="admin-tab" data-target="panel-hero"><i class="fa-solid fa-wand-magic-sparkles"></i> Hero Section</button>
+            <button class="admin-tab" data-target="panel-services"><i class="fa-solid fa-briefcase"></i> Services &amp; Courses</button>
+            <button class="admin-tab" data-target="panel-portfolio"><i class="fa-solid fa-images"></i> Portfolio</button>
+            <button class="admin-tab" data-target="panel-reviews"><i class="fa-solid fa-star"></i> Reviews</button>
+            <button class="admin-tab" data-target="panel-team"><i class="fa-solid fa-users"></i> Team</button>
+            <button class="admin-tab" data-target="panel-json" style="color:#b91c1c;"><i class="fa-solid fa-code"></i> Raw JSON</button>
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Panel: Basics -->
+            <div id="panel-basics" class="admin-panel active">
+                <h2>Basics &amp; Contact</h2>
+                <p class="panel-desc">Update your site identity, contact details, and social media links.</p>
+                <div class="form-grid">
+                    <div class="form-group"><label class="form-label">Site Name</label><input type="text" class="form-control" id="inp-site-name"></div>
+                    <div class="form-group"><label class="form-label">Logo Text <small>(shown when no image logo is set)</small></label><input type="text" class="form-control" id="inp-logo-text" maxlength="4"></div>
+                    <div class="form-group"><label class="form-label">Email Address</label><input type="email" class="form-control" id="inp-email"></div>
+                    <div class="form-group"><label class="form-label">WhatsApp Number <small>(with country code, digits only, e.g. 8801XXXXXXXXX)</small></label><input type="text" class="form-control" id="inp-whatsapp" placeholder="8801XXXXXXXXX"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-facebook-f" style="color:#1877f2;width:16px;"></i> Facebook URL</label><input type="text" class="form-control" id="inp-facebook" placeholder="https://facebook.com/yourpage"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-youtube" style="color:#ff0000;width:16px;"></i> YouTube URL</label><input type="text" class="form-control" id="inp-youtube" placeholder="https://youtube.com/@yourchannel"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-instagram" style="color:#e1306c;width:16px;"></i> Instagram URL</label><input type="text" class="form-control" id="inp-instagram" placeholder="https://instagram.com/yourprofile"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-linkedin-in" style="color:#0a66c2;width:16px;"></i> LinkedIn URL</label><input type="text" class="form-control" id="inp-linkedin" placeholder="https://linkedin.com/company/yourpage"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-tiktok" style="width:16px;"></i> TikTok URL <small>(optional)</small></label><input type="text" class="form-control" id="inp-tiktok" placeholder="https://tiktok.com/@yourprofile"></div>
+                    <div class="form-group"><label class="form-label"><i class="fa-brands fa-x-twitter" style="width:16px;"></i> Twitter/X URL <small>(optional)</small></label><input type="text" class="form-control" id="inp-twitter" placeholder="https://twitter.com/yourprofile"></div>
+                    <div class="form-group full"><label class="form-label">Agency Logo <small>(direct image URL or Base64 data URL — leave empty to use Logo Text)</small></label><input type="text" class="form-control" id="inp-agency-logo" placeholder="https://... or data:image/png;base64,..."></div>
+                    <div class="form-group full"><label class="form-label">Academy Logo <small>(direct image URL or Base64 data URL — leave empty to use Logo Text)</small></label><input type="text" class="form-control" id="inp-academy-logo" placeholder="https://... or data:image/png;base64,..."></div>
+                </div>
+            </div>
+
+            <!-- Panel: Security -->
+            <div id="panel-security" class="admin-panel">
+                <h2>Security — Admin Password</h2>
+                <p class="panel-desc">Change your admin panel login password. You must verify your current password first.</p>
+                <div class="form-grid" style="max-width:480px;">
+                    <div class="form-group full">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="inp-cur-pass" placeholder="Enter your current password" autocomplete="current-password">
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">New Password <small>(minimum 8 characters)</small></label>
+                        <input type="password" class="form-control" id="inp-new-pass" placeholder="Choose a strong new password" autocomplete="new-password">
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="inp-confirm-pass" placeholder="Repeat new password" autocomplete="new-password">
+                    </div>
+                    <div class="form-group full">
+                        <button class="btn-admin primary" onclick="changeAdminPassword()" style="padding:12px 24px;">
+                            <i class="fa-solid fa-key"></i> Update Password
+                        </button>
+                    </div>
+                </div>
+                <div class="security-notice">
+                    <p><i class="fa-solid fa-triangle-exclamation"></i> <strong>Important:</strong> The default password is <code>Admin@VF2024</code>. Change it immediately to protect your admin panel. If you forget your password, it cannot be recovered — you would need to clear browser storage to reset.</p>
+                </div>
+            </div>
+
+            <!-- Panel: Hero -->
+            <div id="panel-hero" class="admin-panel">
+                <h2>Hero Section</h2>
+                <p class="panel-desc">Edit the main hero headline, subtitle, and stat counters.</p>
+                <div class="form-grid">
+                    <div class="form-group full"><label class="form-label">Eyebrow Badge Text</label><input type="text" class="form-control" id="inp-hero-eyebrow"></div>
+                    <div class="form-group full"><label class="form-label">Hero Title <small>(HTML allowed — use &lt;span class='gradient-text'&gt;text&lt;/span&gt; for gradient)</small></label><textarea class="form-control" id="inp-hero-title" style="min-height:80px;"></textarea></div>
+                    <div class="form-group full"><label class="form-label">Hero Subtitle</label><textarea class="form-control" id="inp-hero-subtitle" style="min-height:80px;"></textarea></div>
+                    <div class="form-group full"><label class="form-label">About Section Text</label><textarea class="form-control" id="inp-about-text" style="min-height:100px;"></textarea></div>
+                    <div class="form-group full"><label class="form-label">Stats <small>(JSON Array: [{num, label}, ...])</small></label><textarea class="form-control" id="inp-stats"></textarea></div>
+                </div>
+            </div>
+
+            <!-- Panel: Services -->
+            <div id="panel-services" class="admin-panel">
+                <h2>Services &amp; Academy Courses (JSON)</h2>
+                <p class="panel-desc">Edit agency services and academy course lists. Each item: <code>{"icon":"fa-solid fa-...", "title":"...", "desc":"..."}</code>. Courses can also have <code>"price":"৳4,999"</code>.</p>
+                <div class="form-group full"><label class="form-label">Agency Services Array</label><textarea class="form-control" id="inp-services"></textarea></div>
+                <div class="form-group full" style="margin-top:20px;"><label class="form-label">Academy Courses Array</label><textarea class="form-control" id="inp-courses"></textarea></div>
+            </div>
+
+            <!-- Panel: Portfolio -->
+            <div id="panel-portfolio" class="admin-panel">
+                <h2>Portfolio (JSON)</h2>
+                <p class="panel-desc">Each item: <code>{"cat":"Category", "title":"...", "desc":"...", "img":"URL", "tech":["Tech1"], "link":"https://..."}</code>. The <code>link</code> field is optional — leave empty to hide the View Project button.</p>
+                <div class="form-group full"><textarea class="form-control" id="inp-portfolio"></textarea></div>
+            </div>
+
+            <!-- Panel: Reviews -->
+            <div id="panel-reviews" class="admin-panel">
+                <h2>Client Reviews (JSON)</h2>
+                <p class="panel-desc">Each item: <code>{"name":"...", "role":"...", "text":"...", "avatar":"URL or empty"}</code></p>
+                <div class="form-group full"><textarea class="form-control" id="inp-reviews"></textarea></div>
+            </div>
+
+            <!-- Panel: Team -->
+            <div id="panel-team" class="admin-panel">
+                <h2>Team Members (JSON)</h2>
+                <p class="panel-desc">Each item: <code>{"name":"...", "role":"...", "bio":"...", "avatar":"URL or empty", "socials":{"linkedin":"URL","instagram":"URL","github":"URL","twitter":"URL"}}</code>. Leave social URL empty or omit to hide that icon.</p>
+                <div class="form-group full"><textarea class="form-control" id="inp-team"></textarea></div>
+            </div>
+
+            <!-- Panel: Raw JSON -->
+            <div id="panel-json" class="admin-panel">
+                <h2>Raw JSON State</h2>
+                <p class="panel-desc" style="color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation"></i> Danger zone: Edits here overwrite everything upon save.</p>
+                <div class="form-group full"><textarea class="form-control" id="inp-raw-json" style="min-height:520px;"></textarea></div>
+                <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn-admin danger" onclick="resetToDefault()"><i class="fa-solid fa-rotate-left"></i> Reset Factory Defaults</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ================= ADMIN LOGIN OVERLAY ================= -->
+<div id="admin-login-overlay" style="display:none;">
+    <div id="admin-login-box">
+        <div class="alb-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2>Admin Panel</h2>
+        <p class="alb-subtitle">Enter your password to access the control panel.</p>
+        <div class="alb-input-wrap">
+            <input type="password" id="admin-pass-input" placeholder="Admin password" autocomplete="current-password">
+            <button type="button" id="toggle-pass-vis" onclick="togglePassVisibility()" tabindex="-1">
+                <i class="fa-solid fa-eye" id="pass-eye-icon"></i>
+            </button>
+        </div>
+        <p class="alb-hint">Default password: <code>Admin@VF2024</code> — please change this after first login</p>
+        <button id="admin-pass-btn" onclick="handleAdminLogin()">
+            <i class="fa-solid fa-unlock"></i> Unlock Panel
+        </button>
+        <p id="admin-pass-error"></p>
+        <a href="#" onclick="exitAdmin(); return false;" class="alb-cancel"><i class="fa-solid fa-arrow-left"></i> Back to Site</a>
+    </div>
+</div>
+
+<div class="toast" id="sys-toast"></div>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+'use strict';
+
+// ============================================================
+// 1. PASSWORD & AUTH SYSTEM
+// ============================================================
+const PASS_HASH_KEY = 'vf_admin_phash_v2';
+const SESS_KEY      = 'vf_admin_sess_v2';
+const P_SALT        = 'VisionFlow_Agency_Secure_2024_v2';
+
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function hashPass(p) {
+    return sha256(P_SALT + p + P_SALT.split('').reverse().join(''));
+}
+
+async function initAdminPass() {
+    if (!localStorage.getItem(PASS_HASH_KEY)) {
+        localStorage.setItem(PASS_HASH_KEY, await hashPass('Admin@VF2024'));
+    }
+}
+
+async function verifyAdminPass(p) {
+    return (await hashPass(p)) === localStorage.getItem(PASS_HASH_KEY);
+}
+
+function isAuthenticated()  { return sessionStorage.getItem(SESS_KEY) === '1'; }
+function setAuthenticated()  { sessionStorage.setItem(SESS_KEY, '1'); }
+function clearAuth()         { sessionStorage.removeItem(SESS_KEY); }
+
+function showLoginModal() {
+    const el = document.getElementById('admin-login-overlay');
+    el.style.display = 'grid';
+    document.getElementById('admin-pass-input').value = '';
+    document.getElementById('admin-pass-error').textContent = '';
+    document.getElementById('admin-pass-btn').disabled = false;
+    document.getElementById('admin-pass-btn').innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock Panel';
+    setTimeout(() => document.getElementById('admin-pass-input').focus(), 150);
+}
+
+function hideLoginModal() {
+    document.getElementById('admin-login-overlay').style.display = 'none';
+}
+
+async function handleAdminLogin() {
+    const pass = document.getElementById('admin-pass-input').value;
+    if (!pass) {
+        document.getElementById('admin-pass-error').textContent = 'Please enter your password.';
+        return;
+    }
+    const btn = document.getElementById('admin-pass-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+    const ok = await verifyAdminPass(pass);
+
+    if (ok) {
+        setAuthenticated();
+        hideLoginModal();
+        showAdminView();
+    } else {
+        document.getElementById('admin-pass-error').textContent = 'Incorrect password. Please try again.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock Panel';
+        document.getElementById('admin-pass-input').select();
+        const box = document.getElementById('admin-login-box');
+        box.style.animation = 'none';
+        box.offsetHeight; // force reflow
+        box.style.animation = 'shake 0.4s ease';
+    }
+}
+
+function togglePassVisibility() {
+    const input = document.getElementById('admin-pass-input');
+    const icon  = document.getElementById('pass-eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+    }
+}
+
+async function changeAdminPassword() {
+    const cur = document.getElementById('inp-cur-pass').value.trim();
+    const nw  = document.getElementById('inp-new-pass').value;
+    const cf  = document.getElementById('inp-confirm-pass').value;
+
+    if (!cur || !nw || !cf) { showToast('Please fill all three password fields.', 'error'); return; }
+    if (nw.length < 8)       { showToast('New password must be at least 8 characters.', 'error'); return; }
+    if (nw !== cf)            { showToast("New passwords don't match.", 'error'); return; }
+
+    const valid = await verifyAdminPass(cur);
+    if (!valid) { showToast('Current password is incorrect.', 'error'); return; }
+
+    localStorage.setItem(PASS_HASH_KEY, await hashPass(nw));
+    document.getElementById('inp-cur-pass').value    = '';
+    document.getElementById('inp-new-pass').value    = '';
+    document.getElementById('inp-confirm-pass').value = '';
+    showToast('Password changed successfully!');
+}
+
+
+// ============================================================
+// 2. DEFAULT CONFIGURATION
+// ============================================================
+const DEFAULT_CONFIG = {
+    site: {
+        name: "Vision Flow",
+        logoText: "VF",
+        agencyLogo: "",
+        academyLogo: "",
+        email: "contact@visionflow.studio",
+        whatsapp: "8801700000000",
+        facebook: "https://facebook.com/visionflowagency",
+        youtube: "https://youtube.com/@visionflow",
+        instagram: "https://instagram.com/visionflowagency",
+        linkedin: "https://linkedin.com/company/visionflow",
+        tiktok: "",
+        twitter: ""
+    },
+    hero: {
+        eyebrow: "Agency. Academy. Digital Excellence.",
+        title: "Building Digital <span class='gradient-text'>Growth Systems</span> for the Future.",
+        subtitle: "Professional digital services and hands-on training from Bangladesh to the world. We don't just build — we scale your vision.",
+        aboutText: "Vision Flow is a fully integrated digital agency and training academy delivering world-class video editing, web development, AI automation, and digital marketing to clients across the globe.",
+        stats: [
+            { num: "500+", label: "Happy Clients" },
+            { num: "50+",  label: "Expert Team" },
+            { num: "10+",  label: "Years Experience" },
+            { num: "99%",  label: "Satisfaction Rate" }
+        ]
+    },
+    services: [
+        { icon: "fa-solid fa-code",                   title: "Custom Web Development",      desc: "Full-stack web applications tailored to your business using modern, scalable tech stacks." },
+        { icon: "fa-solid fa-film",                   title: "Video Editing",               desc: "Cinematic, high-retention video editing for YouTube, short-form content, and brand commercials." },
+        { icon: "fa-solid fa-robot",                  title: "AI Automation & Chatbots",    desc: "Intelligent agents and workflow automation that cut costs and dramatically boost efficiency." },
+        { icon: "fa-solid fa-magnifying-glass-chart", title: "SEO & Digital Marketing",     desc: "Data-driven SEO strategies and performance marketing to dominate your market." },
+        { icon: "fa-solid fa-pen-nib",                title: "Graphics & Brand Design",     desc: "Striking visual identities, social media assets, and brand packages that capture attention." },
+        { icon: "fa-solid fa-mobile-screen",          title: "App Development",             desc: "Sleek iOS and Android apps delivering seamless user experiences and strong retention." }
+    ],
+    courses: [
+        { icon: "fa-solid fa-film",                   title: "Professional Video Editing",  desc: "Master Premiere Pro & After Effects with real-world client projects and industry-grade techniques.", price: "৳4,999" },
+        { icon: "fa-solid fa-laptop-code",            title: "Full-Stack Web Development",  desc: "From HTML fundamentals to advanced React & Node.js. Build deployable, real-world applications.", price: "৳7,999" },
+        { icon: "fa-solid fa-robot",                  title: "AI & Prompt Engineering",     desc: "Master modern AI tools and build automated workflows to future-proof your career.", price: "৳3,999" },
+        { icon: "fa-solid fa-magnifying-glass-chart", title: "SEO & Digital Marketing",     desc: "Learn proven strategies to drive organic traffic and grow business online.", price: "৳4,499" },
+        { icon: "fa-solid fa-pen-nib",                title: "Graphic Design Mastery",      desc: "From logos to full brand identities using Illustrator, Photoshop, and Figma.", price: "৳3,499" }
+    ],
+    portfolio: [
+        { cat: "Video Editing",    title: "High-Retention YouTube Edit",     desc: "Fast-paced, cinematic editing for a 1M+ subscriber YouTube creator — boosted watch time by 60%.",      img: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=600&q=80", tech: ["Premiere Pro","After Effects","DaVinci Resolve"], link: "" },
+        { cat: "Web Development",  title: "E-Commerce Platform",             desc: "Scalable, high-conversion online store with real-time inventory management and payment integration.",      img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80", tech: ["React","Node.js","MongoDB","Stripe"],             link: "" },
+        { cat: "AI Automation",    title: "Customer Support AI Agent",       desc: "Automated 80% of support tickets, saving 200+ hours monthly for a SaaS company.",                        img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80", tech: ["OpenAI","LangChain","Python","FastAPI"],          link: "" },
+        { cat: "SEO",              title: "Organic Traffic 10x Growth",      desc: "Took a local business from page 5 to position #1 in Google within 4 months.",                            img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80", tech: ["Ahrefs","On-Page SEO","Content Strategy"],        link: "" },
+        { cat: "Graphics Design",  title: "Complete Brand Identity Package", desc: "Modern premium branding including logo system, typography, color palette, and brand guidelines.",        img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&q=80", tech: ["Illustrator","Figma","Photoshop"],                link: "" },
+        { cat: "App Development",  title: "Fintech Mobile App",              desc: "Secure real-time peer-to-peer payment app with biometric authentication and transaction history.",        img: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80", tech: ["Flutter","Firebase","Stripe","Biometrics"],       link: "" }
+    ],
+    reviews: [
+        { name: "Dr. Zahidur Rahman", role: "Content Creator & YouTuber", text: "Vision Flow transformed my channel completely. The video editing is world-class — keeping my audience engaged every single second. My watch time increased by 60% in just 2 months!", avatar: "" },
+        { name: "Sarah Jenkins",      role: "CEO, TechStart UK",          text: "They built our entire web platform and AI chatbot system. Hyper-professional team that delivered beyond what was promised, on time and within budget. Will work with them again.", avatar: "" },
+        { name: "Ahmed Riyad",        role: "Academy Graduate",           text: "The academy's practical approach changed my career. I learned real marketable skills and landed my first international freelance client within one month of graduating.", avatar: "" }
+    ],
+    team: [
+        { name: "HM Shihabuddin", role: "Founder & Lead Editor",       bio: "Visionary founder with 10+ years in digital content production and agency management.",          avatar: "", socials: { linkedin: "", instagram: "" } },
+        { name: "Alex Mercer",    role: "Lead Web Developer",           bio: "Full-stack expert specializing in React, Node.js and highly scalable cloud architectures.",     avatar: "", socials: { linkedin: "", github: "" } },
+        { name: "Sophia Chen",    role: "AI & Automation Specialist",   bio: "Building intelligent agents and automation workflows that save businesses thousands of hours.",  avatar: "", socials: { linkedin: "" } },
+        { name: "Rahim Karim",    role: "SEO & Marketing Expert",       bio: "Data-driven marketer with a track record of delivering top-ranking organic campaigns.",         avatar: "", socials: { linkedin: "" } }
+    ]
+};
+
+// ============================================================
+// 3. STATE
+// ============================================================
+const STORAGE_KEY = "visionflow_master_config_v2";
+let APP_STATE   = null;
+let currentMode = 'agency';
+
+// ============================================================
+// 4. UTILS
+// ============================================================
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : String(str);
+    return d.innerHTML;
+}
+
+function deepMerge(target, source) {
+    if (!source || typeof source !== 'object') return target;
+    Object.keys(source).forEach(key => {
+        const sv = source[key], tv = target[key];
+        if (sv && typeof sv === 'object' && !Array.isArray(sv) && tv && typeof tv === 'object' && !Array.isArray(tv)) {
+            deepMerge(tv, sv);
+        } else {
+            target[key] = sv;
+        }
+    });
+    return target;
+}
+
+function loadState() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return deepMerge(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), parsed);
+        }
+    } catch(e) { console.warn("State load error:", e); }
+    return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+}
+
+function saveState(newState) {
+    APP_STATE = newState;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(APP_STATE));
+    renderApp();
+    populateAdmin();
+    showToast('Saved successfully!');
+}
+
+function showToast(msg, type = 'success') {
+    const t = $('#sys-toast');
+    t.textContent = msg;
+    t.style.background = type === 'error' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#10b981';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function scrollToId(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+
+// ============================================================
+// 5. RENDERING
+// ============================================================
+function renderApp() {
+    if (!APP_STATE) return;
+    const s = APP_STATE.site;
+
+    // Title & year
+    document.title = esc(s.name) + ' — Agency & Academy';
+    $('#current-year').textContent = new Date().getFullYear();
+
+    // Site name references
+    ['#nav-site-name','#footer-site-name','#copyright-name'].forEach(sel => {
+        const el = $(sel);
+        if (el) el.textContent = s.name;
+    });
+
+    // Logos (nav + footer)
+    updateLogoMark('nav-logo-mark', s);
+    updateLogoMark('footer-logo-mark', s);
+
+    // Mode badge
+    const isAgency = currentMode === 'agency';
+    const badge = $('#nav-mode-badge');
+    badge.textContent = isAgency ? 'Agency' : 'Academy';
+    badge.style.background = isAgency ? 'rgba(6,182,212,0.2)' : 'rgba(139,92,246,0.2)';
+    badge.style.color       = isAgency ? 'var(--accent)' : 'var(--purple)';
+
+    // Hero
+    $('#hero-eyebrow').textContent  = APP_STATE.hero.eyebrow;
+    $('#hero-title').innerHTML      = APP_STATE.hero.title;   // HTML intentional for gradient spans
+    $('#hero-subtitle').textContent = APP_STATE.hero.subtitle;
+    $('#about-text').textContent    = APP_STATE.hero.aboutText;
+
+    // Contact links
+    const emailEl = $('#contact-email');
+    emailEl.href = 'mailto:' + s.email;
+    emailEl.innerHTML = '<i class="fa-solid fa-envelope"></i> Email Us';
+
+    const waNum = (s.whatsapp || '').replace(/\D/g, '');
+    const waMsg = encodeURIComponent('Hello ' + s.name + '! I would like to discuss a project.');
+    const waEl  = $('#contact-whatsapp');
+    waEl.href = waNum ? ('https://wa.me/' + waNum + '?text=' + waMsg) : '#';
+
+    // Stats
+    $('#stats-container').innerHTML = (APP_STATE.hero.stats || []).map(st => `
+        <div class="stat-card glass">
+            <div class="stat-num">${esc(st.num)}</div>
+            <div class="stat-label">${esc(st.label)}</div>
+        </div>`).join('');
+
+    // Social links
+    const socialDefs = [
+        { key: 'facebook',  icon: 'fa-brands fa-facebook-f',  label: 'Facebook'  },
+        { key: 'youtube',   icon: 'fa-brands fa-youtube',     label: 'YouTube'   },
+        { key: 'instagram', icon: 'fa-brands fa-instagram',   label: 'Instagram' },
+        { key: 'linkedin',  icon: 'fa-brands fa-linkedin-in', label: 'LinkedIn'  },
+        { key: 'tiktok',    icon: 'fa-brands fa-tiktok',      label: 'TikTok'    },
+        { key: 'twitter',   icon: 'fa-brands fa-x-twitter',   label: 'Twitter/X' }
+    ];
+    $('#footer-socials').innerHTML = socialDefs
+        .filter(sd => s[sd.key] && s[sd.key].trim())
+        .map(sd => `<li><a href="${esc(s[sd.key])}" target="_blank" rel="noopener noreferrer"><i class="${sd.icon}"></i> ${sd.label}</a></li>`)
+        .join('');
+
+    // Services / Courses
+    renderServices();
+
+    // Portfolio
+    renderPortfolio();
+
+    // Reviews
+    $('#reviews-container').innerHTML = (APP_STATE.reviews || []).map(r => `
+        <div class="review-card glass">
+            <div class="review-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            <p class="review-text">&ldquo;${esc(r.text)}&rdquo;</p>
+            <div class="review-author">
+                <div class="review-avatar">${r.avatar ? `<img src="${esc(r.avatar)}" alt="${esc(r.name)}">` : `<span>${esc((r.name || '?').charAt(0).toUpperCase())}</span>`}</div>
+                <div class="author-info"><h4>${esc(r.name)}</h4><span>${esc(r.role)}</span></div>
+            </div>
+        </div>`).join('');
+
+    // Team
+    $('#team-container').innerHTML = (APP_STATE.team || []).map(t => {
+        const socials = t.socials || {};
+        const links = [
+            socials.linkedin  ? `<a href="${esc(socials.linkedin)}"  target="_blank" rel="noopener"><i class="fa-brands fa-linkedin-in"></i></a>` : '',
+            socials.instagram ? `<a href="${esc(socials.instagram)}" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i></a>` : '',
+            socials.github    ? `<a href="${esc(socials.github)}"    target="_blank" rel="noopener"><i class="fa-brands fa-github"></i></a>` : '',
+            socials.twitter   ? `<a href="${esc(socials.twitter)}"   target="_blank" rel="noopener"><i class="fa-brands fa-x-twitter"></i></a>` : ''
+        ].filter(Boolean).join('');
+        return `
+        <div class="team-card">
+            <div class="team-avatar">${t.avatar ? `<img src="${esc(t.avatar)}" alt="${esc(t.name)}">` : `<span>${esc((t.name || '?').charAt(0).toUpperCase())}</span>`}</div>
+            <h3>${esc(t.name)}</h3>
+            <div class="team-role">${esc(t.role)}</div>
+            ${t.bio ? `<p class="team-bio">${esc(t.bio)}</p>` : ''}
+            ${links ? `<div class="team-socials">${links}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function updateLogoMark(id, siteConfig) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    const src = currentMode === 'agency' ? siteConfig.agencyLogo : siteConfig.academyLogo;
+    if (src && src.trim()) {
+        const img = document.createElement('img');
+        img.src = src.trim();
+        img.alt = siteConfig.name + ' logo';
+        img.onerror = () => { el.textContent = siteConfig.logoText || 'VF'; };
+        el.appendChild(img);
+    } else {
+        el.textContent = siteConfig.logoText || 'VF';
+    }
+}
+
+function renderServices() {
+    const isAgency = currentMode === 'agency';
+    $('#services-title').textContent = isAgency ? 'Our Agency Services' : 'Academy Training Programmes';
+    const items = isAgency ? (APP_STATE.services || []) : (APP_STATE.courses || []);
+    const ctaIcon = isAgency ? 'fa-paper-plane' : 'fa-graduation-cap';
+    const ctaText = isAgency ? 'Request Service'  : 'Enroll Now';
+
+    $('#services-container').innerHTML = items.map(item => `
+        <div class="service-card glass">
+            <div class="service-icon"><i class="${esc(item.icon || (isAgency ? 'fa-solid fa-check' : 'fa-solid fa-graduation-cap'))}"></i></div>
+            <h3>${esc(item.title)}</h3>
+            ${item.price ? `<div class="course-price">${esc(item.price)}</div>` : ''}
+            <p>${esc(item.desc)}</p>
+            <button class="btn btn-primary service-cta" onclick="scrollToId('contact')">
+                <i class="fa-solid ${ctaIcon}"></i> ${ctaText}
+            </button>
+        </div>`).join('');
+}
+
+function renderPortfolio() {
+    const cats = [...new Set((APP_STATE.portfolio || []).map(p => p.cat))];
+    $('#portfolio-filters').innerHTML =
+        `<button class="filter-btn active" data-filter="all">All Work</button>` +
+        cats.map(c => `<button class="filter-btn" data-filter="${esc(c)}">${esc(c)}</button>`).join('');
+
+    $('#portfolio-container').innerHTML = (APP_STATE.portfolio || []).map(p => `
+        <div class="portfolio-item glass show" data-category="${esc(p.cat)}">
+            <div class="port-img">
+                ${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.title)}" loading="lazy">` : `<div class="port-img-placeholder"><i class="fa-solid fa-image"></i></div>`}
+                <div class="port-overlay"><span class="port-cat">${esc(p.cat)}</span></div>
+            </div>
+            <div class="port-content">
+                <h3>${esc(p.title)}</h3>
+                <p>${esc(p.desc)}</p>
+                <div class="port-tech">${(p.tech || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+                ${p.link ? `<div class="port-links"><a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="flex:1;font-size:0.85rem;padding:10px 16px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Project</a></div>` : ''}
+            </div>
+        </div>`).join('');
+}
+
+function switchMode(mode) {
+    currentMode = mode;
+    renderApp();
+}
+
+function toggleMode(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    switchMode(currentMode === 'agency' ? 'academy' : 'agency');
+}
+
+
+// ============================================================
+// 6. ROUTING
+// ============================================================
+function showAdminView() {
+    closeMobileMenu();
+    $('#app-view').style.display   = 'none';
+    $('#admin-view').style.display = 'block';
+    document.body.style.background = '#f8fafc';
+    populateAdmin();
+}
+
+function showAppView() {
+    $('#admin-view').style.display = 'none';
+    $('#app-view').style.display   = 'block';
+    document.body.style.background = '';
+    renderApp();
+}
+
+async function handleRoute() {
+    if (window.location.hash === '#admin') {
+        if (isAuthenticated()) {
+            showAdminView();
+        } else {
+            // Keep app view visible behind modal
+            $('#app-view').style.display   = 'block';
+            $('#admin-view').style.display = 'none';
+            showLoginModal();
+        }
+    } else {
+        hideLoginModal();
+        showAppView();
+    }
+}
+
+function exitAdmin() {
+    window.location.hash = '';
+}
+
+function adminLockExit() {
+    clearAuth();
+    window.location.hash = '';
+    showToast('Admin panel locked.');
+}
+
+window.addEventListener('hashchange', handleRoute);
+
+// Navbar scroll effect
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) $('#navbar').classList.add('scrolled');
+    else $('#navbar').classList.remove('scrolled');
+}, { passive: true });
+
+
+// ============================================================
+// 7. MOBILE MENU
+// ============================================================
+function toggleMobileMenu() {
+    const menu    = $('#mobile-menu');
+    const overlay = $('#mobile-overlay');
+    if (menu.classList.contains('open')) {
+        closeMobileMenu();
+    } else {
+        menu.classList.add('open');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        $('#hamburger-btn').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    }
+}
+
+function closeMobileMenu() {
+    $('#mobile-menu').classList.remove('open');
+    $('#mobile-overlay').classList.remove('show');
+    document.body.style.overflow = '';
+    $('#hamburger-btn').innerHTML = '<i class="fa-solid fa-bars"></i>';
+}
+
+
+// ============================================================
+// 8. PORTFOLIO FILTER — event delegation (no memory leak)
+// ============================================================
+document.getElementById('portfolio-filters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    $$('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.getAttribute('data-filter');
+    $$('.portfolio-item').forEach(item => {
+        const match = f === 'all' || item.getAttribute('data-category') === f;
+        item.style.display = match ? 'block' : 'none';
+        if (match) item.classList.add('show');
+        else item.classList.remove('show');
+    });
+});
+
+
+// ============================================================
+// 9. ADMIN LOGIC
+// ============================================================
+$$('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', e => {
+        $$('.admin-tab').forEach(t => t.classList.remove('active'));
+        $$('.admin-panel').forEach(p => p.classList.remove('active'));
+        const target = e.currentTarget;
+        target.classList.add('active');
+        document.getElementById(target.getAttribute('data-target')).classList.add('active');
+        if (target.getAttribute('data-target') === 'panel-json') {
+            $('#inp-raw-json').value = JSON.stringify(APP_STATE, null, 4);
+        }
+    });
+});
+
+function populateAdmin() {
+    if (!APP_STATE) return;
+    const s = APP_STATE.site;
+    const fieldsMap = {
+        'inp-site-name':    s.name       || '',
+        'inp-logo-text':    s.logoText   || '',
+        'inp-email':        s.email      || '',
+        'inp-whatsapp':     s.whatsapp   || '',
+        'inp-facebook':     s.facebook   || '',
+        'inp-youtube':      s.youtube    || '',
+        'inp-instagram':    s.instagram  || '',
+        'inp-linkedin':     s.linkedin   || '',
+        'inp-tiktok':       s.tiktok     || '',
+        'inp-twitter':      s.twitter    || '',
+        'inp-agency-logo':  s.agencyLogo || '',
+        'inp-academy-logo': s.academyLogo|| '',
+        'inp-hero-eyebrow': APP_STATE.hero.eyebrow  || '',
+        'inp-hero-title':   APP_STATE.hero.title    || '',
+        'inp-hero-subtitle':APP_STATE.hero.subtitle || '',
+        'inp-about-text':   APP_STATE.hero.aboutText|| ''
+    };
+    Object.entries(fieldsMap).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+    document.getElementById('inp-stats').value     = JSON.stringify(APP_STATE.hero.stats,  null, 2);
+    document.getElementById('inp-services').value  = JSON.stringify(APP_STATE.services,    null, 2);
+    document.getElementById('inp-courses').value   = JSON.stringify(APP_STATE.courses,     null, 2);
+    document.getElementById('inp-portfolio').value = JSON.stringify(APP_STATE.portfolio,   null, 2);
+    document.getElementById('inp-reviews').value   = JSON.stringify(APP_STATE.reviews,     null, 2);
+    document.getElementById('inp-team').value      = JSON.stringify(APP_STATE.team,        null, 2);
+    document.getElementById('inp-raw-json').value  = JSON.stringify(APP_STATE,             null, 4);
+}
+
+function adminSave() {
+    try {
+        if (document.getElementById('panel-json').classList.contains('active')) {
+            saveState(JSON.parse(document.getElementById('inp-raw-json').value));
+            return;
+        }
+
+        const ns = JSON.parse(JSON.stringify(APP_STATE));
+        ns.site.name        = $('#inp-site-name').value;
+        ns.site.logoText    = $('#inp-logo-text').value;
+        ns.site.email       = $('#inp-email').value;
+        ns.site.whatsapp    = $('#inp-whatsapp').value.replace(/\D/g,'');
+        ns.site.facebook    = $('#inp-facebook').value.trim();
+        ns.site.youtube     = $('#inp-youtube').value.trim();
+        ns.site.instagram   = $('#inp-instagram').value.trim();
+        ns.site.linkedin    = $('#inp-linkedin').value.trim();
+        ns.site.tiktok      = $('#inp-tiktok').value.trim();
+        ns.site.twitter     = $('#inp-twitter').value.trim();
+        ns.site.agencyLogo  = $('#inp-agency-logo').value.trim();
+        ns.site.academyLogo = $('#inp-academy-logo').value.trim();
+
+        ns.hero.eyebrow   = $('#inp-hero-eyebrow').value;
+        ns.hero.title     = $('#inp-hero-title').value;
+        ns.hero.subtitle  = $('#inp-hero-subtitle').value;
+        ns.hero.aboutText = $('#inp-about-text').value;
+        ns.hero.stats     = JSON.parse($('#inp-stats').value);
+        ns.services       = JSON.parse($('#inp-services').value);
+        ns.courses        = JSON.parse($('#inp-courses').value);
+        ns.portfolio      = JSON.parse($('#inp-portfolio').value);
+        ns.reviews        = JSON.parse($('#inp-reviews').value);
+        ns.team           = JSON.parse($('#inp-team').value);
+
+        saveState(ns);
+    } catch(e) {
+        showToast('JSON Error: ' + e.message, 'error');
+    }
+}
+
+function adminExport() {
+    const blob = new Blob([JSON.stringify(APP_STATE, null, 4)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'vision-flow-config-' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Config exported!');
+}
+
+function adminImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            saveState(JSON.parse(e.target.result));
+            showToast('Config imported successfully!');
+        } catch(err) {
+            showToast('Invalid JSON file: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function resetToDefault() {
+    if (confirm('WARNING: This will permanently erase all your customizations and restore factory defaults.\n\nAre you absolutely sure?')) {
+        saveState(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+        showToast('Reset to factory defaults.');
+    }
+}
+
+
+// ============================================================
+// 10. KEYBOARD HANDLERS
+// ============================================================
+document.getElementById('admin-pass-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAdminLogin();
+    if (e.key === 'Escape') exitAdmin();
+});
+
+
+// ============================================================
+// 11. INIT (async for password init)
+// ============================================================
+(async function init() {
+    await initAdminPass();
+    APP_STATE = loadState();
+    await handleRoute();
+})();
+</script>
+</body>
+</html>
