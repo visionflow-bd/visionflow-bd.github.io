@@ -661,13 +661,13 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 .ticker-rtl{animation:tickerRTL 30s linear infinite}
 .ticker-ltr{animation:tickerLTR 28s linear infinite}
 /* Brand items (row 1) */
-.ticker-brand{display:flex;align-items:center;gap:12px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:700;font-size:.95rem;letter-spacing:.03em;transition:color .2s}
+.ticker-brand{display:flex;align-items:center;gap:12px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:700;font-size:.95rem;letter-spacing:.03em;transition:color .2s;text-decoration:none;cursor:pointer}
 .ticker-brand:hover{color:var(--accent)}
 .ticker-brand-logo{width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:5px;flex-shrink:0;filter:grayscale(20%);transition:filter .2s;display:block}
 .ticker-brand:hover .ticker-brand-logo{filter:grayscale(0)}
 .ticker-brand-badge{width:44px;height:44px;border-radius:10px;background:var(--accent-glow);display:grid;place-items:center;font-size:.58rem;font-weight:900;color:var(--accent);flex-shrink:0;text-transform:uppercase;letter-spacing:.06em}
 /* Person items (row 2) */
-.ticker-person{display:flex;align-items:center;gap:14px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:600;font-size:.9rem;transition:color .2s}
+.ticker-person{display:flex;align-items:center;gap:14px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:600;font-size:.9rem;transition:color .2s;text-decoration:none;cursor:pointer}
 .ticker-person:hover{color:var(--accent)}
 .ticker-person-img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border-mid);flex-shrink:0;transition:border-color .2s}
 .ticker-person:hover .ticker-person-img{border-color:var(--accent)}
@@ -676,6 +676,13 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 .ticker-person-role{font-size:.74rem;color:var(--text-muted)}
 @keyframes tickerRTL{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)}}
 @keyframes tickerLTR{0%{transform:translate3d(-50%,0,0)}100%{transform:translate3d(0,0,0)}}
+/* Ticker hover popup */
+#thc-popup{position:fixed;z-index:9999;pointer-events:none;background:rgba(8,8,24,.97);border:1px solid var(--accent);border-radius:18px;padding:16px 18px;box-shadow:0 28px 70px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.04);min-width:152px;text-align:center;display:none;opacity:0;transform:translateY(8px) scale(.93);transition:opacity .2s ease,transform .22s cubic-bezier(.34,1.56,.64,1)}
+#thc-popup.visible{opacity:1;transform:translateY(0) scale(1)}
+#thc-popup img{width:84px;height:84px;object-fit:cover;border-radius:50%;border:2.5px solid var(--accent);display:block;margin:0 auto 10px;background:transparent}
+#thc-popup.brand-card img{border-radius:10px;background:#fff;padding:8px;object-fit:contain;border:none;height:64px;width:auto;max-width:128px}
+#thc-popup .thc-name{font-size:.9rem;font-weight:700;color:#fff;white-space:nowrap}
+#thc-popup .thc-role{font-size:.73rem;color:var(--text-muted);margin-top:4px;white-space:nowrap}
 /* Social icon with label */
 .social-icon-labeled{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none}
 .social-icon-labeled .social-lbl{font-size:.62rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:center;max-width:72px;line-height:1.2}
@@ -762,39 +769,45 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 <div class="ticker-section">
   <p class="ticker-label">Trusted by leading brands &amp; top creators worldwide</p>
 
-  <!-- Row 1: Brands → slides right to left (7 unique + 7 duplicate = seamless) -->
+  <!-- Row 1: Brands → right to left (7 unique + 7 duplicate) -->
   <div class="ticker-row">
     <div class="ticker-track ticker-rtl">
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/yamaha.com" width="44" height="44" alt="Yamaha" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>YM</span>'"/>Yamaha</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/unilever.com" width="44" height="44" alt="Unilever" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>UNI</span>'"/>Unilever</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>PR</span>'"/>Pran</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>SUN</span>'"/>Sunsilk</div>
-      <div class="ticker-brand"><span class="ticker-brand-badge">BT</span>Bangladesh Times</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>HC</span>'"/>HyperConnect</div>
-      <div class="ticker-brand"><span class="ticker-brand-badge">TTA</span>Taqwa Talent Academy</div>
-      <!-- exact duplicate of above 7 for seamless loop -->
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/yamaha.com" width="44" height="44" alt="Yamaha" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>YM</span>'"/>Yamaha</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/unilever.com" width="44" height="44" alt="Unilever" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>UNI</span>'"/>Unilever</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>PR</span>'"/>Pran</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>SUN</span>'"/>Sunsilk</div>
-      <div class="ticker-brand"><span class="ticker-brand-badge">BT</span>Bangladesh Times</div>
-      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.outerHTML='<span class=\'ticker-brand-badge\'>HC</span>'"/>HyperConnect</div>
-      <div class="ticker-brand"><span class="ticker-brand-badge">TTA</span>Taqwa Talent Academy</div>
+      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none'"/>Yamaha</a>
+      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none'"/>Unilever</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.style.display='none'"/>Pran</a>
+      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</a>
+      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none'"/>Bangladesh Times</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none'"/>Taqwa Talent Academy</a>
+      <!-- duplicate for seamless loop -->
+      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none'"/>Yamaha</a>
+      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none'"/>Unilever</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.style.display='none'"/>Pran</a>
+      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</a>
+      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none'"/>Bangladesh Times</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none'"/>Taqwa Talent Academy</a>
     </div>
   </div>
 
-  <!-- Row 2: Public Figures → slides left to right (4 unique + 4 duplicate = seamless) -->
+  <!-- Row 2: Public Figures → left to right (7 unique + 7 duplicate) -->
   <div class="ticker-row">
     <div class="ticker-track ticker-ltr">
-      <div class="ticker-person"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Station by Aoyon</span></div></div>
-      <!-- exact duplicate for seamless loop -->
-      <div class="ticker-person"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></div>
-      <div class="ticker-person"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Station by Aoyon</span></div></div>
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
+      <!-- duplicate for seamless loop -->
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
     </div>
   </div>
 </div>
@@ -3147,6 +3160,51 @@ async function bootFirebase(){
   }
 }
 
+/* ===== Ticker Hover Preview ===== */
+function initTickerPreview(){
+  const popup = document.createElement('div');
+  popup.id = 'thc-popup';
+  document.body.appendChild(popup);
+  let hideTimer;
+
+  function position(e){
+    const pw=popup.offsetWidth||160, ph=popup.offsetHeight||130;
+    let x=e.clientX-pw/2, y=e.clientY-ph-16;
+    if(x<8) x=8;
+    if(x+pw>innerWidth-8) x=innerWidth-pw-8;
+    if(y<8) y=e.clientY+20;
+    popup.style.left=x+'px'; popup.style.top=y+'px';
+  }
+
+  document.querySelectorAll('a.ticker-person, a.ticker-brand').forEach(item=>{
+    const isBrand = item.classList.contains('ticker-brand');
+    const img = item.querySelector('img');
+    const imgSrc = img ? img.src : '';
+    const name = isBrand
+      ? (item.dataset.name || item.textContent.trim())
+      : (item.querySelector('.ticker-person-name')?.textContent || '');
+    const role = item.querySelector('.ticker-person-role')?.textContent || '';
+    const cls = isBrand ? 'brand-card' : '';
+    const html = (imgSrc ? `<img src="${imgSrc}" alt="${name}">` : '')
+      + `<div class="thc-name">${name}</div>`
+      + (role ? `<div class="thc-role">${role}</div>` : '');
+
+    item.addEventListener('mouseenter', e=>{
+      clearTimeout(hideTimer);
+      popup.className = cls;
+      popup.innerHTML = html;
+      popup.style.display='block';
+      requestAnimationFrame(()=>popup.classList.add('visible'));
+      position(e);
+    });
+    item.addEventListener('mousemove', position);
+    item.addEventListener('mouseleave', ()=>{
+      popup.classList.remove('visible');
+      hideTimer=setTimeout(()=>{ popup.style.display='none'; }, 180);
+    });
+  });
+}
+
 /* ===== Counter Animation ===== */
 let _counterObserver = null;
 function animateCounters(){
@@ -3207,6 +3265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   STATE.mode = sessionStorage.getItem(LS_KEYS.mode) || 'agency';
   renderAll(); // renderHeroStats() inside renderAll handles animateCounters()
   initScrollWatch();
+  initTickerPreview();
   if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60 });
 
   // Close mobile menu on outside click
