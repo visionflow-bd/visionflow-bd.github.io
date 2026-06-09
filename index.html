@@ -45,7 +45,8 @@
   "logo": "https://visionflow-bd.github.io/Agency-Academy/",
   "description": "Premium digital agency and practical academy from Bangladesh delivering video editing, web & app development, AI automation, SEO, graphic design and training.",
   "address": {"@type":"PostalAddress","addressCountry":"BD","addressLocality":"Dhaka"},
-  "sameAs": ["https://facebook.com/visionflowbd","https://instagram.com/visionflowbd","https://youtube.com/@visionflowbd","https://linkedin.com/company/visionflowbd"]
+  "contactPoint": {"@type":"ContactPoint","email":"visionflow.agency.bd@gmail.com","telephone":"+8801997248406","contactType":"customer service"},
+  "sameAs": ["https://web.facebook.com/profile.php?id=61573056402861","https://web.facebook.com/visionflowacademy","https://www.youtube.com/@VisionFlowAgency-VFA","https://web.facebook.com/groups/932506535775086"]
 }
 </script>
 
@@ -664,7 +665,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   <div class="hero-grid-bg"></div>
   <div class="container hero-inner">
     <div class="eyebrow" data-aos="fade-up">Premium Digital Solutions • Bangladesh &amp; Worldwide</div>
-    <h1 data-aos="fade-up" data-aos-delay="100">
+    <h1 data-aos="fade-up" data-aos-delay="100" id="hero-h1">
       Empowering Brands With <br/>
       <span class="flow">Vision &amp; Flow</span>
     </h1>
@@ -974,24 +975,23 @@ const DEFAULT_DATA = {
     },
     academy: {
       name: "Vision Flow Academy",
-      tagline: "Learn • Create • Earn",
+      tagline: "Learn • Create • Get Hired",
       logo: "",
-      heroTitle: "Turn Your Passion Into A Career Skill",
-      heroSub: "Hands-on, project-based training in video editing, web development, AI, design and digital marketing — taught by industry pros.",
+      heroTitle: "Not Just Courses — A Real Career Launch",
+      heroSub: "Vision Flow Academy is not another course platform. From Week 1 you work on real client projects under senior mentorship, build an agency-grade portfolio, and top performers get directly recruited into Vision Flow. Learn the skill. Do the work. Get the job.",
       primaryColor: "#8b5cf6"
     },
     contact: {
-      email: "hello@visionflow-bd.com",
-      phone: "+8801XXXXXXXXX",
-      whatsapp: "8801XXXXXXXXX",
+      email: "visionflow.agency.bd@gmail.com",
+      phone: "+880 1997-248406",
+      whatsapp: "8801997248406",
       location: "Dhaka, Bangladesh • Serving Worldwide",
       hours: "Sat – Thu • 10:00 AM – 10:00 PM (GMT+6)",
       social: [
-        {name:"Facebook", icon:"fab fa-facebook-f", url:"https://facebook.com/visionflowbd"},
-        {name:"Instagram", icon:"fab fa-instagram", url:"https://instagram.com/visionflowbd"},
-        {name:"YouTube", icon:"fab fa-youtube", url:"https://youtube.com/@visionflowbd"},
-        {name:"LinkedIn", icon:"fab fa-linkedin-in", url:"https://linkedin.com/company/visionflowbd"},
-        {name:"GitHub", icon:"fab fa-github", url:"https://github.com/visionflow-bd"}
+        {name:"Facebook (Agency)", icon:"fab fa-facebook-f", url:"https://web.facebook.com/profile.php?id=61573056402861"},
+        {name:"Facebook (Academy)", icon:"fab fa-facebook-f", url:"https://web.facebook.com/visionflowacademy"},
+        {name:"YouTube", icon:"fab fa-youtube", url:"https://www.youtube.com/@VisionFlowAgency-VFA"},
+        {name:"Academy Community", icon:"fab fa-facebook-f", url:"https://web.facebook.com/groups/932506535775086"}
       ]
     },
     stats: [
@@ -1233,21 +1233,22 @@ app.post('/login', async (req, res) => {
   ],
 
   team: [
-    {id:"t1", name:"Md. Rakibul Islam", role:"Founder & Lead Developer", bio:"Full-stack developer with 7+ years building production systems.", img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-linkedin-in",u:"#"},{i:"fab fa-github",u:"#"},{i:"fab fa-twitter",u:"#"}]},
-    {id:"t2", name:"Sayeed Fahad", role:"Senior Video Editor", bio:"5+ years in Premiere Pro & After Effects — millions of views delivered.", img:"https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-youtube",u:"#"},{i:"fab fa-instagram",u:"#"}]},
-    {id:"t3", name:"Tanjila Akter", role:"UI/UX Designer", bio:"Crafting beautiful interfaces in Figma — pixel-perfect every time.", img:"https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-dribbble",u:"#"},{i:"fab fa-behance",u:"#"}]},
-    {id:"t4", name:"Hasan Mahmud", role:"AI Engineer", bio:"Builds GPT-powered automations & RAG agents for global clients.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-github",u:"#"},{i:"fab fa-linkedin-in",u:"#"}]},
-    {id:"t5", name:"Nadia Sultana", role:"Digital Marketing Lead", bio:"Meta Ads & Google Ads expert — managed $1M+ ad spend.", img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-facebook-f",u:"#"},{i:"fab fa-linkedin-in",u:"#"}]},
-    {id:"t6", name:"Imran Hossain", role:"Mobile App Developer", bio:"Flutter & React Native — published 20+ apps on stores.", img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=70", social:[{i:"fab fa-google-play",u:"#"},{i:"fab fa-app-store",u:"#"}]}
+    {id:"t1", name:"HM Shihabuddin Jashory", role:"Founder & CEO", bio:"The vision behind Vision Flow — multi-skilled creator & strategist covering Video Editing, Graphic Design, AI Automation, Digital Marketing, Web Development & Team Leadership.", img:"", social:[{url:"https://web.facebook.com/Jashory", icon:"fab fa-facebook-f"}]},
+    {id:"t2", name:"MD Rafiul Islam Shubho", role:"Co-Founder & Managing Director", bio:"The strategic mastermind behind Vision Flow's operations & growth. SEO expert and backend architect who lets results speak louder than recognition.", img:"", social:[]},
+    {id:"t3", name:"MD Wahiduzzaman Khan", role:"Creative Director", bio:"Software engineer turned creative powerhouse — Professional Video Editing, Visual Storytelling & Graphic Design. The eye that defines Vision Flow's visual identity.", img:"", social:[]},
+    {id:"t4", name:"MD Naimur Rahman Emon", role:"Senior Video Editor", bio:"All-round professional editor mastering SaaS, UI/UX, Geo Layer & Documentary formats. Adobe Premiere Pro & After Effects specialist with millions of views delivered.", img:"", social:[]},
+    {id:"t5", name:"MD Arafat Hossain", role:"General Manager", bio:"Ultra-level AI Expert & Prompt Engineer. Oversees team operations, account management and automation pipelines that power Vision Flow's efficiency at scale.", img:"", social:[]},
+    {id:"t6", name:"MD Kamruzzaman Papon", role:"Professional Video Editor", bio:"Cinematic storyteller delivering premium edits across commercial, social & documentary formats with sharp attention to pacing, colour and detail.", img:"", social:[]},
+    {id:"t7", name:"MD Jasif Khan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.", img:"", social:[]}
   ],
 
   courses: [
-    {id:"co1", title:"Video Editing — From Zero To Pro", desc:"3-month live mentorship in Premiere Pro & After Effects.", img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=70", level:"Beginner", price:"৳ 8,500", duration:"3 months", lessons:"48 lessons"},
-    {id:"co2", title:"Full-Stack Web Development", desc:"Become a job-ready developer — HTML to deployed React app.", img:"https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"৳ 15,000", duration:"6 months", lessons:"120 lessons"},
-    {id:"co3", title:"AI Automation Mastery", desc:"Build AI agents, chatbots & RPA bots that earn you money.", img:"https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=900&q=70", level:"Intermediate", price:"৳ 12,000", duration:"2 months", lessons:"36 lessons"},
-    {id:"co4", title:"Graphic Design Bootcamp", desc:"Photoshop, Illustrator & Figma — build a designer portfolio.", img:"https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=900&q=70", level:"Beginner", price:"৳ 7,000", duration:"2 months", lessons:"40 lessons"},
-    {id:"co5", title:"Digital Marketing Pro", desc:"Meta Ads, Google Ads, SEO & analytics — earn while you learn.", img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"৳ 9,500", duration:"3 months", lessons:"60 lessons"},
-    {id:"co6", title:"YouTube Creator Masterclass", desc:"From zero subs to monetization — content, edit, growth.", img:"https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"৳ 6,500", duration:"6 weeks", lessons:"30 lessons"}
+    {id:"co1", title:"Professional Video Editing — Zero to Studio", desc:"Not tutorials — you edit real client projects under pro mentorship from Week 1. Top graduates get placed on Vision Flow's own production team.", img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=70", level:"Beginner → Pro", price:"Enrolling Soon", duration:"3 Months", lessons:"Live Client Projects"},
+    {id:"co2", title:"AI Automation & Prompt Engineering", desc:"Build real AI agents, GPT chatbots & automation workflows used in actual agency work — not theory. Live tools you deploy from day one.", img:"https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"Enrolling Soon", duration:"2 Months", lessons:"Live Deployments"},
+    {id:"co3", title:"Digital Marketing & Meta Ads Pro", desc:"Run live campaigns on real ad accounts. You manage actual client budgets — the most hands-on marketing training in Bangladesh.", img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"Enrolling Soon", duration:"3 Months", lessons:"Live Campaigns"},
+    {id:"co4", title:"Graphic Design & Brand Identity", desc:"Create logos, brand books & social kits for real clients under Creative Director guidance. Your portfolio will be agency-grade from day one.", img:"https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=900&q=70", level:"Beginner → Pro", price:"Enrolling Soon", duration:"2 Months", lessons:"Live Client Briefs"},
+    {id:"co5", title:"Full-Stack Web Development", desc:"Build and deploy real production websites — not demos. Top performers get directly recruited into Vision Flow's development team.", img:"https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"Enrolling Soon", duration:"6 Months", lessons:"Live Products"},
+    {id:"co6", title:"YouTube & Social Media Creation", desc:"Script, shoot, edit & grow — taught by a practising creator. Learn the exact workflow Vision Flow uses for its own YouTube & social channels.", img:"https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=900&q=70", level:"All Levels", price:"Enrolling Soon", duration:"6 Weeks", lessons:"Live Content"}
   ],
 
   reviews: [
@@ -1264,7 +1265,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 1,
+    version: 2,
     updatedAt: 0
   }
 };
@@ -1272,6 +1273,8 @@ app.post('/login', async (req, res) => {
 // Merge portfolio + portfolioExtra into a single array
 DEFAULT_DATA.portfolio = DEFAULT_DATA.portfolio.concat(DEFAULT_DATA.portfolioExtra);
 delete DEFAULT_DATA.portfolioExtra;
+// Clear placeholder video IDs — admin adds real YouTube embed URLs per item
+DEFAULT_DATA.portfolio.forEach(p => { if(p.video) p.video = ''; });
 // Ensure new fields exist on default contact (for fresh installs and merge)
 DEFAULT_DATA.site.contact.rows = DEFAULT_DATA.site.contact.rows || [];
 DEFAULT_DATA.site.favicon = DEFAULT_DATA.site.favicon || '';
@@ -1386,6 +1389,15 @@ function loadData(){
       if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
       if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
       if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
+      // v2 migration: seed real contact, team, courses; clear fake portfolio video IDs
+      if((parsed.meta?.version||0) < 2){
+        STATE.data.site.contact = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact));
+        STATE.data.site.academy = Object.assign({}, STATE.data.site.academy||{}, JSON.parse(JSON.stringify(DEFAULT_DATA.site.academy)));
+        STATE.data.team    = JSON.parse(JSON.stringify(DEFAULT_DATA.team));
+        STATE.data.courses = JSON.parse(JSON.stringify(DEFAULT_DATA.courses));
+        (STATE.data.portfolio||[]).forEach(p => { if(p.video) p.video = ''; });
+        STATE.data.meta.version = 2;
+      }
       saveLocal();
       return;
     }
@@ -1456,6 +1468,17 @@ function applyBranding(){
       ? STATE.data.site.academy.heroSub
       : (STATE.data.site.agency?.heroSub || '');
     _setText(heroEl, newSub);
+  }
+  // Hero h1 title adapts to mode
+  const heroH1 = $('#hero-h1');
+  if(heroH1){
+    const title = (STATE.data.site[STATE.mode]?.heroTitle || STATE.data.site.agency?.heroTitle || 'Empowering Brands With Vision & Flow').trim();
+    const words = title.split(/\s+/);
+    const splitAt = Math.ceil(words.length / 2);
+    const plain = words.slice(0, splitAt).join(' ');
+    const grad  = words.slice(splitAt).join(' ');
+    const gradClass = STATE.mode === 'academy' ? 'gradient-text-2' : 'flow';
+    _setHTML(heroH1, `${esc(plain)} <br/><span class="${gradClass}">${esc(grad)}</span>`);
   }
   // Favicon: use custom favicon → fallback to current-mode logo → fallback to agency logo
   const faviconSrc = STATE.data.site.favicon
@@ -1528,7 +1551,7 @@ function renderPortfolio(){
     return;
   }
   $('#portfolio-grid').innerHTML = items.map((p,i)=>{
-    const ytId = (p.video||'').match(/embed\/([^?]+)/)?.[1] || (p.video||'').match(/v=([^&]+)/)?.[1];
+    const ytId = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1];
     const media = ytId
       ? `<iframe src="https://www.youtube.com/embed/${ytId}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
       : `<img src="${esc(p.img)}" alt="${esc(p.title)}" loading="lazy"/>`;
@@ -2329,14 +2352,20 @@ function switchBrandTab(t){
     const stats = STATE.data.site.stats || [];
     pane.innerHTML = `
       <h4 style="color:#fff;margin-bottom:4px">Hero Section Statistics</h4>
-      <div class="hint" style="margin-bottom:18px">These numbers animate in the hero section. Enter real or approximate figures for your agency.</div>
+      <div class="hint" style="margin-bottom:18px">These numbers animate in the hero section. Add, edit or remove stats (max 6 recommended).</div>
+      <div id="stats-rows-wrap">
       ${stats.map((s,i)=>`
-        <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;align-items:end;margin-bottom:12px;padding:14px;background:var(--bg-glass);border:1px solid var(--border-light);border-radius:10px">
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr 36px;gap:10px;align-items:end;margin-bottom:12px;padding:14px;background:var(--bg-glass);border:1px solid var(--border-light);border-radius:10px">
           <div class="form-row" style="margin:0"><label>Label</label><input id="stat-lbl-${i}" value="${esc(s.label||'')}" placeholder="Happy Clients"/></div>
           <div class="form-row" style="margin:0"><label>Suffix</label><input id="stat-sfx-${i}" value="${esc(s.suffix||'+')}" placeholder="+" style="text-align:center"/></div>
           <div class="form-row" style="margin:0"><label>Target Number</label><input id="stat-val-${i}" type="number" min="0" step="1" value="${parseInt(s.target||0,10)}" placeholder="0"/></div>
+          <button type="button" class="icon-btn danger" onclick="removeStatRow(${i})" title="Remove stat" style="align-self:flex-end;margin-bottom:2px"><i class="fas fa-trash"></i></button>
         </div>`).join('')}
-      <button class="btn btn-primary" onclick="saveStats()"><i class="fas fa-save"></i> Save Stats</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-secondary btn-sm" onclick="addStatRow()"><i class="fas fa-plus"></i> Add Stat</button>
+        <button class="btn btn-primary" onclick="saveStats()"><i class="fas fa-save"></i> Save Stats</button>
+      </div>
     `;
   } else {
     const b = s[t] || {};
@@ -2555,6 +2584,25 @@ async function saveBranding(t){
   switchBrandTab(t); // re-render to update preview
   showToast(t==='agency'?'Agency branding saved':'Academy branding saved','success');
 }
+function _collectStatsFromDOM(){
+  return (STATE.data.site.stats||[]).map((_,i)=>({
+    target: Math.max(0, parseInt($('#stat-val-'+i)?.value||'0',10)),
+    suffix: ($('#stat-sfx-'+i)?.value||'+').trim()||'+',
+    label:  ($('#stat-lbl-'+i)?.value||'').trim()
+  }));
+}
+function addStatRow(){
+  const current = _collectStatsFromDOM();
+  STATE.data.site.stats = [...current, {target:0, suffix:'+', label:'New Stat'}];
+  switchBrandTab('stats');
+}
+function removeStatRow(i){
+  if((STATE.data.site.stats||[]).length <= 1){ showToast('Need at least one stat','error'); return; }
+  const current = _collectStatsFromDOM();
+  current.splice(i,1);
+  STATE.data.site.stats = current;
+  switchBrandTab('stats');
+}
 async function saveStats(){
   const n = (STATE.data.site.stats||[]).length || 4;
   const stats = Array.from({length: n}, (_,i) => ({
@@ -2643,7 +2691,7 @@ function exportLeadsCSV(){
   const headers = ['Name','Email','Phone','Interest','Message','Date'];
   const rows = list.map(l => [l.name,l.email,l.phone,l.interest,l.message?.replace(/\n/g,' '), new Date(l.createdAt).toISOString()]);
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}); const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'visionflow-leads.csv'; a.click();
 }
 
@@ -2779,7 +2827,8 @@ function renderAdminAccount(sec){
       <ul style="font-size:.86rem;color:var(--text-muted);line-height:1.9;padding-left:20px">
         <li>URL hash: append <code style="color:#67e8f9">#admin</code> to the site URL</li>
         <li>Keyboard shortcut: <code style="color:#67e8f9">Ctrl + Shift + A</code></li>
-        <li>Click the footer text "Crafted with ♥ in Bangladesh" five times rapidly</li>
+        <li>Click the footer text "Crafted with ♥ in Bangladesh" <strong style="color:#67e8f9">5 times</strong> rapidly — opens login modal</li>
+        <li>Click the same footer text <strong style="color:#f87171">10 times</strong> rapidly — opens credential reset wizard</li>
         <li>Click the "Admin Panel" link in the footer</li>
       </ul>
     </div>
@@ -2788,7 +2837,7 @@ function renderAdminAccount(sec){
       <h4 style="color:#fbbf24;margin-bottom:8px"><i class="fas fa-shield-halved"></i> Security reminder</h4>
       <p style="font-size:.86rem;color:var(--text-muted);line-height:1.7;margin:0">
         Use a <strong style="color:#fbbf24">strong, unique password</strong> — minimum 12 characters with a mix of letters, numbers and symbols.
-        Never share your credentials. If you ever forget your password, use the <em>"Forgot password?"</em> link on the login screen to reset to defaults.
+        Never share your credentials. If you ever forget your password, use the <strong style="color:#fbbf24">10-click secret trigger</strong> — click the footer text "Crafted with &#9829; in Bangladesh" <em>10 times rapidly</em> to reset credentials.
       </p>
     </div>
 
@@ -2838,9 +2887,16 @@ function importJSON(e){
   reader.onload = async () => {
     try {
       const data = JSON.parse(reader.result);
-      if(!data || !data.site) throw new Error('Invalid data file');
+      if(!data || typeof data !== 'object' || !data.site) throw new Error('Invalid data file — missing site data');
       if(!confirm('This will replace all current data. Continue?')) return;
-      STATE.data = data;
+      STATE.data = _deepMerge(data, DEFAULT_DATA);
+      ['services','portfolio','categories','team','reviews','courses','codeDemos','liveSites','leads'].forEach(k=>{
+        if(!Array.isArray(STATE.data[k])) STATE.data[k] = Array.isArray(DEFAULT_DATA[k]) ? JSON.parse(JSON.stringify(DEFAULT_DATA[k])) : [];
+      });
+      STATE.data.site.contact = STATE.data.site.contact || {};
+      if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
+      if(!Array.isArray(STATE.data.site.contact.social)||!STATE.data.site.contact.social.length) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
+      if(!Array.isArray(STATE.data.site.stats)||!STATE.data.site.stats.length) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
       await persist();
       renderAll();
       showToast('Data imported successfully','success');
@@ -2937,9 +2993,11 @@ async function bootFirebase(){
 }
 
 /* ===== Counter Animation ===== */
+let _counterObserver = null;
 function animateCounters(){
+  if(_counterObserver){ _counterObserver.disconnect(); _counterObserver = null; }
   const els = $$('[data-target]');
-  const observer = new IntersectionObserver(entries => {
+  _counterObserver = new IntersectionObserver(entries => {
     entries.forEach(en => {
       if(!en.isIntersecting) return;
       const el = en.target;
@@ -2953,10 +3011,10 @@ function animateCounters(){
         if(p<1) requestAnimationFrame(update);
       };
       requestAnimationFrame(update);
-      observer.unobserve(el);
+      _counterObserver.unobserve(el);
     });
   }, {threshold:.5});
-  els.forEach(el => observer.observe(el));
+  els.forEach(el => _counterObserver.observe(el));
 }
 
 /* ===== Scroll: topbar shadow + active link ===== */
