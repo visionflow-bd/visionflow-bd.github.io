@@ -2875,8 +2875,9 @@ async function initFirebase(){
 }
 
 async function bootFirebase(){
-  const cfgStr = localStorage.getItem(LS_KEYS.fbCfg);
-  if(!cfgStr) return;
+  const _BUILTIN_FB = '{"apiKey":"AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM","authDomain":"visionflow-bd.firebaseapp.com","projectId":"visionflow-bd","storageBucket":"visionflow-bd.firebasestorage.app","messagingSenderId":"233587493754","appId":"1:233587493754:web:a9d064de81f356ab81e4c3","measurementId":"G-RQEHEH1RB5"}';
+  let cfgStr = localStorage.getItem(LS_KEYS.fbCfg);
+  if(!cfgStr){ cfgStr = _BUILTIN_FB; localStorage.setItem(LS_KEYS.fbCfg, cfgStr); }
   let cfg; try { cfg = JSON.parse(cfgStr); } catch { return; }
   await initFirebase();
   if(!window.__fb){ console.warn('Firebase SDK unavailable'); return; }
