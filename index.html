@@ -493,13 +493,6 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 .foot-about{max-width:380px}
 .foot-about p{font-size:.88rem;color:var(--text-muted);margin:14px 0}
 .foot-social{display:flex;gap:8px;flex-wrap:wrap}
-.foot-social a{
-  width:38px;height:38px;border-radius:50%;
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-  display:grid;place-items:center;color:#cbd5e1;
-  transition:var(--transition);font-size:.95rem;
-}
-.foot-social a:hover{background:var(--gradient-1);color:#fff;border-color:transparent;transform:translateY(-2px)}
 /* Unified social icon button used in contact + footer */
 .social-icon-btn{
   width:42px;height:42px;border-radius:50%;
@@ -707,12 +700,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         </div>
       </button>
     </div>
-    <div class="hero-stats" data-aos="fade-up" data-aos-delay="500">
-      <div class="hero-stat"><div class="hero-stat-num" data-target="5000" data-suffix="+">0</div><div class="hero-stat-label">Happy Clients</div></div>
-      <div class="hero-stat"><div class="hero-stat-num" data-target="850" data-suffix="+">0</div><div class="hero-stat-label">Projects Delivered</div></div>
-      <div class="hero-stat"><div class="hero-stat-num" data-target="60" data-suffix="+">0</div><div class="hero-stat-label">Countries Served</div></div>
-      <div class="hero-stat"><div class="hero-stat-num" data-target="98" data-suffix="%">0</div><div class="hero-stat-label">% Retention</div></div>
-    </div>
+    <div id="hero-stats-grid" class="hero-stats" data-aos="fade-up" data-aos-delay="500"></div>
   </div>
 </section>
 
@@ -913,8 +901,11 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         <button class="btn btn-primary" type="submit" style="width:100%;margin-top:6px"><i class="fas fa-sign-in-alt"></i> Sign In</button>
       </form>
       <p style="font-size:.78rem;color:var(--text-muted);margin-top:16px;line-height:1.6">
-        <i class="fas fa-circle-info" style="color:var(--accent)"></i> Login tries <b>Firebase first</b> (if connected), then falls back to your <b>local credentials</b>. Set them in <em>Admin → Account</em>. Default: <code style="color:#67e8f9">admin@visionflow-bd.com</code> / <code style="color:#67e8f9">visionflow2026</code> — <b>change them immediately</b>.
+        <i class="fas fa-circle-info" style="color:var(--accent)"></i> Tries <b>Firebase</b> first (if configured), then falls back to <b>local credentials</b>. Manage them in <em>Admin → Account</em>.
       </p>
+      <div style="margin-top:10px;text-align:center">
+        <button type="button" onclick="_resetCredentials()" style="background:none;border:none;color:var(--text-dim);font-size:.72rem;cursor:pointer;text-decoration:underline;padding:0">Forgot password? Reset to default credentials</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1002,7 +993,13 @@ const DEFAULT_DATA = {
         {name:"LinkedIn", icon:"fab fa-linkedin-in", url:"https://linkedin.com/company/visionflowbd"},
         {name:"GitHub", icon:"fab fa-github", url:"https://github.com/visionflow-bd"}
       ]
-    }
+    },
+    stats: [
+      { target: 200, suffix: '+', label: 'Happy Clients' },
+      { target: 500, suffix: '+', label: 'Projects Delivered' },
+      { target: 15,  suffix: '+', label: 'Countries Served' },
+      { target: 98,  suffix: '%', label: 'Client Retention' }
+    ]
   },
 
   services: [
@@ -1388,6 +1385,7 @@ function loadData(){
       STATE.data.site.contact = STATE.data.site.contact || {};
       if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
       if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
+      if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
       saveLocal();
       return;
     }
@@ -1478,6 +1476,7 @@ function applyBranding(){
 /* ============= RENDER ============= */
 function renderAll(){
   applyBranding();
+  renderHeroStats();
   renderServices();
   renderCategories();
   renderPortfolio();
@@ -1790,8 +1789,25 @@ async function submitLead(e){
 
 function openWhatsapp(){
   const wa = (STATE.data.site.contact.whatsapp||'').replace(/\D/g,'');
-  if(!wa || wa.length < 10){ showToast('WhatsApp number not configured yet','error'); return; }
-  window.open(`https://wa.me/${wa}?text=${encodeURIComponent('Hi Vision Flow, I want to discuss a project.')}`,'_blank');
+  if(!wa || wa.length < 10){ showToast('WhatsApp number not configured yet — set it in Admin → Contact','error'); return; }
+  const url = `https://wa.me/${wa}?text=${encodeURIComponent('Hi Vision Flow, I want to discuss a project.')}`;
+  // Use anchor click to avoid popup-blocker issues with window.open()
+  const a = Object.assign(document.createElement('a'), {href: url, target: '_blank', rel: 'noopener noreferrer'});
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ===== Hero Stats rendering ===== */
+function renderHeroStats(){
+  const el = $('#hero-stats-grid');
+  if(!el) return;
+  const stats = STATE.data.site?.stats || [];
+  el.innerHTML = stats.map(s => `
+    <div class="hero-stat">
+      <div class="hero-stat-num" data-target="${parseInt(s.target||0,10)}" data-suffix="${esc(s.suffix||'+')}">0</div>
+      <div class="hero-stat-label">${esc(s.label||'')}</div>
+    </div>`).join('');
+  // Re-run counter observer for newly rendered elements
+  animateCounters();
 }
 </script>
 <script>
@@ -1884,6 +1900,20 @@ async function _verifyLocal(email, pass){
   if(email !== cfg.email) return false;
   const tryHash = await _hashPwd(pass, cfg.salt || '');
   return tryHash === cfg.passHash;
+}
+
+/* Credential recovery — clears stored hash so default credentials work again */
+function _resetCredentials(){
+  if(!confirm(
+    'Reset admin credentials to factory defaults?\n\n' +
+    'After resetting:\n' +
+    '  Email:    admin@visionflow-bd.com\n' +
+    '  Password: visionflow2026\n\n' +
+    'Log in with those, then immediately change your password in Admin → Account.\n\nContinue?'
+  )) return;
+  localStorage.removeItem(LS_KEYS.authLocal);
+  showToast('Credentials reset — use the default login now.', 'success');
+  setTimeout(() => location.reload(), 1800);
 }
 
 /* Rate limit: max 6 attempts / 60s */
@@ -2258,6 +2288,7 @@ function renderAdminSite(sec){
       <button class="active" onclick="switchBrandTab('agency')">Agency Branding</button>
       <button onclick="switchBrandTab('academy')">Academy Branding</button>
       <button onclick="switchBrandTab('contact')">Contact Info</button>
+      <button onclick="switchBrandTab('stats')">Hero Stats</button>
     </div>
     <div id="brand-pane"></div>
   `;
@@ -2269,6 +2300,19 @@ function switchBrandTab(t){
   const s = STATE.data.site;
   if(t==='contact'){
     renderContactAdmin(pane);
+  } else if(t==='stats'){
+    const stats = STATE.data.site.stats || [];
+    pane.innerHTML = `
+      <h4 style="color:#fff;margin-bottom:4px">Hero Section Statistics</h4>
+      <div class="hint" style="margin-bottom:18px">These numbers animate in the hero section. Enter real or approximate figures for your agency.</div>
+      ${stats.map((s,i)=>`
+        <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;align-items:end;margin-bottom:12px;padding:14px;background:var(--bg-glass);border:1px solid var(--border-light);border-radius:10px">
+          <div class="form-row" style="margin:0"><label>Label</label><input id="stat-lbl-${i}" value="${esc(s.label||'')}" placeholder="Happy Clients"/></div>
+          <div class="form-row" style="margin:0"><label>Suffix</label><input id="stat-sfx-${i}" value="${esc(s.suffix||'+')}" placeholder="+" style="text-align:center"/></div>
+          <div class="form-row" style="margin:0"><label>Target Number</label><input id="stat-val-${i}" type="number" min="0" step="1" value="${parseInt(s.target||0,10)}" placeholder="0"/></div>
+        </div>`).join('')}
+      <button class="btn btn-primary" onclick="saveStats()"><i class="fas fa-save"></i> Save Stats</button>
+    `;
   } else {
     const b = s[t] || {};
     pane.innerHTML = `
@@ -2426,13 +2470,13 @@ function updateSocialRow(i, key, val){
   STATE.data.site.contact.social[i][key] = val;
   if(key === 'url'){
     // Update icon preview in-place — do NOT call renderSocialRowsAdmin()
-    // because that replaces innerHTML and the focused URL input loses focus mid-typing
+    // (that replaces innerHTML and kills the focused input)
     const row = STATE.data.site.contact.social[i];
-    if(!row.icon){
-      const autoIcon = detectSocialIcon(val) || 'fas fa-link';
-      const iconEl = document.querySelector(`i[data-si-row="${i}"]`);
-      if(iconEl) iconEl.className = autoIcon;
-    }
+    // Always auto-detect when URL changes; user can override via the custom icon field
+    const autoIcon = detectSocialIcon(val) || 'fas fa-link';
+    if(!row.icon) row.icon = ''; // keep empty so saveContact re-detects
+    const iconEl = document.querySelector(`i[data-si-row="${i}"]`);
+    if(iconEl) iconEl.className = autoIcon;
   } else if(key === 'icon'){
     // Custom icon override — show it immediately
     const iconEl = document.querySelector(`i[data-si-row="${i}"]`);
@@ -2485,6 +2529,19 @@ async function saveBranding(t){
   renderAll();
   switchBrandTab(t); // re-render to update preview
   showToast(t==='agency'?'Agency branding saved':'Academy branding saved','success');
+}
+async function saveStats(){
+  const n = (STATE.data.site.stats||[]).length || 4;
+  const stats = Array.from({length: n}, (_,i) => ({
+    target: Math.max(0, parseInt($('#stat-val-'+i)?.value||0, 10) || 0),
+    suffix: ($('#stat-sfx-'+i)?.value||'+').trim() || '+',
+    label:  ($('#stat-lbl-'+i)?.value||'').trim()
+  })).filter(s => s.label);
+  STATE.data.site.stats = stats;
+  await persist();
+  renderAll();
+  switchBrandTab('stats');
+  showToast('✅ Stats saved — visible in the hero section now','success');
 }
 async function saveContact(){
   // Clean up rows: drop empty ones
@@ -2703,10 +2760,10 @@ function renderAdminAccount(sec){
     </div>
 
     <div style="margin-top:18px;padding:18px;border:1px solid rgba(251,191,36,.3);border-radius:12px;background:rgba(251,191,36,.05)">
-      <h4 style="color:#fbbf24;margin-bottom:8px"><i class="fas fa-shield-halved"></i> First-time setup tip</h4>
+      <h4 style="color:#fbbf24;margin-bottom:8px"><i class="fas fa-shield-halved"></i> Security reminder</h4>
       <p style="font-size:.86rem;color:var(--text-muted);line-height:1.7;margin:0">
-        Default credentials are <code style="color:#67e8f9">admin@visionflow-bd.com</code> / <code style="color:#67e8f9">visionflow2026</code>.
-        <strong style="color:#fbbf24">Change them immediately</strong> using the form above for security.
+        Use a <strong style="color:#fbbf24">strong, unique password</strong> — minimum 12 characters with a mix of letters, numbers and symbols.
+        Never share your credentials. If you ever forget your password, use the <em>"Forgot password?"</em> link on the login screen to reset to defaults.
       </p>
     </div>
 
@@ -2821,6 +2878,7 @@ async function bootFirebase(){
           STATE.data.site.contact = STATE.data.site.contact || {};
           STATE.data.site.contact.rows = Array.isArray(STATE.data.site.contact.rows) ? STATE.data.site.contact.rows : [];
           if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
+          if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
           localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data));
           renderAllDebounced(); // debounced to prevent blink from rapid consecutive updates
         }
@@ -2897,9 +2955,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#year').textContent = new Date().getFullYear();
   loadData();
   STATE.mode = localStorage.getItem(LS_KEYS.mode) || 'agency';
-  renderAll();
+  renderAll(); // renderHeroStats() inside renderAll handles animateCounters()
   initScrollWatch();
-  animateCounters();
   if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60 });
 
   // Close mobile menu on outside click
