@@ -649,17 +649,33 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   footer{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 }
 /* ===== CLIENT TICKER ===== */
-.ticker-section{overflow:hidden;padding:28px 0;border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);background:rgba(0,0,0,.18);position:relative}
-.ticker-section::before,.ticker-section::after{content:"";position:absolute;top:0;bottom:0;width:120px;z-index:2;pointer-events:none}
+.ticker-section{overflow:hidden;padding:32px 0 28px;border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);background:rgba(0,0,0,.18);position:relative}
+.ticker-section::before,.ticker-section::after{content:"";position:absolute;top:0;bottom:0;width:100px;z-index:2;pointer-events:none}
 .ticker-section::before{left:0;background:linear-gradient(to right,var(--bg-deep),transparent)}
 .ticker-section::after{right:0;background:linear-gradient(to left,var(--bg-deep),transparent)}
-.ticker-label{text-align:center;font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px}
-.ticker-track{display:flex;width:max-content;animation:tickerScroll 28s linear infinite}
+.ticker-label{text-align:center;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:18px}
+.ticker-row{overflow:hidden;margin-bottom:0}
+.ticker-row+.ticker-row{margin-top:14px}
+.ticker-track{display:flex;width:max-content}
 .ticker-track:hover{animation-play-state:paused}
-.ticker-item{display:flex;align-items:center;gap:10px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:600;font-size:.95rem;letter-spacing:.02em;transition:color .2s}
-.ticker-item:hover{color:var(--accent)}
-.ticker-item .ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.5;flex-shrink:0}
-@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-rtl{animation:tickerRTL 32s linear infinite}
+.ticker-ltr{animation:tickerLTR 36s linear infinite}
+/* Brand items (row 1) */
+.ticker-brand{display:flex;align-items:center;gap:10px;padding:0 28px;white-space:nowrap;color:var(--text-secondary);font-weight:700;font-size:.9rem;letter-spacing:.03em;transition:color .2s}
+.ticker-brand:hover{color:var(--accent)}
+.ticker-brand-logo{width:32px;height:32px;border-radius:8px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0;filter:grayscale(30%);transition:filter .2s}
+.ticker-brand:hover .ticker-brand-logo{filter:grayscale(0)}
+.ticker-brand-badge{width:32px;height:32px;border-radius:8px;background:var(--accent-glow);display:grid;place-items:center;font-size:.6rem;font-weight:900;color:var(--accent);flex-shrink:0;text-transform:uppercase}
+/* Person items (row 2) */
+.ticker-person{display:flex;align-items:center;gap:11px;padding:0 28px;white-space:nowrap;color:var(--text-secondary);font-weight:600;font-size:.88rem;transition:color .2s}
+.ticker-person:hover{color:var(--accent)}
+.ticker-person-img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--border-mid);flex-shrink:0;transition:border-color .2s}
+.ticker-person:hover .ticker-person-img{border-color:var(--accent)}
+.ticker-person-meta{display:flex;flex-direction:column;line-height:1.25}
+.ticker-person-name{font-weight:700;font-size:.88rem;color:#fff}
+.ticker-person-role{font-size:.72rem;color:var(--text-muted)}
+@keyframes tickerRTL{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes tickerLTR{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
 /* Social icon with label */
 .social-icon-labeled{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none}
 .social-icon-labeled .social-lbl{font-size:.62rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:center;max-width:72px;line-height:1.2}
@@ -744,32 +760,50 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 
 <!-- ==================== CLIENT TICKER ==================== -->
 <div class="ticker-section">
-  <p class="ticker-label">Trusted by brands &amp; creators worldwide</p>
-  <div class="ticker-track" id="ticker-track">
-    <div class="ticker-item"><span class="ticker-dot"></span>Yamaha</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Unilever</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Pran</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Sunsilk</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Bangladesh Times</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>HyperConnect</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Taqwa Talent Academy</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Mosharraf Karim</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Rafsan The Choto Vhai</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Porimoni</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Pinaki Hore</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Shawon Islam</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Yamaha</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Unilever</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Pran</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Sunsilk</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Bangladesh Times</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>HyperConnect</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Taqwa Talent Academy</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Mosharraf Karim</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Rafsan The Choto Vhai</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Porimoni</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Pinaki Hore</div>
-    <div class="ticker-item"><span class="ticker-dot"></span>Shawon Islam</div>
+  <p class="ticker-label">Trusted by leading brands &amp; top creators worldwide</p>
+
+  <!-- Row 1: Brands → slides right to left -->
+  <div class="ticker-row">
+    <div class="ticker-track ticker-rtl">
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/yamaha.com" alt="Yamaha" onerror="this.style.display='none'"/>Yamaha</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/unilever.com" alt="Unilever" onerror="this.style.display='none'"/>Unilever</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" alt="Pran" onerror="this.style.display='none'"/>Pran</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/sunsilk.com" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">BT</span>Bangladesh Times</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">TTA</span>Taqwa Talent Academy</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">YA</span>Yamaha Music</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/unilever.com" alt="Unilever" onerror="this.style.display='none'"/>Unilever</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" alt="Pran" onerror="this.style.display='none'"/>Pran</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/sunsilk.com" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">BT</span>Bangladesh Times</div>
+      <div class="ticker-brand"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">TTA</span>Taqwa Talent Academy</div>
+      <div class="ticker-brand"><span class="ticker-brand-badge">YA</span>Yamaha Music</div>
+    </div>
+  </div>
+
+  <!-- Row 2: Celebrities & Clients → slides left to right -->
+  <div class="ticker-row">
+    <div class="ticker-track ticker-ltr">
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&h=80&q=80" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor &amp; Content Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80" alt="Rafsan"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Vhai</span><span class="ticker-person-role">Content Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80" alt="Porimoni"/><div class="ticker-person-meta"><span class="ticker-person-name">Porimoni</span><span class="ticker-person-role">Actress</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&h=80&q=80" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&q=80" alt="Shawon Islam"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Islam</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&h=80&q=80" alt="Tahmid Hasan"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=80&h=80&q=80" alt="Sadia Tuli"/><div class="ticker-person-meta"><span class="ticker-person-name">Sadia Islam Tuli</span><span class="ticker-person-role">Content Creator · New York</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&h=80&q=80" alt="Belal Hussain"/><div class="ticker-person-meta"><span class="ticker-person-name">Belal Hussain</span><span class="ticker-person-role">YouTube Creator · Dhaka</span></div></div>
+      <!-- Duplicate for seamless loop -->
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&h=80&q=80" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor &amp; Content Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80" alt="Rafsan"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Vhai</span><span class="ticker-person-role">Content Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80" alt="Porimoni"/><div class="ticker-person-meta"><span class="ticker-person-name">Porimoni</span><span class="ticker-person-role">Actress</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&h=80&q=80" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&q=80" alt="Shawon Islam"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Islam</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&h=80&q=80" alt="Tahmid Hasan"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=80&h=80&q=80" alt="Sadia Tuli"/><div class="ticker-person-meta"><span class="ticker-person-name">Sadia Islam Tuli</span><span class="ticker-person-role">Content Creator · New York</span></div></div>
+      <div class="ticker-person"><img class="ticker-person-img" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&h=80&q=80" alt="Belal Hussain"/><div class="ticker-person-meta"><span class="ticker-person-name">Belal Hussain</span><span class="ticker-person-role">YouTube Creator · Dhaka</span></div></div>
+    </div>
   </div>
 </div>
 
@@ -1320,16 +1354,25 @@ app.post('/login', async (req, res) => {
   ],
 
   reviews: [
-    {id:"r1", name:"Saqlain Khan", role:"Content Creator", rating:5, text:"Vision Flow er video editing quality next level. Cinematic feel, fast delivery and super professional team. Recommended 100%.", img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=70"},
-    {id:"r2", name:"Nafees Salim", role:"YouTuber", rating:5, text:"Worked with many editors before — none matched the quality and turnaround Vision Flow gave me. My reels' engagement jumped 3x.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70"},
-    {id:"r3", name:"Maria Sultana", role:"Founder, Babylist BD", rating:5, text:"They built our entire e-commerce platform from scratch. Pixel-perfect design, blazing fast and the admin panel is a dream to use.", img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70"},
-    {id:"r4", name:"David Chen", role:"SaaS Founder, Singapore", rating:5, text:"Hired Vision Flow for our dashboard rebuild. Communication was flawless, code quality enterprise-grade. Will hire again.", img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=70"},
-    {id:"r5", name:"Aisha Rahman", role:"Academy Student", rating:5, text:"I joined the video editing course as a complete beginner. 3 months later I'm earning my first ৳25,000 in client work. Worth every taka.", img:"https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=70"},
-    {id:"r6", name:"Onnorokom Group", role:"Corporate Client", rating:5, text:"Excellent partner for our long-form YouTube content. They understand brand voice and deliver consistently.", img:"https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70"},
-    {id:"r7", name:"BYD Bangladesh", role:"Brand", rating:5, text:"Our product launch reel crossed 1.2M views — couldn't have done it without Vision Flow's editing magic.", img:"https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=70"},
-    {id:"r8", name:"Tasnim Ahmed", role:"Academy Student", rating:5, text:"The web dev bootcamp changed my career. From zero coding to landing a remote job — Vision Flow Academy delivered exactly what they promised.", img:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=70"},
-    {id:"r9", name:"Pinaki Hore", role:"Documentary Creator", country:"India", rating:5, text:"Working with Vision Flow has been exceptional. 24 to 48 premium videos per month — geo layer animations, AI-driven footage, After Effects storytelling — quality that beats top creators. Consistent, professional, and always on time.", img:"", year:"2024"},
-    {id:"r10", name:"Shawon Islam", role:"Professional Cinematographer", country:"Malaysia", rating:5, text:"I trust Vision Flow for all my celebrity work — Mosharraf Karim, Rafsan The Choto Vhai, Porimoni. Every cut is broadcast-grade. They understand cinematic storytelling at the highest level.", img:"", year:"2024"}
+    // ── Video Editing ──
+    {id:"r1", name:"Pinaki Hore", role:"Documentary Creator", country:"India", rating:5, text:"Vision Flow handles 24–48 of my videos every month — geo layer map animations, AI-enhanced After Effects storytelling at a level that rivals India's top creators. Consistently exceptional quality, never missed a deadline.", img:"https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=70"},
+    {id:"r2", name:"Shawon Islam", role:"Professional Cinematographer", country:"Malaysia", rating:5, text:"From Mosharraf Karim to Rafsan The Choto Vhai to Porimoni — Vision Flow handles every celebrity cut I bring them. The quality is broadcast-grade and the team understands cinematic storytelling at the highest level.", img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=70"},
+    {id:"r3", name:"Tahmid Hasan Official", role:"Content Creator & Filmmaker", country:"Bangladesh", rating:5, text:"My documentary content reached a whole new level after partnering with Vision Flow. The editing style is immersive, the team is professional, and they understand storytelling deeply. Highly recommended for serious creators.", img:"https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=70"},
+    {id:"r4", name:"Aoyon Ahmed", role:"Creator, SEO Station by Aoyon", country:"Bangladesh", rating:5, text:"Vision Flow transformed my YouTube channel's production quality. The edits are sharp, the transitions are cinematic, and engagement went up significantly. They truly understand what makes content stand out.", img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=70"},
+    {id:"r5", name:"Belal Hussain", role:"YouTube Creator", country:"Bangladesh", rating:5, text:"Running an English-language YouTube channel demands top-tier editing — and Vision Flow delivers every time. My international audience has grown 40% since working with them. Professional, fast and always on-brand.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70"},
+    // ── Web Development + E-commerce ──
+    {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70"},
+    {id:"r7", name:"David Chen", role:"SaaS Founder", country:"Singapore", rating:5, text:"Hired Vision Flow for our dashboard rebuild. Communication was flawless, code quality was enterprise-grade, and they delivered ahead of schedule. Will definitely work with them again on our next product.", img:"https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70"},
+    // ── Social Media + Content Creation ──
+    {id:"r8", name:"Sadia Islam Tuli", role:"Content Creator & Vlogger", country:"USA", rating:5, text:"Vision Flow handles everything — vlog editing, UGC content, YouTube, Instagram, Facebook setup and management. Being in New York and having a team this reliable in Bangladesh is incredible. They feel like my creative partner.", img:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=70"},
+    {id:"r9", name:"Rahat Islam", role:"Digital Entrepreneur", country:"Bangladesh", rating:5, text:"I've been working with Vision Flow across multiple projects and they always exceed expectations. Whether it's video, web or design — the quality is premium, the team is responsive and the results speak for themselves.", img:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=70"},
+    {id:"r10", name:"Priya Sharma", role:"Marketing Manager", country:"India", rating:5, text:"We brought Vision Flow in for our product launch reels and the results blew us away — 1.4M views, 18% engagement rate. Their understanding of social-first video content is unmatched.", img:"https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=70"},
+    // ── Academy ──
+    {id:"r11", name:"Aisha Rahman", role:"Academy Graduate", country:"Bangladesh", rating:5, text:"Joined Vision Flow Academy as a complete beginner. Three months later I was earning ৳25,000/month from client work. The live project training made all the difference — this is not a normal course platform.", img:"https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=70"},
+    {id:"r12", name:"Tasnim Ahmed", role:"Academy Graduate → Web Dev", country:"Bangladesh", rating:5, text:"From zero coding to landing a remote job in 4 months — Vision Flow Academy is genuinely life-changing. The curriculum is real-world, the mentors are active professionals, and the community keeps you accountable.", img:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=70"},
+    // ── AI & Automation ──
+    {id:"r13", name:"Omar Faruq", role:"E-commerce Owner", country:"Bangladesh", rating:5, text:"Their AI chatbot cut our customer support tickets by 60% in the first month. The automation workflows they built save us 3 hours every day. Vision Flow's AI team truly understands business impact.", img:"https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&fit=crop&w=200&q=70"},
+    {id:"r14", name:"Sarah Rahman", role:"Brand Manager", country:"UK", rating:5, text:"We hired Vision Flow for our Meta Ads campaign and the ROI was outstanding — 7x in 6 weeks. The creative direction combined with technical execution is something rare to find in one agency.", img:"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=200&q=70"},
   ],
 
   leads: [],
