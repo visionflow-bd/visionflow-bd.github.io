@@ -663,26 +663,29 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 /* Brand items (row 1) */
 .ticker-brand{display:flex;align-items:center;gap:12px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:700;font-size:.95rem;letter-spacing:.03em;transition:color .2s;text-decoration:none;cursor:pointer}
 .ticker-brand:hover{color:var(--accent)}
-.ticker-brand-logo{width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:5px;flex-shrink:0;filter:grayscale(20%);transition:filter .2s;display:block}
-.ticker-brand:hover .ticker-brand-logo{filter:grayscale(0)}
-.ticker-brand-badge{width:44px;height:44px;border-radius:10px;background:var(--accent-glow);display:grid;place-items:center;font-size:.58rem;font-weight:900;color:var(--accent);flex-shrink:0;text-transform:uppercase;letter-spacing:.06em}
+.ticker-brand-logo{width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:5px;flex-shrink:0;filter:grayscale(20%);transition:filter .2s,transform .38s cubic-bezier(.34,1.56,.64,1);display:block;transform-origin:center bottom}
+.ticker-brand:hover .ticker-brand-logo{filter:grayscale(0);transform:scale(1.45) translateY(-6px)}
+.ticker-brand-badge{width:44px;height:44px;border-radius:10px;background:var(--accent-glow);display:grid;place-items:center;font-size:.58rem;font-weight:900;color:var(--accent);flex-shrink:0;text-transform:uppercase;letter-spacing:.06em;transition:transform .38s cubic-bezier(.34,1.56,.64,1);transform-origin:center bottom}
+.ticker-brand:hover .ticker-brand-badge{transform:scale(1.35) translateY(-5px)}
 /* Person items (row 2) */
 .ticker-person{display:flex;align-items:center;gap:14px;padding:0 36px;white-space:nowrap;color:var(--text-secondary);font-weight:600;font-size:.9rem;transition:color .2s;text-decoration:none;cursor:pointer}
 .ticker-person:hover{color:var(--accent)}
-.ticker-person-img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border-mid);flex-shrink:0;transition:border-color .2s}
-.ticker-person:hover .ticker-person-img{border-color:var(--accent)}
+.ticker-person-img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border-mid);flex-shrink:0;transition:transform .38s cubic-bezier(.34,1.56,.64,1),border-color .2s,box-shadow .38s;transform-origin:center bottom}
+.ticker-person:hover .ticker-person-img{transform:scale(1.55) translateY(-10px);border-color:var(--accent);box-shadow:0 14px 32px rgba(6,182,212,.45)}
 .ticker-person-meta{display:flex;flex-direction:column;line-height:1.3}
 .ticker-person-name{font-weight:700;font-size:.9rem;color:#fff}
 .ticker-person-role{font-size:.74rem;color:var(--text-muted)}
 @keyframes tickerRTL{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)}}
 @keyframes tickerLTR{0%{transform:translate3d(-50%,0,0)}100%{transform:translate3d(0,0,0)}}
 /* Ticker hover popup */
-#thc-popup{position:fixed;z-index:9999;pointer-events:none;background:rgba(8,8,24,.97);border:1px solid var(--accent);border-radius:18px;padding:16px 18px;box-shadow:0 28px 70px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.04);min-width:152px;text-align:center;display:none;opacity:0;transform:translateY(8px) scale(.93);transition:opacity .2s ease,transform .22s cubic-bezier(.34,1.56,.64,1)}
+#thc-popup{position:fixed;z-index:9999;pointer-events:auto;background:rgba(8,8,24,.97);border:1px solid var(--accent);border-radius:18px;padding:16px 18px;box-shadow:0 28px 70px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.04);min-width:160px;text-align:center;display:none;opacity:0;transform:translateY(8px) scale(.93);transition:opacity .2s ease,transform .22s cubic-bezier(.34,1.56,.64,1)}
 #thc-popup.visible{opacity:1;transform:translateY(0) scale(1)}
-#thc-popup img{width:84px;height:84px;object-fit:cover;border-radius:50%;border:2.5px solid var(--accent);display:block;margin:0 auto 10px;background:transparent}
+#thc-popup img{width:88px;height:88px;object-fit:cover;border-radius:50%;border:2.5px solid var(--accent);display:block;margin:0 auto 10px;background:transparent}
 #thc-popup.brand-card img{border-radius:10px;background:#fff;padding:8px;object-fit:contain;border:none;height:64px;width:auto;max-width:128px}
 #thc-popup .thc-name{font-size:.9rem;font-weight:700;color:#fff;white-space:nowrap}
 #thc-popup .thc-role{font-size:.73rem;color:var(--text-muted);margin-top:4px;white-space:nowrap}
+#thc-popup .thc-visit{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:700;text-decoration:none;border:1px solid rgba(6,182,212,.3);border-radius:20px;padding:5px 13px;transition:background .15s,border-color .15s}
+#thc-popup .thc-visit:hover{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.6)}
 /* Social icon with label */
 .social-icon-labeled{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none}
 .social-icon-labeled .social-lbl{font-size:.62rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:center;max-width:72px;line-height:1.2}
@@ -693,7 +696,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 <!-- ==================== TOPBAR ==================== -->
 <header class="topbar" id="topbar">
   <nav class="nav">
-    <button class="brand" onclick="goSection('home')" aria-label="Vision Flow Home">
+    <button class="brand" onclick="switchMode('agency');goSection('home')" aria-label="Vision Flow Home">
       <span class="brand-mark" id="brand-mark">VF</span>
       <span class="brand-text">
         <span class="brand-name" id="brand-name">Vision Flow</span>
@@ -701,11 +704,11 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
       </span>
     </button>
     <div class="navlinks" id="navlinks">
-      <button class="nav-link" data-section="home" onclick="goSection('home')">Home</button>
-      <button class="nav-link" data-section="services" onclick="goSection('services')">Services</button>
-      <button class="nav-link" data-section="portfolio" onclick="goSection('portfolio')">Portfolio</button>
-      <button class="nav-link" data-section="code" onclick="goSection('code')">Code Demos</button>
-      <button class="nav-link" data-section="live" onclick="goSection('live')">Live Sites</button>
+      <button class="nav-link" data-section="home" onclick="switchMode('agency');goSection('home')">Home</button>
+      <button class="nav-link" data-section="services" onclick="switchMode('agency');goSection('services')">Services</button>
+      <button class="nav-link" data-section="portfolio" onclick="switchMode('agency');goSection('portfolio')">Portfolio</button>
+      <button class="nav-link" data-section="code" onclick="switchMode('agency');goSection('code')">Code Demos</button>
+      <button class="nav-link" data-section="live" onclick="switchMode('agency');goSection('live')">Live Sites</button>
       <button class="nav-link" data-section="team" onclick="goSection('team')">Our Team</button>
       <button class="nav-link" data-section="courses" onclick="switchMode('academy');goSection('courses')">Academy</button>
       <button class="nav-link" data-section="reviews" onclick="goSection('reviews')">Reviews</button>
@@ -772,21 +775,21 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   <!-- Row 1: Brands → right to left (7 unique + 7 duplicate) -->
   <div class="ticker-row">
     <div class="ticker-track ticker-rtl">
-      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none'"/>Yamaha</a>
-      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none'"/>Unilever</a>
-      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.style.display='none'"/>Pran</a>
-      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</a>
-      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none'"/>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</a>
-      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none'"/>Taqwa Talent Academy</a>
+      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">YM</span>Yamaha</a>
+      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">UNI</span>Unilever</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://logo.clearbit.com/pranfoods.net" width="44" height="44" alt="Pran" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
+      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
+      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
       <!-- duplicate for seamless loop -->
-      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none'"/>Yamaha</a>
-      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none'"/>Unilever</a>
-      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" onerror="this.style.display='none'"/>Pran</a>
-      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none'"/>Sunsilk</a>
-      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none'"/>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none'"/>HyperConnect</a>
-      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none'"/>Taqwa Talent Academy</a>
+      <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">YM</span>Yamaha</a>
+      <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">UNI</span>Unilever</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://logo.clearbit.com/pranfoods.net" width="44" height="44" alt="Pran" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
+      <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
+      <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
     </div>
   </div>
 
@@ -955,22 +958,22 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         <p>Premium digital agency and practical academy from Bangladesh — empowering brands and creators worldwide.</p>
         <div class="foot-social" id="foot-social"></div>
       </div>
-      <div class="foot-col">
+      <div class="foot-col" id="foot-col-agency">
         <h5>Agency</h5>
         <ul>
-          <li><button onclick="goSection('services')">Services</button></li>
-          <li><button onclick="goSection('portfolio')">Portfolio</button></li>
-          <li><button onclick="goSection('code')">Code Demos</button></li>
-          <li><button onclick="goSection('live')">Live Sites</button></li>
+          <li><button onclick="switchMode('agency');goSection('services')">Services</button></li>
+          <li><button onclick="switchMode('agency');goSection('portfolio')">Portfolio</button></li>
+          <li><button onclick="switchMode('agency');goSection('code')">Code Demos</button></li>
+          <li><button onclick="switchMode('agency');goSection('live')">Live Sites</button></li>
         </ul>
       </div>
-      <div class="foot-col">
+      <div class="foot-col" id="foot-col-academy">
         <h5>Academy</h5>
         <ul>
           <li><button onclick="switchMode('academy');goSection('courses')">Courses</button></li>
-          <li><button onclick="goSection('team')">Mentors</button></li>
-          <li><button onclick="goSection('reviews')">Student Reviews</button></li>
-          <li><button onclick="goSection('contact')">Enroll</button></li>
+          <li><button onclick="switchMode('academy');goSection('team')">Mentors</button></li>
+          <li><button onclick="switchMode('academy');goSection('reviews')">Student Reviews</button></li>
+          <li><button onclick="switchMode('academy');goSection('contact')">Enroll</button></li>
         </ul>
       </div>
       <div class="foot-col">
@@ -1093,10 +1096,10 @@ const DEFAULT_DATA = {
       location: "Dhaka, Bangladesh • Serving Worldwide",
       hours: "Sat – Thu • 10:00 AM – 10:00 PM (GMT+6)",
       social: [
-        {name:"Facebook (Agency)", icon:"fab fa-facebook-f", url:"https://web.facebook.com/profile.php?id=61573056402861"},
-        {name:"Facebook (Academy)", icon:"fab fa-facebook-f", url:"https://web.facebook.com/visionflowacademy"},
+        {name:"Facebook", icon:"fab fa-facebook-f", url:"https://web.facebook.com/profile.php?id=61573056402861"},
+        {name:"Academy FB", icon:"fab fa-facebook-f", url:"https://web.facebook.com/visionflowacademy"},
         {name:"YouTube", icon:"fab fa-youtube", url:"https://www.youtube.com/@VisionFlowAgency-VFA"},
-        {name:"Academy Community", icon:"fab fa-facebook-f", url:"https://web.facebook.com/groups/932506535775086"}
+        {name:"FB Group", icon:"fab fa-facebook-f", url:"https://web.facebook.com/groups/932506535775086"}
       ]
     },
     stats: [
@@ -1360,10 +1363,10 @@ app.post('/login', async (req, res) => {
 
   reviews: [
     // ── Video Editing ──
-    {id:"r1", name:"Pinaki Hore", role:"Documentary Creator", country:"India", rating:5, text:"Vision Flow handles 24–48 of my videos every month — geo layer map animations, AI-enhanced After Effects storytelling at a level that rivals India's top creators. Consistently exceptional quality, never missed a deadline.", img:"https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=70"},
-    {id:"r2", name:"Shawon Islam", role:"Professional Cinematographer", country:"Malaysia", rating:5, text:"From Mosharraf Karim to Rafsan The Choto Vhai to Porimoni — Vision Flow handles every celebrity cut I bring them. The quality is broadcast-grade and the team understands cinematic storytelling at the highest level.", img:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=70"},
-    {id:"r3", name:"Tahmid Hasan Official", role:"Content Creator & Filmmaker", country:"Bangladesh", rating:5, text:"My documentary content reached a whole new level after partnering with Vision Flow. The editing style is immersive, the team is professional, and they understand storytelling deeply. Highly recommended for serious creators.", img:"https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=70"},
-    {id:"r4", name:"Aoyon Ahmed", role:"Creator, SEO Station by Aoyon", country:"Bangladesh", rating:5, text:"Vision Flow transformed my YouTube channel's production quality. The edits are sharp, the transitions are cinematic, and engagement went up significantly. They truly understand what makes content stand out.", img:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=70"},
+    {id:"r1", name:"Pinaki Hore", role:"Documentary Creator", country:"India", rating:5, text:"Vision Flow handles 24–48 of my videos every month — geo layer map animations, AI-enhanced After Effects storytelling at a level that rivals India's top creators. Consistently exceptional quality, never missed a deadline.", img:"https://graph.facebook.com/guddu.hore/picture?type=large"},
+    {id:"r2", name:"Shawon Islam", role:"Professional Cinematographer", country:"Malaysia", rating:5, text:"From Mosharraf Karim to Rafsan The Choto Vhai to Porimoni — Vision Flow handles every celebrity cut I bring them. The quality is broadcast-grade and the team understands cinematic storytelling at the highest level.", img:"https://graph.facebook.com/shawonahmed.official2/picture?type=large"},
+    {id:"r3", name:"Tahmid Hasan Official", role:"Content Creator & Filmmaker", country:"Bangladesh", rating:5, text:"My documentary content reached a whole new level after partnering with Vision Flow. The editing style is immersive, the team is professional, and they understand storytelling deeply. Highly recommended for serious creators.", img:"https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large"},
+    {id:"r4", name:"Aoyon Ahmed", role:"Creator, SEO Station by Aoyon", country:"Bangladesh", rating:5, text:"Vision Flow transformed my YouTube channel's production quality. The edits are sharp, the transitions are cinematic, and engagement went up significantly. They truly understand what makes content stand out.", img:"https://graph.facebook.com/seostationaoyon/picture?type=large"},
     {id:"r5", name:"Belal Hussain", role:"YouTube Creator", country:"Bangladesh", rating:5, text:"Running an English-language YouTube channel demands top-tier editing — and Vision Flow delivers every time. My international audience has grown 40% since working with them. Professional, fast and always on-brand.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70"},
     // ── Web Development + E-commerce ──
     {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70"},
@@ -1383,7 +1386,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 3,
+    version: 4,
     updatedAt: 0
   }
 };
@@ -1507,6 +1510,18 @@ function loadData(){
       if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
       if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
       if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
+      // v4 migration: real profile images for known reviewers; shorten social names
+      if((parsed.meta?.version||0) < 4){
+        const _imgUp={'r1':'https://graph.facebook.com/guddu.hore/picture?type=large','r2':'https://graph.facebook.com/shawonahmed.official2/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
+        if(Array.isArray(STATE.data.reviews)) STATE.data.reviews.forEach(r=>{ if(_imgUp[r.id]) r.img=_imgUp[r.id]; });
+        if(Array.isArray(STATE.data.site?.contact?.social)) STATE.data.site.contact.social.forEach(s=>{
+          const u=(s.url||'').toLowerCase();
+          if(u.includes('61573056402861')) s.name='Facebook';
+          else if(u.includes('visionflowacademy')) s.name='Academy FB';
+          else if(u.includes('groups/932506535775086')) s.name='FB Group';
+        });
+        STATE.data.meta.version = 4;
+      }
       // v3 migration: add academyEmail to contact
       if((parsed.meta?.version||0) < 3){
         if(!STATE.data.site.contact.academyEmail) STATE.data.site.contact.academyEmail = 'visionflow.academy.bd@gmail.com';
@@ -1569,6 +1584,7 @@ function switchMode(mode){
   STATE.mode = mode;
   sessionStorage.setItem(LS_KEYS.mode, mode);
   applyBranding();
+  renderContact();
 }
 /* setText/setHTML helpers: only touch DOM if value actually differs — kills flicker */
 function _setText(el, val){ if(el && el.textContent !== val) el.textContent = val; }
@@ -1614,6 +1630,11 @@ function applyBranding(){
     const gradClass = STATE.mode === 'academy' ? 'gradient-text-2' : 'flow';
     _setHTML(heroH1, `${esc(plain)} <br/><span class="${gradClass}">${esc(grad)}</span>`);
   }
+  // Footer: show only relevant column per mode
+  const agencyCol = $('#foot-col-agency');
+  const academyCol = $('#foot-col-academy');
+  if(agencyCol) agencyCol.style.display = STATE.mode === 'academy' ? 'none' : '';
+  if(academyCol) academyCol.style.display = STATE.mode === 'agency' ? 'none' : '';
   // Favicon: use custom favicon → fallback to current-mode logo → fallback to agency logo
   const faviconSrc = STATE.data.site.favicon
     || STATE.data.site[STATE.mode]?.logo
@@ -1905,9 +1926,19 @@ function renderContact(){
       return `<div class="contact-row"><i class="${esc(icon)}"></i><div><h5>${esc(r.label||'')}</h5><p>${valHtml}</p></div></div>`;
     }).join('');
   }
+  // Filter social links by mode: agency sees agency FB + YT; academy sees academy FB + group + YT
+  const _filterSocial = (list) => (list||[]).filter(s => {
+    const u = (s.url||s.u||'').toLowerCase();
+    if(STATE.mode === 'agency'){
+      if(u.includes('visionflowacademy') || u.includes('groups/932506535775086')) return false;
+    } else {
+      if(u.includes('61573056402861')) return false;
+    }
+    return true;
+  });
   const sSocial = $('#ci-social');
   if(sSocial){
-    sSocial.innerHTML = (c.social||[]).map(s=>{
+    sSocial.innerHTML = _filterSocial(c.social).map(s=>{
       const url = (s.url||s.u||'').trim();
       const ic = detectSocialIcon(url) || (s.icon||s.i||'').trim() || 'fas fa-link';
       if(!url && !ic) return '';
@@ -1916,7 +1947,7 @@ function renderContact(){
   }
   const fSocial = $('#foot-social');
   if(fSocial){
-    fSocial.innerHTML = (c.social||[]).map(s=>{
+    fSocial.innerHTML = _filterSocial(c.social).map(s=>{
       const url = (s.url||s.u||'').trim();
       const ic = detectSocialIcon(url) || (s.icon||s.i||'').trim() || 'fas fa-link';
       const label = (s.name||s.n||'').trim();
@@ -3165,14 +3196,21 @@ function initTickerPreview(){
   const popup = document.createElement('div');
   popup.id = 'thc-popup';
   document.body.appendChild(popup);
-  let hideTimer;
+  let hideTimer, touchTimer, longPressActive = false, overPopup = false;
 
-  function position(e){
-    const pw=popup.offsetWidth||160, ph=popup.offsetHeight||130;
-    let x=e.clientX-pw/2, y=e.clientY-ph-16;
+  popup.addEventListener('mouseenter', ()=>{ overPopup=true; clearTimeout(hideTimer); });
+  popup.addEventListener('mouseleave', ()=>{
+    overPopup=false;
+    popup.classList.remove('visible');
+    hideTimer=setTimeout(()=>{ popup.style.display='none'; }, 200);
+  });
+
+  function positionAt(cx, cy){
+    const pw=popup.offsetWidth||170, ph=popup.offsetHeight||150;
+    let x=cx-pw/2, y=cy-ph-20;
     if(x<8) x=8;
     if(x+pw>innerWidth-8) x=innerWidth-pw-8;
-    if(y<8) y=e.clientY+20;
+    if(y<8) y=cy+22;
     popup.style.left=x+'px'; popup.style.top=y+'px';
   }
 
@@ -3185,55 +3223,87 @@ function initTickerPreview(){
       : (item.querySelector('.ticker-person-name')?.textContent || '');
     const role = item.querySelector('.ticker-person-role')?.textContent || '';
     const cls = isBrand ? 'brand-card' : '';
+    const href = item.getAttribute('href') || '#';
     const html = (imgSrc ? `<img src="${imgSrc}" alt="${name}">` : '')
       + `<div class="thc-name">${name}</div>`
-      + (role ? `<div class="thc-role">${role}</div>` : '');
+      + (role ? `<div class="thc-role">${role}</div>` : '')
+      + `<a href="${href}" target="_blank" rel="noopener" class="thc-visit">Visit Profile <i class="fas fa-external-link-alt" style="font-size:.65em"></i></a>`;
 
-    item.addEventListener('mouseenter', e=>{
+    function showPopup(cx, cy){
       clearTimeout(hideTimer);
       popup.className = cls;
       popup.innerHTML = html;
       popup.style.display='block';
-      requestAnimationFrame(()=>popup.classList.add('visible'));
-      position(e);
-    });
-    item.addEventListener('mousemove', position);
-    item.addEventListener('mouseleave', ()=>{
+      requestAnimationFrame(()=>{ popup.classList.add('visible'); positionAt(cx,cy); });
+    }
+    function hidePopup(delay=200){
       popup.classList.remove('visible');
-      hideTimer=setTimeout(()=>{ popup.style.display='none'; }, 180);
+      hideTimer=setTimeout(()=>{ if(!overPopup) popup.style.display='none'; }, delay);
+    }
+
+    // Desktop hover
+    item.addEventListener('mouseenter', e=>{ showPopup(e.clientX, e.clientY); });
+    item.addEventListener('mousemove', e=>{ if(popup.style.display==='block') positionAt(e.clientX, e.clientY); });
+    item.addEventListener('mouseleave', ()=>{ hideTimer=setTimeout(()=>{ if(!overPopup) hidePopup(200); }, 60); });
+
+    // Mobile: long-press (400ms hold) to show popup; normal tap still navigates
+    item.addEventListener('touchstart', e=>{
+      longPressActive=false;
+      clearTimeout(touchTimer);
+      const t=e.touches[0];
+      touchTimer=setTimeout(()=>{
+        longPressActive=true;
+        showPopup(t.clientX, t.clientY);
+      },400);
+    },{passive:true});
+    item.addEventListener('touchend', ()=>{
+      clearTimeout(touchTimer);
+      if(longPressActive){ longPressActive=false; hideTimer=setTimeout(()=>hidePopup(0), 1400); }
+    });
+    item.addEventListener('touchcancel', ()=>{
+      clearTimeout(touchTimer); longPressActive=false;
+      popup.classList.remove('visible'); popup.style.display='none';
     });
   });
 }
 
 /* ===== Counter Animation ===== */
 let _counterObserver = null;
+let _countersInView = false;
 function animateCounters(){
   if(_counterObserver){ _counterObserver.disconnect(); _counterObserver = null; }
   const els = $$('[data-target]');
+  if(!els.length) return;
   _counterObserver = new IntersectionObserver(entries => {
     entries.forEach(en => {
-      if(!en.isIntersecting) return;
+      if(!en.isIntersecting){ _countersInView = false; return; }
       const el = en.target;
       if(el._counting) return;
+      if(_countersInView){
+        // Section still in view from previous animation (e.g. re-render) — snap to final value without re-animating
+        el.textContent = parseInt(el.dataset.target,10).toLocaleString() + (el.dataset.suffix||'+');
+        return;
+      }
+      // Fresh viewport entry — animate
+      _countersInView = true;
       el._counting = true;
       const target = parseInt(el.dataset.target,10);
       const suffix = el.dataset.suffix || '+';
       const duration = 2000;
-      // Delay 400ms to let AOS fade-in complete before counting
       setTimeout(() => {
         const startTime = performance.now();
         const update = (t) => {
           const p = Math.min((t-startTime)/duration, 1);
           const eased = 1 - Math.pow(1-p, 3);
-          el.textContent = Math.floor((target)*eased).toLocaleString() + suffix;
+          el.textContent = Math.floor(target*eased).toLocaleString() + suffix;
           if(p<1){ requestAnimationFrame(update); }
-          else { el._counting = false; _counterObserver.unobserve(el); }
+          else { el._counting = false; }
         };
         requestAnimationFrame(update);
       }, 400);
     });
   }, {threshold:.3, rootMargin:'0px 0px -40px 0px'});
-  els.forEach(el => { el._counting = false; _counterObserver.observe(el); });
+  els.forEach(el => { _counterObserver.observe(el); });
 }
 
 /* ===== Scroll: topbar shadow + active link ===== */
