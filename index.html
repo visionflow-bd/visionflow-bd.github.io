@@ -382,6 +382,55 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .portfolio-meta{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--text-dim)}
 .portfolio-meta a{color:var(--accent);font-weight:600}
 
+/* PORTFOLIO SUBTABS (subcategory filter) */
+.portfolio-subtabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:-16px 0 32px;padding:0 0 4px}
+.subtab-btn{
+  padding:6px 14px;border-radius:999px;font-size:.78rem;font-weight:600;cursor:pointer;
+  background:transparent;border:1px solid var(--border-light);color:var(--text-muted);
+  transition:var(--transition);
+}
+.subtab-btn:hover{color:#fff;border-color:var(--border-hover)}
+.subtab-btn.active{background:rgba(6,182,212,.12);border-color:var(--accent);color:var(--accent)}
+
+/* PORTFOLIO ALL-MODE: grouped sections */
+.portfolio-all-view{display:flex;flex-direction:column;gap:52px}
+.portfolio-all-section{}
+.portfolio-all-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:18px;padding-bottom:12px;
+  border-bottom:1px solid var(--border-light);
+}
+.portfolio-cat-heading{
+  display:flex;align-items:center;gap:10px;
+  font-size:1.1rem;font-weight:800;color:#fff;
+}
+.portfolio-cat-heading i{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--gradient-1);display:grid;place-items:center;
+  color:#fff;font-size:.85rem;flex-shrink:0;
+}
+.portfolio-cat-count{
+  font-size:.72rem;font-weight:600;color:var(--text-muted);
+  background:var(--bg-glass);border:1px solid var(--border-light);
+  border-radius:999px;padding:3px 10px;
+}
+.portfolio-see-more{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;border-radius:999px;font-size:.8rem;font-weight:700;
+  background:var(--bg-glass);border:1px solid var(--border-mid);
+  color:var(--accent);cursor:pointer;transition:var(--transition);white-space:nowrap;
+}
+.portfolio-see-more:hover{background:rgba(6,182,212,.1);border-color:var(--accent)}
+.portfolio-showcase-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:18px;
+}
+.portfolio-no-featured{
+  padding:24px;text-align:center;color:var(--text-muted);
+  font-size:.88rem;border:1px dashed var(--border-light);border-radius:var(--radius-md);
+}
+
 /* CODE DEMO CARDS */
 .code-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
 .code-card{
@@ -672,6 +721,8 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 .ticker-person:hover{color:var(--accent)}
 .ticker-person-img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border-mid);flex-shrink:0;transition:transform .38s cubic-bezier(.34,1.56,.64,1),border-color .2s,box-shadow .38s;transform-origin:center bottom}
 .ticker-person:hover .ticker-person-img{transform:scale(1.55) translateY(-10px);border-color:var(--accent);box-shadow:0 14px 32px rgba(6,182,212,.45)}
+.ticker-person-init{width:52px;height:52px;border-radius:50%;background:var(--gradient-1);display:none;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.7rem;flex-shrink:0;transition:transform .38s cubic-bezier(.34,1.56,.64,1);transform-origin:center bottom;letter-spacing:.05em}
+.ticker-person:hover .ticker-person-init{transform:scale(1.55) translateY(-10px)}
 .ticker-person-meta{display:flex;flex-direction:column;line-height:1.3}
 .ticker-person-name{font-weight:700;font-size:.9rem;color:#fff}
 .ticker-person-role{font-size:.74rem;color:var(--text-muted)}
@@ -796,21 +847,21 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   <!-- Row 2: Public Figures → left to right (7 unique + 7 duplicate) -->
   <div class="ticker-row">
     <div class="ticker-track ticker-ltr">
-      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
-      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
-      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">RC</span><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PM</span><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">TH</span><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PH</span><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">SA</span><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">AO</span><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
       <!-- duplicate for seamless loop -->
-      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim"/><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
-      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai"/><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni"/><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official"/><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore"/><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
-      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed"/><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
-      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon"/><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">RC</span><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PM</span><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">TH</span><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/guddu.hore" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/guddu.hore/picture?type=large" width="52" height="52" alt="Pinaki Hore" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PH</span><div class="ticker-person-meta"><span class="ticker-person-name">Pinaki Hore</span><span class="ticker-person-role">Documentary Creator · India</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/shawonahmed.official2" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/shawonahmed.official2/picture?type=large" width="52" height="52" alt="Shawon Ahmed" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">SA</span><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
+      <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">AO</span><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
     </div>
   </div>
 </div>
@@ -836,7 +887,8 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
       <p>Real projects across every digital service we offer. Click a category below.</p>
     </div>
     <div class="portfolio-tabs" id="portfolio-tabs" data-aos="fade-up"></div>
-    <div class="portfolio-grid" id="portfolio-grid"></div>
+    <div class="portfolio-subtabs" id="portfolio-subtabs" style="display:none"></div>
+    <div id="portfolio-grid"></div>
   </div>
 </section>
 
@@ -955,7 +1007,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
             <span class="brand-tag">Agency &amp; Academy</span>
           </span>
         </button>
-        <p>Premium digital agency and practical academy from Bangladesh — empowering brands and creators worldwide.</p>
+        <p id="foot-about-desc">Premium digital agency and practical academy from Bangladesh — empowering brands and creators worldwide.</p>
         <div class="foot-social" id="foot-social"></div>
       </div>
       <div class="foot-col" id="foot-col-agency">
@@ -1123,80 +1175,80 @@ const DEFAULT_DATA = {
   ],
 
   categories: [
-    {id:"cat-video",   name:"Video Editing",         icon:"fas fa-video"},
-    {id:"cat-web",     name:"Web Development",       icon:"fas fa-code"},
-    {id:"cat-app",     name:"App Development",       icon:"fas fa-mobile-screen"},
-    {id:"cat-ai",      name:"AI & Chatbots",         icon:"fas fa-robot"},
-    {id:"cat-design",  name:"Graphic Design",        icon:"fas fa-palette"},
-    {id:"cat-seo",     name:"SEO Case Studies",      icon:"fas fa-magnifying-glass-chart"},
-    {id:"cat-market",  name:"Digital Marketing",     icon:"fas fa-bullhorn"},
-    {id:"cat-biz",     name:"Business Consulting",   icon:"fas fa-briefcase"}
+    {id:"cat-video",  name:"Video Editing",        icon:"fas fa-video",                subcats:["Documentary","Wedding","Short-form / Reels","Corporate","YouTube"]},
+    {id:"cat-web",    name:"Web Development",      icon:"fas fa-code",                 subcats:["E-commerce","Portfolio","SaaS","Custom"]},
+    {id:"cat-app",    name:"App Development",      icon:"fas fa-mobile-screen",        subcats:["Android","iOS","Flutter","React Native"]},
+    {id:"cat-ai",     name:"AI & Chatbots",        icon:"fas fa-robot",                subcats:["Chatbots","Voice AI","Automation","RAG / Documents"]},
+    {id:"cat-design", name:"Graphic Design",       icon:"fas fa-palette",              subcats:["Brand Identity","Social Media","Packaging","Thumbnails","Print"]},
+    {id:"cat-seo",    name:"SEO Case Studies",     icon:"fas fa-magnifying-glass-chart",subcats:["Technical SEO","Local SEO","Content Strategy","Link Building"]},
+    {id:"cat-market", name:"Digital Marketing",    icon:"fas fa-bullhorn",             subcats:["Meta Ads","Google Ads","Email Marketing","Influencer"]},
+    {id:"cat-biz",    name:"Business Consulting",  icon:"fas fa-briefcase",            subcats:["Digital Transformation","E-commerce Setup","Brand Strategy","Scale-Up"]}
   ],
 
   portfolio: [
     // ===== VIDEO EDITING (6) =====
-    {id:"p-v1", catId:"cat-video", title:"Cinematic Brand Story", desc:"Saqlain Khan • Travel doc-style edit with color grading & motion graphics.", img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/dQw4w9WgXcQ", year:"2025", client:"Saqlain Khan"},
-    {id:"p-v2", catId:"cat-video", title:"YouTube Long-form Edit", desc:"Onnorokom Group • Educational long-form with B-roll & infographics.", img:"https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/oavMtUWDBTM", year:"2025", client:"Onnorokom Group"},
-    {id:"p-v3", catId:"cat-video", title:"Product Launch Reel", desc:"BYD Bangladesh • 60s cinematic launch reel — 1.2M views.", img:"https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/ScMzIvxBSi4", year:"2024", client:"BYD Bangladesh"},
-    {id:"p-v4", catId:"cat-video", title:"Reels & Shorts Pack", desc:"Nafees Salim • 12-reel social pack with VFX transitions.", img:"https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/jNQXAC9IVRw", year:"2025", client:"Nafees Salim"},
-    {id:"p-v5", catId:"cat-video", title:"Wedding Cinematography", desc:"Destination wedding edit with drone & cinematic LUTs.", img:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/L_jWHffIx5E", year:"2024", client:"Private"},
-    {id:"p-v6", catId:"cat-video", title:"Corporate Promo", desc:"60s corporate brand promo with kinetic typography.", img:"https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/y6120QOlsfU", year:"2025", client:"Tech Corp"},
-    {id:"p-v7", catId:"cat-video", title:"Pinaki Hore — Geo Layer Documentaries", desc:"Long-term monthly collaboration: 24–48 premium documentaries per month. Cinematic geo layer map animations & AI-enhanced After Effects storytelling surpassing top Indian creators.", img:"https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Pinaki Hore, India"},
-    {id:"p-v8", catId:"cat-video", title:"Shawon Islam — Celebrity Cinematography", desc:"Premium cinematic edits for Bangladesh's biggest stars: Mosharraf Karim, Rafsan The Choto Vhai, Porimoni & more — shot & cut to broadcast-grade standards.", img:"https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Shawon Islam, Malaysia"},
+    {id:"p-v1", catId:"cat-video", subcat:"Corporate",       featured:true,  title:"Cinematic Brand Story", desc:"Saqlain Khan • Travel doc-style edit with color grading & motion graphics.", img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/dQw4w9WgXcQ", year:"2025", client:"Saqlain Khan"},
+    {id:"p-v2", catId:"cat-video", subcat:"YouTube",         featured:true,  title:"YouTube Long-form Edit", desc:"Onnorokom Group • Educational long-form with B-roll & infographics.", img:"https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/oavMtUWDBTM", year:"2025", client:"Onnorokom Group"},
+    {id:"p-v3", catId:"cat-video", subcat:"Corporate",       featured:false, title:"Product Launch Reel", desc:"BYD Bangladesh • 60s cinematic launch reel — 1.2M views.", img:"https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/ScMzIvxBSi4", year:"2024", client:"BYD Bangladesh"},
+    {id:"p-v4", catId:"cat-video", subcat:"Short-form / Reels",featured:false,title:"Reels & Shorts Pack", desc:"Nafees Salim • 12-reel social pack with VFX transitions.", img:"https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/jNQXAC9IVRw", year:"2025", client:"Nafees Salim"},
+    {id:"p-v5", catId:"cat-video", subcat:"Wedding",         featured:false, title:"Wedding Cinematography", desc:"Destination wedding edit with drone & cinematic LUTs.", img:"https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/L_jWHffIx5E", year:"2024", client:"Private"},
+    {id:"p-v6", catId:"cat-video", subcat:"Corporate",       featured:false, title:"Corporate Promo", desc:"60s corporate brand promo with kinetic typography.", img:"https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=70", video:"https://www.youtube.com/embed/y6120QOlsfU", year:"2025", client:"Tech Corp"},
+    {id:"p-v7", catId:"cat-video", subcat:"Documentary",     featured:false, title:"Pinaki Hore — Geo Layer Documentaries", desc:"Long-term monthly collaboration: 24–48 premium documentaries per month. Cinematic geo layer map animations & AI-enhanced After Effects storytelling surpassing top Indian creators.", img:"https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Pinaki Hore, India"},
+    {id:"p-v8", catId:"cat-video", subcat:"Documentary",     featured:false, title:"Shawon Islam — Celebrity Cinematography", desc:"Premium cinematic edits for Bangladesh's biggest stars: Mosharraf Karim, Rafsan The Choto Vhai, Porimoni & more — shot & cut to broadcast-grade standards.", img:"https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Shawon Islam, Malaysia"},
 
     // ===== WEB DEVELOPMENT (6) =====
-    {id:"p-w1", catId:"cat-web", title:"Babylist BD — E-commerce", desc:"Full-stack baby products marketplace built on Laravel + Vue.", img:"data:image/png;base64,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", link:"https://babylist-bd.com", year:"2025", client:"Babylist BD"},
-    {id:"p-w2", catId:"cat-web", title:"Agency & Academy Site", desc:"Single-file portfolio with admin panel & real-time sync.", img:"https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=900&q=70", link:"https://visionflow-bd.github.io/Agency-Academy/", year:"2025", client:"Vision Flow"},
-    {id:"p-w3", catId:"cat-web", title:"SaaS Dashboard", desc:"Multi-tenant analytics dashboard built with Next.js + Postgres.", img:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Confidential"},
-    {id:"p-w4", catId:"cat-web", title:"Restaurant Web App", desc:"Online ordering + admin panel + delivery tracking.", img:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
-    {id:"p-w5", catId:"cat-web", title:"Portfolio Website", desc:"Personal portfolio for a creator — premium dark theme.", img:"https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=900&q=70", link:"https://visionflow-bd.github.io/Vision-Flow/", year:"2025", client:"Personal"},
-    {id:"p-w6", catId:"cat-web", title:"NGO Donation Platform", desc:"Stripe + bKash integrated donation site with admin panel.", img:"https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Hope Foundation"},
+    {id:"p-w1", catId:"cat-web", subcat:"E-commerce", featured:true,  title:"Babylist BD — E-commerce", desc:"Full-stack baby products marketplace built on Laravel + Vue.", img:"data:image/png;base64,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", link:"https://babylist-bd.com", year:"2025", client:"Babylist BD"},
+    {id:"p-w2", catId:"cat-web", subcat:"Custom", featured:true, title:"Agency & Academy Site", desc:"Single-file portfolio with admin panel & real-time sync.", img:"https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=900&q=70", link:"https://visionflow-bd.github.io/Agency-Academy/", year:"2025", client:"Vision Flow"},
+    {id:"p-w3", catId:"cat-web", subcat:"SaaS", featured:false, title:"SaaS Dashboard", desc:"Multi-tenant analytics dashboard built with Next.js + Postgres.", img:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Confidential"},
+    {id:"p-w4", catId:"cat-web", subcat:"Custom", featured:false, title:"Restaurant Web App", desc:"Online ordering + admin panel + delivery tracking.", img:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
+    {id:"p-w5", catId:"cat-web", subcat:"Portfolio", featured:false, title:"Portfolio Website", desc:"Personal portfolio for a creator — premium dark theme.", img:"https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=900&q=70", link:"https://visionflow-bd.github.io/Vision-Flow/", year:"2025", client:"Personal"},
+    {id:"p-w6", catId:"cat-web", subcat:"Custom", featured:false, title:"NGO Donation Platform", desc:"Stripe + bKash integrated donation site with admin panel.", img:"https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Hope Foundation"},
 
     // ===== APP DEVELOPMENT (5) =====
-    {id:"p-a1", catId:"cat-app", title:"Fitness Tracker App", desc:"Flutter app with workout tracking, charts & social feed.", img:"https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"FitLife"},
-    {id:"p-a2", catId:"cat-app", title:"Food Delivery App", desc:"React Native app with real-time order tracking.", img:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
-    {id:"p-a3", catId:"cat-app", title:"Learning App", desc:"E-learning Android app with offline videos & quizzes.", img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"EduPro"},
-    {id:"p-a4", catId:"cat-app", title:"E-commerce Mobile", desc:"Cross-platform shopping app with bKash & Nagad integration.", img:"https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Local Brand"},
-    {id:"p-a5", catId:"cat-app", title:"Productivity App", desc:"To-do, notes & habit tracker with cloud sync.", img:"https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Indie"}
+    {id:"p-a1", catId:"cat-app", subcat:"Flutter", featured:true, title:"Fitness Tracker App", desc:"Flutter app with workout tracking, charts & social feed.", img:"https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"FitLife"},
+    {id:"p-a2", catId:"cat-app", subcat:"React Native", featured:true, title:"Food Delivery App", desc:"React Native app with real-time order tracking.", img:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
+    {id:"p-a3", catId:"cat-app", subcat:"Android", featured:false, title:"Learning App", desc:"E-learning Android app with offline videos & quizzes.", img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"EduPro"},
+    {id:"p-a4", catId:"cat-app", subcat:"React Native", featured:false, title:"E-commerce Mobile", desc:"Cross-platform shopping app with bKash & Nagad integration.", img:"https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Local Brand"},
+    {id:"p-a5", catId:"cat-app", subcat:"Flutter", featured:false, title:"Productivity App", desc:"To-do, notes & habit tracker with cloud sync.", img:"https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Indie"}
   ],
 
   // ===== Portfolio continued =====
   portfolioExtra: [
     // AI (5)
-    {id:"p-ai1", catId:"cat-ai", title:"Customer Service ChatBot", desc:"GPT-4o powered support bot trained on client docs.", img:"https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Confidential"},
-    {id:"p-ai2", catId:"cat-ai", title:"AI Voice Assistant", desc:"WhatsApp + Telegram voice assistant in Bangla & English.", img:"https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"StartUp"},
-    {id:"p-ai3", catId:"cat-ai", title:"Document Q&A Agent", desc:"LangChain RAG agent for PDF/Knowledge base queries.", img:"https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Law Firm"},
-    {id:"p-ai4", catId:"cat-ai", title:"E-commerce Auto-Reply", desc:"Smart inbox automation that replies & tags Facebook DMs.", img:"https://images.unsplash.com/photo-1611605698335-8b1569810432?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Brand"},
-    {id:"p-ai5", catId:"cat-ai", title:"Image-to-3D AI Tool", desc:"Custom MidJourney + Blender pipeline for product mockups.", img:"https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Agency"},
+    {id:"p-ai1", catId:"cat-ai", subcat:"Chatbots",      featured:true,  title:"Customer Service ChatBot", desc:"GPT-4o powered support bot trained on client docs.", img:"https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Confidential"},
+    {id:"p-ai2", catId:"cat-ai", subcat:"Voice AI",      featured:true,  title:"AI Voice Assistant", desc:"WhatsApp + Telegram voice assistant in Bangla & English.", img:"https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"StartUp"},
+    {id:"p-ai3", catId:"cat-ai", subcat:"RAG / Documents", featured:false, title:"Document Q&A Agent", desc:"LangChain RAG agent for PDF/Knowledge base queries.", img:"https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Law Firm"},
+    {id:"p-ai4", catId:"cat-ai", subcat:"Automation",    featured:false, title:"E-commerce Auto-Reply", desc:"Smart inbox automation that replies & tags Facebook DMs.", img:"https://images.unsplash.com/photo-1611605698335-8b1569810432?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Brand"},
+    {id:"p-ai5", catId:"cat-ai", subcat:"Automation",    featured:false, title:"Image-to-3D AI Tool", desc:"Custom MidJourney + Blender pipeline for product mockups.", img:"https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Agency"},
 
     // DESIGN (6)
-    {id:"p-d1", catId:"cat-design", title:"Brand Identity Pack", desc:"Logo, palette, typography, stationery — full brand book.", img:"https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-d2", catId:"cat-design", title:"Social Media Pack", desc:"30-post Instagram template kit with motion variants.", img:"https://images.unsplash.com/photo-1611162617263-4ec3060a058e?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-d3", catId:"cat-design", title:"Product Packaging", desc:"Premium cosmetics packaging design & 3D mockups.", img:"https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-d4", catId:"cat-design", title:"YouTube Thumbnail Pack", desc:"50 high-CTR thumbnails with character cutouts.", img:"https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-d5", catId:"cat-design", title:"Logo Design Showcase", desc:"Modern minimalist logo collection — 12 brands.", img:"https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-d6", catId:"cat-design", title:"Poster & Print Design", desc:"Event posters, banners & print collateral.", img:"https://images.unsplash.com/photo-1561070791-2526d30994b8?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-d1", catId:"cat-design", subcat:"Brand Identity", featured:true, title:"Brand Identity Pack", desc:"Logo, palette, typography, stationery — full brand book.", img:"https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-d2", catId:"cat-design", subcat:"Social Media", featured:true, title:"Social Media Pack", desc:"30-post Instagram template kit with motion variants.", img:"https://images.unsplash.com/photo-1611162617263-4ec3060a058e?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-d3", catId:"cat-design", subcat:"Packaging", featured:false, title:"Product Packaging", desc:"Premium cosmetics packaging design & 3D mockups.", img:"https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-d4", catId:"cat-design", subcat:"Thumbnails", featured:false, title:"YouTube Thumbnail Pack", desc:"50 high-CTR thumbnails with character cutouts.", img:"https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-d5", catId:"cat-design", subcat:"Brand Identity", featured:false, title:"Logo Design Showcase", desc:"Modern minimalist logo collection — 12 brands.", img:"https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-d6", catId:"cat-design", subcat:"Print", featured:false, title:"Poster & Print Design", desc:"Event posters, banners & print collateral.", img:"https://images.unsplash.com/photo-1561070791-2526d30994b8?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
 
     // SEO (5)
-    {id:"p-s1", catId:"cat-seo", title:"E-commerce 0→100K Traffic", desc:"Organic traffic grown from 0 to 100K/mo in 6 months.", img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Babylist BD"},
-    {id:"p-s2", catId:"cat-seo", title:"Local SEO Domination", desc:"Restaurant ranked #1 on Google Maps for 30+ keywords.", img:"https://images.unsplash.com/photo-1432888622747-4eb9a8f5a07d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
-    {id:"p-s3", catId:"cat-seo", title:"Technical SEO Audit", desc:"Core Web Vitals + schema fix — +47% impressions.", img:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-s4", catId:"cat-seo", title:"Content Strategy", desc:"100-article cluster strategy ranking on 1st page.", img:"https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-s5", catId:"cat-seo", title:"Link Building Campaign", desc:"50+ DR60+ backlinks in 90 days — white-hat.", img:"https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-s1", catId:"cat-seo", subcat:"Content Strategy", featured:true, title:"E-commerce 0→100K Traffic", desc:"Organic traffic grown from 0 to 100K/mo in 6 months.", img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025", client:"Babylist BD"},
+    {id:"p-s2", catId:"cat-seo", subcat:"Local SEO",         featured:true, title:"Local SEO Domination", desc:"Restaurant ranked #1 on Google Maps for 30+ keywords.", img:"https://images.unsplash.com/photo-1432888622747-4eb9a8f5a07d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024", client:"Foodie BD"},
+    {id:"p-s3", catId:"cat-seo", subcat:"Technical SEO",     featured:false, title:"Technical SEO Audit", desc:"Core Web Vitals + schema fix — +47% impressions.", img:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-s4", catId:"cat-seo", subcat:"Content Strategy", featured:false, title:"Content Strategy", desc:"100-article cluster strategy ranking on 1st page.", img:"https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-s5", catId:"cat-seo", subcat:"Link Building",    featured:false, title:"Link Building Campaign", desc:"50+ DR60+ backlinks in 90 days — white-hat.", img:"https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
 
     // MARKETING (5)
-    {id:"p-m1", catId:"cat-market", title:"Meta Ads — 10x ROAS", desc:"E-commerce store scaled to $50K/mo with 10x return.", img:"https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-m2", catId:"cat-market", title:"TikTok Viral Campaign", desc:"3 videos to 8M+ views & 12K new followers.", img:"https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-m3", catId:"cat-market", title:"Email Funnel Setup", desc:"6-step nurture funnel — 38% open, 9% CTR.", img:"https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-m4", catId:"cat-market", title:"Google Ads Launch", desc:"Brand new account → profitable in week 2.", img:"https://images.unsplash.com/photo-1432888622747-4eb9a8f5a07d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-m5", catId:"cat-market", title:"Influencer Campaign", desc:"15 micro-influencers — $0.18 CPM, 6x ROAS.", img:"https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-m1", catId:"cat-market", subcat:"Meta Ads",         featured:true, title:"Meta Ads — 10x ROAS", desc:"E-commerce store scaled to $50K/mo with 10x return.", img:"https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-m2", catId:"cat-market", subcat:"Influencer",       featured:true, title:"TikTok Viral Campaign", desc:"3 videos to 8M+ views & 12K new followers.", img:"https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-m3", catId:"cat-market", subcat:"Email Marketing", featured:false, title:"Email Funnel Setup", desc:"6-step nurture funnel — 38% open, 9% CTR.", img:"https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-m4", catId:"cat-market", subcat:"Google Ads",      featured:false, title:"Google Ads Launch", desc:"Brand new account → profitable in week 2.", img:"https://images.unsplash.com/photo-1432888622747-4eb9a8f5a07d?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-m5", catId:"cat-market", subcat:"Influencer",       featured:false, title:"Influencer Campaign", desc:"15 micro-influencers — $0.18 CPM, 6x ROAS.", img:"https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
 
     // BUSINESS (5)
-    {id:"p-b1", catId:"cat-biz", title:"Digital Transformation", desc:"Manufacturing client moved 100% operations online.", img:"https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-b2", catId:"cat-biz", title:"E-com Setup A→Z", desc:"From product sourcing to launch — full handover.", img:"https://images.unsplash.com/photo-1556745757-8d76bdb6984b?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-b3", catId:"cat-biz", title:"Brand Strategy Session", desc:"Positioning, audience & messaging workshop.", img:"https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
-    {id:"p-b4", catId:"cat-biz", title:"Scale-Up Roadmap", desc:"12-month growth roadmap for SaaS startup.", img:"https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
-    {id:"p-b5", catId:"cat-biz", title:"Online Business Setup", desc:"Legal, payment, hosting — done-for-you setup.", img:"https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"}
+    {id:"p-b1", catId:"cat-biz", subcat:"Digital Transformation", featured:true, title:"Digital Transformation", desc:"Manufacturing client moved 100% operations online.", img:"https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-b2", catId:"cat-biz", subcat:"E-commerce Setup",      featured:true, title:"E-com Setup A→Z", desc:"From product sourcing to launch — full handover.", img:"https://images.unsplash.com/photo-1556745757-8d76bdb6984b?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-b3", catId:"cat-biz", subcat:"Brand Strategy",        featured:false, title:"Brand Strategy Session", desc:"Positioning, audience & messaging workshop.", img:"https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"},
+    {id:"p-b4", catId:"cat-biz", subcat:"Scale-Up",              featured:false, title:"Scale-Up Roadmap", desc:"12-month growth roadmap for SaaS startup.", img:"https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=70", link:"#", year:"2024"},
+    {id:"p-b5", catId:"cat-biz", subcat:"E-commerce Setup",      featured:false, title:"Online Business Setup", desc:"Legal, payment, hosting — done-for-you setup.", img:"https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=70", link:"#", year:"2025"}
   ],
 
   codeDemos: [
@@ -1386,7 +1438,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 4,
+    version: 5,
     updatedAt: 0
   }
 };
@@ -1441,6 +1493,7 @@ let STATE = {
   fbConfigured: false,
   fbUnsub: null,
   activePortfolioCat: 'all',
+  activePortfolioSubcat: null,
   _pendingSync: false
 };
 
@@ -1510,6 +1563,35 @@ function loadData(){
       if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
       if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
       if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
+      // v5 migration: add subcats to categories, featured+subcat to portfolio items
+      if((parsed.meta?.version||0) < 5){
+        const _catSubcats = {
+          'cat-video':  ["Documentary","Wedding","Short-form / Reels","Corporate","YouTube"],
+          'cat-web':    ["E-commerce","Portfolio","SaaS","Custom"],
+          'cat-app':    ["Android","iOS","Flutter","React Native"],
+          'cat-ai':     ["Chatbots","Voice AI","Automation","RAG / Documents"],
+          'cat-design': ["Brand Identity","Social Media","Packaging","Thumbnails","Print"],
+          'cat-seo':    ["Technical SEO","Local SEO","Content Strategy","Link Building"],
+          'cat-market': ["Meta Ads","Google Ads","Email Marketing","Influencer"],
+          'cat-biz':    ["Digital Transformation","E-commerce Setup","Brand Strategy","Scale-Up"]
+        };
+        if(Array.isArray(STATE.data.categories)) STATE.data.categories.forEach(c=>{
+          if(!Array.isArray(c.subcats)) c.subcats = _catSubcats[c.id] || [];
+        });
+        // Mark first 2 items per category as featured, add subcat from DEFAULT_DATA where known
+        const _defPort = {};
+        (DEFAULT_DATA.portfolio||[]).forEach(p=>{ _defPort[p.id]=p; });
+        const _featCounts = {};
+        if(Array.isArray(STATE.data.portfolio)) STATE.data.portfolio.forEach(p=>{
+          if(p.subcat === undefined) p.subcat = _defPort[p.id]?.subcat || '';
+          if(p.featured === undefined){
+            _featCounts[p.catId] = (_featCounts[p.catId]||0);
+            p.featured = _featCounts[p.catId] < 2;
+            if(p.featured) _featCounts[p.catId]++;
+          }
+        });
+        STATE.data.meta.version = 5;
+      }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((parsed.meta?.version||0) < 4){
         const _imgUp={'r1':'https://graph.facebook.com/guddu.hore/picture?type=large','r2':'https://graph.facebook.com/shawonahmed.official2/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
@@ -1630,11 +1712,15 @@ function applyBranding(){
     const gradClass = STATE.mode === 'academy' ? 'gradient-text-2' : 'flow';
     _setHTML(heroH1, `${esc(plain)} <br/><span class="${gradClass}">${esc(grad)}</span>`);
   }
-  // Footer: show only relevant column per mode
+  // Footer: show only relevant column + update description per mode
   const agencyCol = $('#foot-col-agency');
   const academyCol = $('#foot-col-academy');
   if(agencyCol) agencyCol.style.display = STATE.mode === 'academy' ? 'none' : '';
   if(academyCol) academyCol.style.display = STATE.mode === 'agency' ? 'none' : '';
+  const footDesc = $('#foot-about-desc');
+  if(footDesc) footDesc.textContent = STATE.mode === 'academy'
+    ? 'Not another course platform — train by doing real client projects from Week 1, build an agency-grade portfolio, and top performers get recruited directly into Vision Flow.'
+    : 'Premium digital agency from Bangladesh — broadcast-quality video editing, custom web & app development, AI automation, SEO and digital marketing for brands worldwide.';
   // Favicon: use custom favicon → fallback to current-mode logo → fallback to agency logo
   const faviconSrc = STATE.data.site.favicon
     || STATE.data.site[STATE.mode]?.logo
@@ -1679,51 +1765,113 @@ function renderServices(){
     </div>`).join('');
 }
 
+function _portfolioCard(p, catLabel){
+  const ytId = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1];
+  const imgSrc = p.img || '';
+  const media = ytId
+    ? `<iframe src="https://www.youtube.com/embed/${ytId}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
+    : `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.opacity='.4';this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 250%22%3E%3Crect fill=%22%230f172a%22 width=%22400%22 height=%22250%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%2364748b%22 font-family=%22Arial%22 font-size=%2218%22%3ENo Preview%3C/text%3E%3C/svg%3E'"/>`;
+  return `
+  <div class="portfolio-item">
+    <div class="portfolio-media">${media}</div>
+    <div class="portfolio-body">
+      <span class="portfolio-cat">${esc(catLabel||'')}</span>
+      <h4>${esc(p.title)}</h4>
+      <p>${esc(p.desc)}</p>
+      <div class="portfolio-meta">
+        <span><i class="fas fa-calendar"></i> ${esc(p.year||'')}</span>
+        ${p.link && p.link!=='#' ? `<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">View <i class="fas fa-arrow-up-right-from-square"></i></a>` : (p.client?`<span><i class="fas fa-user"></i> ${esc(p.client)}</span>`:'')}
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderCategories(){
   const cats = STATE.data.categories || [];
   const allBtn = `<button class="tab-btn ${STATE.activePortfolioCat==='all'?'active':''}" data-cat="all"><i class="fas fa-th"></i> All</button>`;
   $('#portfolio-tabs').innerHTML = allBtn + cats.map(c=>`
     <button class="tab-btn ${STATE.activePortfolioCat===c.id?'active':''}" data-cat="${esc(c.id)}"><i class="${esc(c.icon)}"></i> ${esc(c.name)}</button>
   `).join('');
+
+  // Show/hide subcategory tabs
+  const stEl = $('#portfolio-subtabs');
+  if(!stEl) return;
+  if(STATE.activePortfolioCat === 'all'){
+    stEl.style.display = 'none';
+    stEl.innerHTML = '';
+    return;
+  }
+  const cat = cats.find(c=>c.id===STATE.activePortfolioCat);
+  const subcats = cat?.subcats || [];
+  if(!subcats.length){ stEl.style.display='none'; stEl.innerHTML=''; return; }
+  stEl.style.display = 'flex';
+  stEl.innerHTML = `<button class="subtab-btn ${!STATE.activePortfolioSubcat?'active':''}" data-subcat="">All</button>`
+    + subcats.map(s=>`<button class="subtab-btn ${STATE.activePortfolioSubcat===s?'active':''}" data-subcat="${esc(s)}">${esc(s)}</button>`).join('');
 }
+
 function filterPortfolio(id){
   STATE.activePortfolioCat = id;
+  STATE.activePortfolioSubcat = null;
   renderCategories();
   renderPortfolio();
 }
-/* Event delegation for portfolio tabs — safe against XSS in category IDs */
+function filterSubcat(subcat){
+  STATE.activePortfolioSubcat = subcat || null;
+  renderCategories();
+  renderPortfolio();
+}
+
+/* Event delegation — portfolio category tabs and subcategory tabs */
 document.addEventListener('click', e => {
-  const btn = e.target.closest('#portfolio-tabs [data-cat]');
-  if(btn) filterPortfolio(btn.dataset.cat);
+  const catBtn = e.target.closest('#portfolio-tabs [data-cat]');
+  if(catBtn){ filterPortfolio(catBtn.dataset.cat); return; }
+  const subBtn = e.target.closest('#portfolio-subtabs [data-subcat]');
+  if(subBtn){ filterSubcat(subBtn.dataset.subcat); }
 });
 
 function renderPortfolio(){
-  const items = (STATE.data.portfolio||[]).filter(p =>
-    STATE.activePortfolioCat==='all' ? true : p.catId===STATE.activePortfolioCat);
-  const catName = id => (STATE.data.categories||[]).find(c=>c.id===id)?.name || 'General';
-  if(!items.length){
-    $('#portfolio-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">No portfolio items in this category yet.</div>`;
+  const allItems = STATE.data.portfolio || [];
+  const cats = STATE.data.categories || [];
+  const catName = id => cats.find(c=>c.id===id)?.name || 'General';
+  const grid = $('#portfolio-grid');
+
+  if(STATE.activePortfolioCat === 'all'){
+    // Grouped showcase: featured items per category with See More button
+    const sections = cats.map(cat => {
+      const featured = allItems.filter(p => p.catId===cat.id && p.featured);
+      const total = allItems.filter(p => p.catId===cat.id).length;
+      const cards = featured.length
+        ? featured.map(p => _portfolioCard(p, p.subcat||cat.name)).join('')
+        : `<div class="portfolio-no-featured">No featured items — mark items as featured in the Admin Panel to show them here.</div>`;
+      return `
+      <div class="portfolio-all-section">
+        <div class="portfolio-all-header">
+          <div class="portfolio-cat-heading">
+            <i class="${esc(cat.icon)}"></i>
+            ${esc(cat.name)}
+            <span class="portfolio-cat-count">${total} project${total!==1?'s':''}</span>
+          </div>
+          <button class="portfolio-see-more" onclick="filterPortfolio('${esc(cat.id)}')">See All <i class="fas fa-arrow-right" style="font-size:.7em"></i></button>
+        </div>
+        <div class="portfolio-showcase-grid">${cards}</div>
+      </div>`;
+    }).filter((_,i)=> allItems.some(p=>p.catId===cats[i]?.id));
+    if(!sections.length){
+      grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">No portfolio items yet.</div>`;
+    } else {
+      grid.innerHTML = `<div class="portfolio-all-view">${sections.join('')}</div>`;
+    }
     return;
   }
-  $('#portfolio-grid').innerHTML = items.map((p,i)=>{
-    const ytId = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1];
-    const media = ytId
-      ? `<iframe src="https://www.youtube.com/embed/${ytId}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
-      : `<img src="${esc(p.img)}" alt="${esc(p.title)}" loading="lazy"/>`;
-    return `
-    <div class="portfolio-item">
-      <div class="portfolio-media">${media}</div>
-      <div class="portfolio-body">
-        <span class="portfolio-cat">${esc(catName(p.catId))}</span>
-        <h4>${esc(p.title)}</h4>
-        <p>${esc(p.desc)}</p>
-        <div class="portfolio-meta">
-          <span><i class="fas fa-calendar"></i> ${esc(p.year||'')}</span>
-          ${p.link && p.link!=='#' ? `<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">View <i class="fas fa-arrow-up-right-from-square"></i></a>` : (p.client?`<span><i class="fas fa-user"></i> ${esc(p.client)}</span>`:'')}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+
+  // Specific category: filter by catId + optional subcat
+  let items = allItems.filter(p => p.catId===STATE.activePortfolioCat);
+  if(STATE.activePortfolioSubcat) items = items.filter(p => p.subcat===STATE.activePortfolioSubcat);
+  if(!items.length){
+    grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">No portfolio items${STATE.activePortfolioSubcat?' in this subcategory':' in this category'} yet.</div>`;
+    return;
+  }
+  grid.innerHTML = `<div class="portfolio-grid">${items.map(p=>_portfolioCard(p, p.subcat||catName(p.catId))).join('')}</div>`;
 }
 
 function renderCode(){
@@ -1817,7 +1965,7 @@ function renderReviews(){
       <div class="review-rating">${stars}</div>
       <p class="review-text">"${esc(r.text)}"</p>
       <div class="review-author">
-        <div class="review-avatar">${r.img?`<img src="${esc(r.img)}" alt=""/>`:initial}</div>
+        <div class="review-avatar" data-init="${esc(initial)}">${r.img?`<img src="${esc(r.img)}" alt="${esc(r.name)}" onerror="this.style.display='none';this.parentNode.textContent=this.parentNode.dataset.init"/>`:initial}</div>
         <div><h5>${esc(r.name)}</h5><small>${esc(r.role||'')}</small></div>
       </div>
     </div>`;
@@ -2255,19 +2403,22 @@ function svcFields(){ return [
   {k:'tags',  label:'Tags (comma separated)', type:'csv'}
 ];}
 function catFields(){ return [
-  {k:'name', label:'Category Name', type:'text'},
-  {k:'icon', label:'Icon (FontAwesome class)', placeholder:'fas fa-video', type:'text'}
+  {k:'name',    label:'Category Name', type:'text'},
+  {k:'icon',    label:'Icon (FontAwesome class)', placeholder:'fas fa-video', type:'text'},
+  {k:'subcats', label:'Subcategories (comma-separated)', placeholder:'Documentary, Wedding, Short-form', type:'csv'}
 ];}
 function portfolioFields(){ return [
-  {k:'title', label:'Title', type:'text'},
-  {k:'catId', label:'Category', type:'category'},
-  {k:'desc',  label:'Description', type:'textarea'},
-  {k:'img',   label:'Image URL', type:'text', placeholder:'https://...'},
-  {k:'imgFile', label:'📤 Or Upload Image', type:'imgupload', target:'img'},
-  {k:'video', label:'YouTube Embed URL (optional)', type:'text', placeholder:'https://www.youtube.com/embed/VIDEO_ID'},
-  {k:'link',  label:'External Link (optional)', type:'text'},
-  {k:'client',label:'Client Name', type:'text'},
-  {k:'year',  label:'Year', type:'text'}
+  {k:'title',    label:'Title', type:'text'},
+  {k:'catId',    label:'Category', type:'category'},
+  {k:'subcat',   label:'Subcategory', type:'text', placeholder:'e.g. Documentary'},
+  {k:'featured', label:'⭐ Show in "All" showcase (Featured)', type:'checkbox'},
+  {k:'desc',     label:'Description', type:'textarea'},
+  {k:'img',      label:'Image URL', type:'text', placeholder:'https://...'},
+  {k:'imgFile',  label:'📤 Or Upload Image', type:'imgupload', target:'img'},
+  {k:'video',    label:'YouTube Embed URL (optional)', type:'text', placeholder:'https://www.youtube.com/embed/VIDEO_ID'},
+  {k:'link',     label:'External Link (optional)', type:'text'},
+  {k:'client',   label:'Client Name', type:'text'},
+  {k:'year',     label:'Year', type:'text'}
 ];}
 function codeFields(){ return [
   {k:'lang',  label:'Language / Stack', type:'text', placeholder:'JavaScript'},
@@ -2376,6 +2527,7 @@ function editItem(key, id){
       if(f.type==='imgupload') return; // file input only — already wrote into the target field
       const el = $(`[name="${f.k}"]`, body);
       if(!el) return;
+      if(f.type==='checkbox'){ data[f.k] = el.checked; return; }
       if(f.type==='csv') data[f.k] = el.value.split(',').map(x=>x.trim()).filter(Boolean);
       else if(f.type==='json'){ try { data[f.k] = JSON.parse(el.value||'[]'); } catch(err){ showToast('Invalid JSON: '+f.k,'error'); throw err; } }
       else if(f.type==='sociallist'){
@@ -2422,6 +2574,9 @@ function fieldHTML(f, val){
   if(f.type==='imgupload'){
     // Convert uploaded image → dataURL into the input matching f.target (e.g. "img")
     return `<div class="form-row"><label>${esc(f.label)} <small style="color:var(--text-muted);font-weight:400">(PNG/JPG — under 2MB)</small></label><input type="file" accept="image/*" onchange="_inlineImgUpload(event,'${esc(f.target||'img')}')"/></div>`;
+  }
+  if(f.type==='checkbox'){
+    return `<div class="form-row" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="${f.k}" id="chk-${f.k}" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0" ${val?'checked':''}/><label for="chk-${f.k}" style="margin:0;cursor:pointer">${esc(f.label)}</label></div>`;
   }
   if(f.type==='sociallist'){
     // Dynamic add/remove social link rows (auto-detect icon)
@@ -3275,34 +3430,38 @@ function animateCounters(){
   const els = $$('[data-target]');
   if(!els.length) return;
   _counterObserver = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if(!en.isIntersecting){ _countersInView = false; return; }
-      const el = en.target;
-      if(el._counting) return;
-      if(_countersInView){
-        // Section still in view from previous animation (e.g. re-render) — snap to final value without re-animating
-        el.textContent = parseInt(el.dataset.target,10).toLocaleString() + (el.dataset.suffix||'+');
-        return;
-      }
-      // Fresh viewport entry — animate
+    // Pass 1: handle exits — reset flag so next scroll-in re-animates
+    entries.forEach(en => { if(!en.isIntersecting) _countersInView = false; });
+    // Pass 2: handle ALL entering elements as a batch (so they all animate together)
+    const entering = entries.filter(en => en.isIntersecting && !en.target._counting);
+    if(!entering.length) return;
+    if(_countersInView){
+      // Re-render while still in view — snap all to final value immediately
+      entering.forEach(en => {
+        en.target.textContent = parseInt(en.target.dataset.target,10).toLocaleString() + (en.target.dataset.suffix||'+');
+      });
+    } else {
+      // Fresh viewport entry — animate ALL counters simultaneously
       _countersInView = true;
-      el._counting = true;
-      const target = parseInt(el.dataset.target,10);
-      const suffix = el.dataset.suffix || '+';
-      const duration = 2000;
-      setTimeout(() => {
-        const startTime = performance.now();
-        const update = (t) => {
-          const p = Math.min((t-startTime)/duration, 1);
-          const eased = 1 - Math.pow(1-p, 3);
-          el.textContent = Math.floor(target*eased).toLocaleString() + suffix;
-          if(p<1){ requestAnimationFrame(update); }
-          else { el._counting = false; }
-        };
-        requestAnimationFrame(update);
-      }, 400);
-    });
-  }, {threshold:.3, rootMargin:'0px 0px -40px 0px'});
+      entering.forEach(en => {
+        const el = en.target;
+        el._counting = true;
+        const target = parseInt(el.dataset.target,10);
+        const suffix = el.dataset.suffix||'+';
+        setTimeout(()=>{
+          const start = performance.now();
+          const update = t => {
+            const p = Math.min((t-start)/2000,1);
+            const eased = 1-Math.pow(1-p,3);
+            el.textContent = Math.floor(target*eased).toLocaleString()+suffix;
+            if(p<1) requestAnimationFrame(update);
+            else el._counting = false;
+          };
+          requestAnimationFrame(update);
+        },400);
+      });
+    }
+  },{threshold:.3, rootMargin:'0px 0px -40px 0px'});
   els.forEach(el => { _counterObserver.observe(el); });
 }
 
