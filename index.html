@@ -515,7 +515,7 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .team-card h4{font-size:1.15rem;color:#fff;margin-bottom:4px}
 .team-role{font-size:.82rem;color:var(--accent);font-weight:600;margin-bottom:10px}
 .team-bio{font-size:.85rem;color:var(--text-muted);margin-bottom:14px}
-.team-social{display:flex;justify-content:center;gap:8px}
+.team-social{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;max-width:260px;margin:0 auto}
 .team-social a{
   width:36px;height:36px;border-radius:50%;
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
@@ -623,6 +623,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   border-radius:var(--radius-lg);overflow:hidden;
   box-shadow:var(--shadow-lg);
   animation:modalIn .35s cubic-bezier(.4,0,.2,1);
+  max-height:calc(100dvh - 40px);display:flex;flex-direction:column;
 }
 .modal-lg{max-width:1100px;max-height:92vh;display:flex;flex-direction:column}
 @keyframes modalIn{from{transform:translateY(30px) scale(.95);opacity:0}}
@@ -1607,7 +1608,7 @@ app.post('/login', async (req, res) => {
        {url:"mailto:shihabjessore7@gmail.com",          icon:"fas fa-envelope"}
      ]},
     {id:"t2", name:"MD Rafiul Islam Shubho", role:"Co-Founder & Managing Director", bio:"The strategic mastermind behind Vision Flow's operations & growth. SEO expert and operations architect who lets results speak louder than recognition.",
-     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Shubho2024&skinColor=Tanned&topType=ShortHairShortFlat&facialHairType=BeardMedium&facialHairColor=Black2&clotheType=BlazerShirt&backgroundColor=0f172a",
+     img:"https://ui-avatars.com/api/?name=MD+Rafiul+Shubho&background=1e3a5f&color=06b6d4&size=256&bold=true&format=png",
      social:[
        {url:"https://web.facebook.com/sejofrenia.shuvo", icon:"fab fa-facebook-f"},
        {url:"https://wa.me/8801676302084",               icon:"fab fa-whatsapp"},
@@ -1646,13 +1647,13 @@ app.post('/login', async (req, res) => {
        {url:"mailto:foraiwork143@gmail.com",                    icon:"fas fa-envelope"}
      ]},
     {id:"t6", name:"MD Kamruzzaman Papon", role:"Software Engineer & Video Editor", bio:"Software engineer and cinematic storyteller — combines technical depth with creative precision to deliver premium edits across commercial, social & documentary formats.",
-     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Papon2024&skinColor=Tanned&topType=ShortHairTheCaesar&facialHairType=BeardLight&facialHairColor=Black2&clotheType=BlazerAndStripes&backgroundColor=0f172a",
+     img:"https://ui-avatars.com/api/?name=MD+Kamruzzaman+Papon&background=1e1b4b&color=8b5cf6&size=256&bold=true&format=png",
      social:[
        {url:"https://wa.me/8801837346318",           icon:"fab fa-whatsapp"},
        {url:"mailto:kamruzzmanpopon@gmail.com",       icon:"fas fa-envelope"}
      ]},
     {id:"t7", name:"MD Jasif Hasan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.",
-     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Jasif2024&skinColor=Light&topType=ShortHairFrizzle&facialHairType=Blank&clotheType=Hoodie&backgroundColor=0f172a",
+     img:"https://ui-avatars.com/api/?name=MD+Jasif+Hasan&background=172554&color=38bdf8&size=256&bold=true&format=png",
      social:[
        {url:"https://www.facebook.com/md.superearner",         icon:"fab fa-facebook-f"},
        {url:"https://www.instagram.com/mdjasifpro/",           icon:"fab fa-instagram"},
@@ -1699,7 +1700,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 10,
+    version: 11,
     updatedAt: 0
   }
 };
@@ -1930,6 +1931,15 @@ function loadData(){
       if((STATE.data.meta.version||0) < 10){
         STATE.data.team = JSON.parse(JSON.stringify(DEFAULT_DATA.team));
         STATE.data.meta.version = 10;
+      }
+      // v11 migration: fix avatar members (Shubho/Papon/Jasif) from broken DiceBear SVG → ui-avatars PNG
+      if((STATE.data.meta.version||0) < 11){
+        const _d11 = {}; (DEFAULT_DATA.team||[]).forEach(t=>{ _d11[t.id]=t; });
+        ['t2','t6','t7'].forEach(tid => {
+          const m = (STATE.data.team||[]).find(t=>t.id===tid);
+          if(m && _d11[tid]) m.img = _d11[tid].img;
+        });
+        STATE.data.meta.version = 11;
       }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((STATE.data.meta.version||0) < 4){
@@ -2791,6 +2801,7 @@ function adminLogout(){
 
 /* ===== Tabs ===== */
 function adminTab(name){
+  _adminCurrentTab = name;
   $$('.admin-side button').forEach(b => {
     const m = b.getAttribute('onclick')?.match(/'(.+)'/)?.[1];
     b.classList.toggle('active', m===name);
@@ -2932,7 +2943,7 @@ function editItem(key, id){
   const body = $('#edit-body');
   body.innerHTML = `<form id="edit-form">
     ${fields.map(f => fieldHTML(f, item?.[f.k])).join('')}
-    <div style="display:flex;gap:10px;margin-top:14px">
+    <div style="display:flex;gap:10px;margin-top:14px;position:sticky;bottom:0;background:var(--bg-dark);padding:12px 0 2px;border-top:1px solid rgba(255,255,255,.08);z-index:1">
       <button type="button" class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
       <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> ${id?'Update':'Create'}</button>
     </div>
@@ -2973,6 +2984,7 @@ function editItem(key, id){
     closeModal('edit-modal');
     showToast('Saved successfully','success');
     renderAll();
+    if(_adminCurrentTab) adminTab(_adminCurrentTab);
   });
   openModal('edit-modal');
 }
@@ -3018,7 +3030,7 @@ function _inlineImgUpload(e, targetName){
   const reader = new FileReader();
   reader.onload = ()=>{
     const inp = document.querySelector(`[name="${targetName}"]`);
-    if(inp){ inp.value = reader.result; showToast('✅ Image loaded — click Save','success'); }
+    if(inp){ inp.value = reader.result; showToast('📸 Photo ready — scroll down & click Update to save','success'); }
   };
   reader.readAsDataURL(file);
 }
@@ -3931,6 +3943,7 @@ let _counterObserver = null;
 let _countersInView = false;
 let _statsRevealDone = false;
 let _initialRenderDone = false;
+let _adminCurrentTab = '';
 function animateCounters(){
   if(_counterObserver){ _counterObserver.disconnect(); _counterObserver = null; }
   const els = $$('[data-target]');
