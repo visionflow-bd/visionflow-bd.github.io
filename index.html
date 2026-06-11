@@ -23,13 +23,13 @@
 <meta property="og:url" content="https://visionflow-bd.github.io/Agency-Academy/" />
 <meta property="og:site_name" content="Vision Flow" />
 <meta property="og:locale" content="en_US" />
-<meta property="og:image" content="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80" />
+<meta property="og:image" content="https://visionflow-bd.github.io/Agency-Academy/og-image.png" />
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Vision Flow — Premium Digital Agency & Academy | Bangladesh" />
 <meta name="twitter:description" content="500+ clients, 5000+ projects. Video editing, web dev, AI automation, SEO & a real-world academy from Bangladesh." />
-<meta name="twitter:image" content="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80" />
+<meta name="twitter:image" content="https://visionflow-bd.github.io/Agency-Academy/og-image.png" />
 
 <!-- PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -329,6 +329,8 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
   overflow:hidden;
 }
 .glass-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.glass-card::after,.portfolio-item::after{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(500px circle at var(--cx,50%) var(--cy,50%),rgba(6,182,212,.13),transparent 50%);opacity:0;transition:opacity .35s;pointer-events:none;z-index:1}
+.glass-card:hover::after,.portfolio-item:hover::after{opacity:1}
 
 /* SERVICES */
 .services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
@@ -542,7 +544,7 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 
 /* FOOTER */
 footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:rgba(0,0,0,.3)}
-.foot-grid{display:grid;grid-template-columns:1.4fr 1.4fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1.4fr;gap:32px;margin-bottom:36px}
 @media(max-width:780px){.foot-grid{grid-template-columns:1fr 1fr}}
 .foot-col h5{font-size:.85rem;color:#fff;margin-bottom:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 .foot-col ul li{margin-bottom:8px}
@@ -818,7 +820,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         </div>
       </button>
     </div>
-    <div id="hero-stats-grid" class="hero-stats" data-aos="fade-up" data-aos-delay="500"></div>
+    <div id="hero-stats-grid" class="hero-stats"></div>
   </div>
 </section>
 
@@ -831,18 +833,18 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
     <div class="ticker-track ticker-rtl">
       <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">YM</span>Yamaha</a>
       <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">UNI</span>Unilever</a>
-      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Pran_Foods_logo.jpg/200px-Pran_Foods_logo.jpg" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
       <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
       <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Hyperconnect_logo.png/200px-Hyperconnect_logo.png" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
       <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
       <!-- duplicate for seamless loop -->
       <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">YM</span>Yamaha</a>
       <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">UNI</span>Unilever</a>
-      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Pran_Foods_logo.jpg/200px-Pran_Foods_logo.jpg" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
+      <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
       <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
       <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Hyperconnect_logo.png/200px-Hyperconnect_logo.png" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
       <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
     </div>
   </div>
@@ -850,7 +852,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   <!-- Row 2: Public Figures → left to right (7 unique + 7 duplicate) -->
   <div class="ticker-row">
     <div class="ticker-track ticker-ltr">
-      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Mosharraf_Karim.jpg/220px-Mosharraf_Karim.jpg" width="52" height="52" alt="Mosharraf Karim" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
       <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">RC</span><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
       <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PM</span><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
       <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">TH</span><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
@@ -858,7 +860,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
       <a class="ticker-person" href="https://www.facebook.com/clicksofshawon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/clicksofshawon/picture?type=large" width="52" height="52" alt="Shawon Ahmed" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">SA</span><div class="ticker-person-meta"><span class="ticker-person-name">Shawon Ahmed</span><span class="ticker-person-role">Cinematographer · Malaysia</span></div></a>
       <a class="ticker-person" href="https://www.youtube.com/@seostationbyaoyon" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/seostationaoyon/picture?type=large" width="52" height="52" alt="Aoyon" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">AO</span><div class="ticker-person-meta"><span class="ticker-person-name">Aoyon</span><span class="ticker-person-role">SEO Expert · SEO Station</span></div></a>
       <!-- duplicate for seamless loop -->
-      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Mosharraf_Karim.jpg/220px-Mosharraf_Karim.jpg" width="52" height="52" alt="Mosharraf Karim" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
+      <a class="ticker-person" href="https://www.facebook.com/PageMosharrafKarim" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/PageMosharrafKarim/picture?type=large" width="52" height="52" alt="Mosharraf Karim" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">MK</span><div class="ticker-person-meta"><span class="ticker-person-name">Mosharraf Karim</span><span class="ticker-person-role">Actor · Bangladesh</span></div></a>
       <a class="ticker-person" href="https://www.youtube.com/@RafsanTheChotobhai" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg" width="52" height="52" alt="Rafsan The Choto Bhai" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">RC</span><div class="ticker-person-meta"><span class="ticker-person-name">Rafsan The Choto Bhai</span><span class="ticker-person-role">Content Creator · 3.4M+ subscribers</span></div></a>
       <a class="ticker-person" href="https://www.facebook.com/porimoniw" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg" width="52" height="52" alt="Pori Moni" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">PM</span><div class="ticker-person-meta"><span class="ticker-person-name">Pori Moni</span><span class="ticker-person-role">Actress · Bangladesh</span></div></a>
       <a class="ticker-person" href="https://www.facebook.com/TahmidHasanOfficial1" target="_blank" rel="noopener"><img class="ticker-person-img" src="https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large" width="52" height="52" alt="Tahmid Hasan Official" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><span class="ticker-person-init">TH</span><div class="ticker-person-meta"><span class="ticker-person-name">Tahmid Hasan Official</span><span class="ticker-person-role">Documentary Creator · BD</span></div></a>
@@ -1002,6 +1004,7 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 <footer>
   <div class="container">
     <div class="foot-grid">
+      <!-- Col 1: Agency info (left) -->
       <div class="foot-col foot-about">
         <button class="brand" style="margin-bottom:14px">
           <span class="brand-mark" id="brand-mark-foot">VF</span>
@@ -1013,6 +1016,37 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         <p id="foot-about-desc">Premium digital agency from Bangladesh — broadcast-quality video editing, custom web &amp; app development, AI automation, SEO and digital marketing for brands worldwide.</p>
         <div class="foot-social" id="foot-social"></div>
       </div>
+      <!-- Col 2: Agency links -->
+      <div class="foot-col" id="foot-col-agency">
+        <h5>Agency</h5>
+        <ul>
+          <li><button onclick="switchMode('agency');goSection('services')">Services</button></li>
+          <li><button onclick="switchMode('agency');goSection('portfolio')">Portfolio</button></li>
+          <li><button onclick="switchMode('agency');goSection('code')">Code Demos</button></li>
+          <li><button onclick="goLiveSites()">Live Sites</button></li>
+        </ul>
+      </div>
+      <!-- Col 3: Company (centre) -->
+      <div class="foot-col">
+        <h5>Company</h5>
+        <ul>
+          <li><button onclick="goSection('contact')">Contact</button></li>
+          <li><button onclick="openAdminLogin()">Admin Panel</button></li>
+          <li><a href="#" onclick="event.preventDefault();showToast('Coming soon!','success')">Privacy</a></li>
+          <li><a href="#" onclick="event.preventDefault();showToast('Coming soon!','success')">Terms</a></li>
+        </ul>
+      </div>
+      <!-- Col 4: Academy links -->
+      <div class="foot-col" id="foot-col-academy">
+        <h5>Academy</h5>
+        <ul>
+          <li><button onclick="switchMode('academy');goSection('courses')">Courses</button></li>
+          <li><button onclick="switchMode('academy');goSection('team')">Mentors</button></li>
+          <li><button onclick="switchMode('academy');goSection('reviews')">Student Reviews</button></li>
+          <li><button onclick="switchMode('academy');goSection('contact')">Enroll</button></li>
+        </ul>
+      </div>
+      <!-- Col 5: Academy info (right) -->
       <div class="foot-col foot-about" id="foot-brand-academy">
         <button class="brand" style="margin-bottom:14px">
           <span class="brand-mark academy" id="brand-mark-foot-academy">VFA</span>
@@ -1023,33 +1057,6 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
         </button>
         <p id="foot-about-desc-academy">Not another course platform — train by doing real client projects from Week 1, build an agency-grade portfolio, and top performers get recruited directly into Vision Flow.</p>
         <div class="foot-social" id="foot-social-academy"></div>
-      </div>
-      <div class="foot-col" id="foot-col-agency">
-        <h5>Agency</h5>
-        <ul>
-          <li><button onclick="switchMode('agency');goSection('services')">Services</button></li>
-          <li><button onclick="switchMode('agency');goSection('portfolio')">Portfolio</button></li>
-          <li><button onclick="switchMode('agency');goSection('code')">Code Demos</button></li>
-          <li><button onclick="goLiveSites()">Live Sites</button></li>
-        </ul>
-      </div>
-      <div class="foot-col" id="foot-col-academy">
-        <h5>Academy</h5>
-        <ul>
-          <li><button onclick="switchMode('academy');goSection('courses')">Courses</button></li>
-          <li><button onclick="switchMode('academy');goSection('team')">Mentors</button></li>
-          <li><button onclick="switchMode('academy');goSection('reviews')">Student Reviews</button></li>
-          <li><button onclick="switchMode('academy');goSection('contact')">Enroll</button></li>
-        </ul>
-      </div>
-      <div class="foot-col">
-        <h5>Company</h5>
-        <ul>
-          <li><button onclick="goSection('contact')">Contact</button></li>
-          <li><button onclick="openAdminLogin()">Admin Panel</button></li>
-          <li><a href="#" onclick="event.preventDefault();showToast('Coming soon!','success')">Privacy</a></li>
-          <li><a href="#" onclick="event.preventDefault();showToast('Coming soon!','success')">Terms</a></li>
-        </ul>
       </div>
     </div>
     <div class="foot-bottom">
@@ -1433,9 +1440,12 @@ app.post('/login', async (req, res) => {
     {id:"r2", name:"Shawon Islam", role:"Professional Cinematographer", country:"Malaysia", rating:5, text:"From Mosharraf Karim to Rafsan The Choto Vhai to Porimoni — Vision Flow handles every celebrity cut I bring them. The quality is broadcast-grade and the team understands cinematic storytelling at the highest level.", img:"https://graph.facebook.com/clicksofshawon/picture?type=large"},
     {id:"r3", name:"Tahmid Hasan Official", role:"Content Creator & Filmmaker", country:"Bangladesh", rating:5, text:"My documentary content reached a whole new level after partnering with Vision Flow. The editing style is immersive, the team is professional, and they understand storytelling deeply. Highly recommended for serious creators.", img:"https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large"},
     {id:"r4", name:"Aoyon Ahmed", role:"Creator, SEO Station by Aoyon", country:"Bangladesh", rating:5, text:"Vision Flow transformed my YouTube channel's production quality. The edits are sharp, the transitions are cinematic, and engagement went up significantly. They truly understand what makes content stand out.", img:"https://graph.facebook.com/seostationaoyon/picture?type=large"},
+    {id:"r-mk", name:"Mosharraf Karim", role:"Actor · Bangladesh", country:"Bangladesh", rating:5, text:"Vision Flow edited my drama promos and digital content with exceptional cinematic quality. Professional, punctual and they truly understand what Bangladeshi audiences connect with. Remarkable team.", img:"https://graph.facebook.com/PageMosharrafKarim/picture?type=large"},
+    {id:"r-rafsan", name:"Rafsan The Choto Bhai", role:"Content Creator · 3.4M+ Subscribers", country:"Bangladesh", rating:5, text:"My YouTube and social content jumped to a whole new level after Vision Flow got involved. Every edit feels cinematic, every thumbnail pops — and the team is consistent no matter the volume. Genuinely impressive.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg"},
+    {id:"r-pm", name:"Pori Moni", role:"Actress · Bangladesh", country:"Bangladesh", rating:5, text:"Working with Vision Flow on my social media content has been a seamless experience. The editing is glamorous, on-brand and always on time. I trust no one else with my online presence.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg"},
     {id:"r5", name:"Belal Hussain", role:"YouTube Creator", country:"Bangladesh", rating:5, text:"Running an English-language YouTube channel demands top-tier editing — and Vision Flow delivers every time. My international audience has grown 40% since working with them. Professional, fast and always on-brand.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70"},
     // ── Web Development + E-commerce ──
-    {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70"},
+    {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://graph.facebook.com/babylistbd/picture?type=large"},
     {id:"r7", name:"David Chen", role:"SaaS Founder", country:"Singapore", rating:5, text:"Hired Vision Flow for our dashboard rebuild. Communication was flawless, code quality was enterprise-grade, and they delivered ahead of schedule. Will definitely work with them again on our next product.", img:"https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70"},
     // ── Social Media + Content Creation ──
     {id:"r8", name:"Sadia Islam Tuli", role:"Content Creator & Vlogger", country:"USA", rating:5, text:"Vision Flow handles everything — vlog editing, UGC content, YouTube, Instagram, Facebook setup and management. Being in New York and having a team this reliable in Bangladesh is incredible. They feel like my creative partner.", img:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=70"},
@@ -1452,7 +1462,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 6,
+    version: 7,
     updatedAt: 0
   }
 };
@@ -1626,14 +1636,31 @@ function loadData(){
           'r2': 'https://graph.facebook.com/clicksofshawon/picture?type=large',
           'r3': 'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large',
           'r4': 'https://graph.facebook.com/seostationaoyon/picture?type=large',
+          'r-mk': 'https://graph.facebook.com/PageMosharrafKarim/picture?type=large',
+          'r-rafsan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg',
+          'r-pm': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg',
           'r5': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70',
-          'r6': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=70',
+          'r6': 'https://graph.facebook.com/babylistbd/picture?type=large',
           'r7': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70',
           'r8': 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=70',
           'r9': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=70'
         };
         if(Array.isArray(STATE.data.reviews)) STATE.data.reviews.forEach(r=>{ if(_revImgMap[r.id]) r.img = _revImgMap[r.id]; });
         STATE.data.meta.version = 5;
+      }
+      // v6 migration: add Mosharraf Karim, Rafsan, Pori Moni reviews; fix Babylist BD photo
+      if((STATE.data.meta.version||0) < 6){
+        const _v6revs = [
+          {id:"r-mk", name:"Mosharraf Karim", role:"Actor · Bangladesh", country:"Bangladesh", rating:5, text:"Vision Flow edited my drama promos and digital content with exceptional cinematic quality. Professional, punctual and they truly understand what Bangladeshi audiences connect with. Remarkable team.", img:"https://graph.facebook.com/PageMosharrafKarim/picture?type=large"},
+          {id:"r-rafsan", name:"Rafsan The Choto Bhai", role:"Content Creator · 3.4M+ Subscribers", country:"Bangladesh", rating:5, text:"My YouTube and social content jumped to a whole new level after Vision Flow got involved. Every edit feels cinematic, every thumbnail pops — and the team is consistent no matter the volume. Genuinely impressive.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg/250px-Iftekhar_Rafsan_%28Rafsan_thechotobhai%29.jpg"},
+          {id:"r-pm", name:"Pori Moni", role:"Actress · Bangladesh", country:"Bangladesh", rating:5, text:"Working with Vision Flow on my social media content has been a seamless experience. The editing is glamorous, on-brand and always on time. I trust no one else with my online presence.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg"}
+        ];
+        if(Array.isArray(STATE.data.reviews)){
+          _v6revs.forEach(nr=>{ if(!STATE.data.reviews.find(r=>r.id===nr.id)) STATE.data.reviews.splice(4,0,nr); });
+          const r6 = STATE.data.reviews.find(r=>r.id==='r6');
+          if(r6) r6.img = 'https://graph.facebook.com/babylistbd/picture?type=large';
+        }
+        STATE.data.meta.version = 6;
       }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((STATE.data.meta.version||0) < 4){
@@ -1807,7 +1834,14 @@ function renderAll(){
   renderContact();
   // Update lead badge only — do NOT refresh admin tab (it destroys unsaved edits mid-typing)
   $('#lead-badge').textContent = (STATE.data.leads||[]).length;
-  // Do NOT call AOS.refresh() here — causes visible animation re-trigger blink on re-render
+  // After the initial render: suppress AOS re-animation for elements already in the viewport
+  if(_initialRenderDone && window.AOS){
+    const vh = window.innerHeight;
+    document.querySelectorAll('[data-aos]').forEach(el=>{
+      if(el.getBoundingClientRect().top < vh - 30) el.classList.add('aos-init','aos-animate');
+    });
+  }
+  _initialRenderDone = true;
 }
 
 function renderServices(){
@@ -2257,11 +2291,15 @@ function openWhatsapp(){
 function renderHeroStats(){
   const el = $('#hero-stats-grid');
   if(!el) return;
+  if(!_statsRevealDone){
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(18px)';
+    el.style.transition = 'opacity .7s ease .35s, transform .7s ease .35s';
+  }
   const stats = STATE.data.site?.stats || [];
   el.innerHTML = stats.map(s => {
     const tgt = parseInt(s.target||0, 10);
     const suf = s.suffix||'+';
-    // If counters are already in view (e.g. renderAll from admin), show final value immediately to avoid blink
     const initial = _countersInView ? (tgt.toLocaleString()+suf) : '0';
     return `<div class="hero-stat">
       <div class="hero-stat-num" data-target="${tgt}" data-suffix="${esc(suf)}">${initial}</div>
@@ -2269,6 +2307,13 @@ function renderHeroStats(){
     </div>`;
   }).join('');
   animateCounters();
+  if(!_statsRevealDone){
+    _statsRevealDone = true;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }));
+  }
 }
 </script>
 <script>
@@ -3516,6 +3561,8 @@ function initTickerPreview(){
 /* ===== Counter Animation ===== */
 let _counterObserver = null;
 let _countersInView = false;
+let _statsRevealDone = false;
+let _initialRenderDone = false;
 function animateCounters(){
   if(_counterObserver){ _counterObserver.disconnect(); _counterObserver = null; }
   const els = $$('[data-target]');
@@ -3586,6 +3633,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initScrollWatch();
   initTickerPreview();
   if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60 });
+  document.addEventListener('mousemove', e=>{
+    document.querySelectorAll('.glass-card,.portfolio-item').forEach(c=>{
+      const r=c.getBoundingClientRect();
+      c.style.setProperty('--cx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+      c.style.setProperty('--cy',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+    });
+  });
 
   // Close mobile menu on outside click
   document.addEventListener('click', e => {
