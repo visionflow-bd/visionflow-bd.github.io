@@ -2096,11 +2096,13 @@ function filterPortfolio(id){
   STATE.activePortfolioSubcat = null;
   renderCategories();
   renderPortfolio();
+  observeScrollItems();
 }
 function filterSubcat(subcat){
   STATE.activePortfolioSubcat = subcat || null;
   renderCategories();
   renderPortfolio();
+  observeScrollItems();
 }
 
 /* Event delegation — portfolio category tabs and subcategory tabs */
@@ -3879,19 +3881,18 @@ function initScrollWatch(){
 /* ===== DOM Ready ===== */
 document.addEventListener('DOMContentLoaded', async () => {
   $('#year').textContent = new Date().getFullYear();
+  // Custom scroll animation observer — must be created BEFORE renderAll()
+  window._sio = new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){ en.target.classList.add('in-view'); _sio.unobserve(en.target); }
+    });
+  },{threshold:0.08,rootMargin:'0px 0px -20px 0px'});
   loadData();
   STATE.mode = sessionStorage.getItem(LS_KEYS.mode) || 'agency';
   renderAll(); // renderHeroStats() inside renderAll handles animateCounters()
   initScrollWatch();
   initTickerPreview();
   if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60, disableMutationObserver: true });
-  // Custom scroll animation observer (fires once per element, never repeats)
-  window._sio = new IntersectionObserver(entries=>{
-    entries.forEach(en=>{
-      if(en.isIntersecting){ en.target.classList.add('in-view'); _sio.unobserve(en.target); }
-    });
-  },{threshold:0.08,rootMargin:'0px 0px -20px 0px'});
-  observeScrollItems();
   // Language toggle
   const _savedLang = localStorage.getItem('vf:lang') || 'en';
   if(_savedLang === 'bn') { setTimeout(()=>applyLanguage('bn'),200); }
