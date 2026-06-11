@@ -1732,9 +1732,9 @@ DEFAULT_DATA.site.favicon = DEFAULT_DATA.site.favicon || '';
 <!-- Firebase v10 (modular CDN) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-  window.__fb = { initializeApp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp };
+  window.__fb = { initializeApp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -2038,7 +2038,12 @@ async function persist(){
     try {
       STATE.data.meta = STATE.data.meta || {};
       STATE.data.meta.updatedAt = Date.now();
-      const fbData = _stripLargeBase64(STATE.data); // strip base64 > 55KB
+      // JSON round-trip strips undefined/NaN/Infinity — Firestore rejects those values
+      const fbData = JSON.parse(JSON.stringify(_stripLargeBase64(STATE.data)));
+      // Ensure Firebase Auth is active before write (anonymous if needed)
+      if(STATE.fbAuth && !STATE.fbAuth.currentUser && window.__fb.signInAnonymously){
+        try { await window.__fb.signInAnonymously(STATE.fbAuth); } catch {}
+      }
       await window.__fb.setDoc(window.__fb.doc(STATE.fbDb, 'site','main'), fbData);
       // Cloud save succeeded — cache locally for fast reloads
       try { localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data)); } catch {}
@@ -2048,8 +2053,14 @@ async function persist(){
       if(STATE.data.meta) STATE.data.meta.updatedAt = savedTs;
       STATE._pendingSync = 0;
       STATE._ignoreSyncUntil = 0;
-      console.warn('Firebase save failed', e);
-      showToast('☁️ Save failed! Check internet connection & try again.','error');
+      const errCode = e?.code || '';
+      console.error('Firebase save failed', errCode, e?.message);
+      const errMsg = errCode === 'permission-denied'
+        ? '🔒 Save failed: Permission denied — enable Anonymous Auth in Firebase console'
+        : errCode === 'resource-exhausted'
+        ? '📦 Save failed: Document too large — remove uploaded images'
+        : `☁️ Save failed (${errCode||'network'}) — check internet & try again`;
+      showToast(errMsg, 'error');
       return false;
     }
   } else {
@@ -2840,13 +2851,16 @@ async function adminLogin(e){
   showToast(fbError ? ('Login failed — '+fbError) : 'Invalid email or password','error');
 }
 function adminLogout(){
-  if(STATE.fbAuth && STATE.fbAuth.currentUser){
-    window.__fb.signOut(STATE.fbAuth);
-  }
   STATE.isAdmin = false;
   sessionStorage.removeItem('vf:admin');
   closeModal('admin-panel-modal');
   showToast('Logged out','success');
+  if(STATE.fbAuth){
+    window.__fb.signOut(STATE.fbAuth).then(() => {
+      // Re-establish anonymous auth so Firestore writes still work when admin is logged out
+      if(window.__fb.signInAnonymously) window.__fb.signInAnonymously(STATE.fbAuth).catch(()=>{});
+    }).catch(()=>{});
+  }
 }
 
 /* ===== Tabs ===== */
@@ -3836,13 +3850,15 @@ async function bootFirebase(){
           }
         }
       } else {
-        window.__fb.setDoc(window.__fb.doc(STATE.fbDb,'site','main'), STATE.data).catch(e=>console.warn('Seed failed',e));
+        window.__fb.setDoc(window.__fb.doc(STATE.fbDb,'site','main'), JSON.parse(JSON.stringify(_stripLargeBase64(STATE.data)))).catch(e=>console.warn('Seed failed',e.code||e.message));
       }
     }, err => console.warn('Firestore listen error', err));
 
     // Auth state listener — verify email matches configured admin before granting access
     window.__fb.onAuthStateChanged(STATE.fbAuth, user => {
       if(user){
+        // Anonymous auth is kept active so Firestore writes always have request.auth != null
+        if(user.isAnonymous) return;
         const localCfg = JSON.parse(localStorage.getItem(LS_KEYS.authLocal)||'null');
         const adminEmail = (localCfg && localCfg.email ? localCfg.email : 'shihabjessore7@gmail.com').toLowerCase();
         if(user.email && user.email.toLowerCase() === adminEmail){
@@ -3856,8 +3872,18 @@ async function bootFirebase(){
         }
       } else {
         STATE.isAdmin = sessionStorage.getItem('vf:admin')==='1';
+        // Re-establish anonymous auth so future writes still have request.auth != null
+        if(window.__fb.signInAnonymously) window.__fb.signInAnonymously(STATE.fbAuth).catch(()=>{});
       }
     });
+
+    // Sign in anonymously at startup — ensures Firestore writes always have request.auth != null.
+    // When admin logs in with email/password this anonymous session is replaced automatically.
+    // Requires Anonymous Auth to be enabled in Firebase console > Authentication > Sign-in providers.
+    window.__fb.signInAnonymously(STATE.fbAuth).catch(e => {
+      if(e.code !== 'auth/operation-not-allowed') console.warn('Anonymous auth error:', e.code);
+    });
+
   } catch(e){
     console.warn('Firebase init failed', e);
     showToast('Firebase init failed — using local mode','error');
