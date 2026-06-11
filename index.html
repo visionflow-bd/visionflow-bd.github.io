@@ -1598,13 +1598,68 @@ app.post('/login', async (req, res) => {
   ],
 
   team: [
-    {id:"t1", name:"HM Shihabuddin Jashory", role:"Founder & CEO", bio:"The vision behind Vision Flow — multi-skilled creator & strategist covering Video Editing, Graphic Design, AI Automation, Digital Marketing, Web Development & Team Leadership.", img:"", social:[{url:"https://web.facebook.com/Jashory", icon:"fab fa-facebook-f"}]},
-    {id:"t2", name:"MD Rafiul Islam Shubho", role:"Co-Founder & Managing Director", bio:"The strategic mastermind behind Vision Flow's operations & growth. SEO expert and backend architect who lets results speak louder than recognition.", img:"", social:[]},
-    {id:"t3", name:"MD Wahiduzzaman Khan", role:"Creative Director", bio:"Software engineer turned creative powerhouse — Professional Video Editing, Visual Storytelling & Graphic Design. The eye that defines Vision Flow's visual identity.", img:"", social:[]},
-    {id:"t4", name:"MD Naimur Rahman Emon", role:"Senior Video Editor", bio:"All-round professional editor mastering SaaS, UI/UX, Geo Layer & Documentary formats. Adobe Premiere Pro & After Effects specialist with millions of views delivered.", img:"", social:[]},
-    {id:"t5", name:"MD Arafat Hossain", role:"General Manager", bio:"Ultra-level AI Expert & Prompt Engineer. Oversees team operations, account management and automation pipelines that power Vision Flow's efficiency at scale.", img:"", social:[]},
-    {id:"t6", name:"MD Kamruzzaman Papon", role:"Software Engineer & Video Editor", bio:"Software engineer and cinematic storyteller — combines technical depth with creative precision to deliver premium edits across commercial, social & documentary formats.", img:"", social:[]},
-    {id:"t7", name:"MD Jasif Khan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.", img:"", social:[]}
+    {id:"t1", name:"HM Shihabuddin Jashory", role:"Founder & CEO", bio:"The vision behind Vision Flow — multi-skilled creator & strategist covering Video Editing, Graphic Design, AI Automation, Digital Marketing, Web Development & Team Leadership.",
+     img:"https://graph.facebook.com/Jashory/picture?type=large",
+     social:[
+       {url:"https://web.facebook.com/Jashory",         icon:"fab fa-facebook-f"},
+       {url:"https://www.instagram.com/your_jashory/",  icon:"fab fa-instagram"},
+       {url:"https://wa.me/8801997248406",              icon:"fab fa-whatsapp"},
+       {url:"mailto:shihabjessore7@gmail.com",          icon:"fas fa-envelope"}
+     ]},
+    {id:"t2", name:"MD Rafiul Islam Shubho", role:"Co-Founder & Managing Director", bio:"The strategic mastermind behind Vision Flow's operations & growth. SEO expert and operations architect who lets results speak louder than recognition.",
+     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Shubho2024&skinColor=Tanned&topType=ShortHairShortFlat&facialHairType=BeardMedium&facialHairColor=Black2&clotheType=BlazerShirt&backgroundColor=0f172a",
+     social:[
+       {url:"https://web.facebook.com/sejofrenia.shuvo", icon:"fab fa-facebook-f"},
+       {url:"https://wa.me/8801676302084",               icon:"fab fa-whatsapp"},
+       {url:"mailto:mdrafiulislamshubho@gmail.com",      icon:"fas fa-envelope"}
+     ]},
+    {id:"t3", name:"MD Wahiduzzaman Khan", role:"Creative Director", bio:"Software engineer turned creative powerhouse — Professional 3D Motion Design, Visual Storytelling & Graphic Design. The eye that defines Vision Flow's visual identity.",
+     img:"https://graph.facebook.com/wahid.khan.1428/picture?type=large",
+     social:[
+       {url:"https://web.facebook.com/wahid.khan.1428",                                   icon:"fab fa-facebook-f"},
+       {url:"https://www.instagram.com/0wahidkhan0",                                      icon:"fab fa-instagram"},
+       {url:"https://www.behance.net/gallery/229830045/Portfolio-Senior-Visualizer",      icon:"fab fa-behance"},
+       {url:"https://wa.me/8801676685704",                                                icon:"fab fa-whatsapp"},
+       {url:"mailto:wahid.3d.motion@gmail.com",                                           icon:"fas fa-envelope"}
+     ]},
+    {id:"t4", name:"Naimur Rahman Emon", role:"Senior Developer & Video Editor", bio:"Full-stack developer and visual storyteller — bridges creative editing with technical depth. Adobe Premiere, After Effects & Next.js specialist with millions of views delivered.",
+     img:"https://graph.facebook.com/motionofnaimur/picture?type=large",
+     social:[
+       {url:"https://www.facebook.com/motionofnaimur",           icon:"fab fa-facebook-f"},
+       {url:"https://www.instagram.com/motionofnaimur",          icon:"fab fa-instagram"},
+       {url:"https://www.linkedin.com/in/motionofnaimur",        icon:"fab fa-linkedin-in"},
+       {url:"https://github.com/developer-naimur-rahman",        icon:"fab fa-github"},
+       {url:"https://www.youtube.com/@motionofnaimur",           icon:"fab fa-youtube"},
+       {url:"https://x.com/motionofnaimur",                      icon:"fab fa-x-twitter"},
+       {url:"https://www.behance.net/motionofnaimur",            icon:"fab fa-behance"},
+       {url:"https://motionofnaimur.netlify.app",                icon:"fas fa-globe"},
+       {url:"https://wa.me/8801734108616",                       icon:"fab fa-whatsapp"},
+       {url:"mailto:naimur582582@gmail.com",                     icon:"fas fa-envelope"}
+     ]},
+    {id:"t5", name:"MD Arafat Hossain", role:"General Manager & AI Expert", bio:"Ultra-level AI Expert & Prompt Engineer. Oversees team operations, account management and automation pipelines that power Vision Flow's efficiency at scale.",
+     img:"https://graph.facebook.com/arafatislam134/picture?type=large",
+     social:[
+       {url:"https://www.facebook.com/arafatislam134",          icon:"fab fa-facebook-f"},
+       {url:"https://www.instagram.com/arafatislam_999/",       icon:"fab fa-instagram"},
+       {url:"https://arafat-cinematic-ai.lovable.app/",         icon:"fas fa-globe"},
+       {url:"https://wa.me/8801329954960",                      icon:"fab fa-whatsapp"},
+       {url:"mailto:foraiwork143@gmail.com",                    icon:"fas fa-envelope"}
+     ]},
+    {id:"t6", name:"MD Kamruzzaman Papon", role:"Software Engineer & Video Editor", bio:"Software engineer and cinematic storyteller — combines technical depth with creative precision to deliver premium edits across commercial, social & documentary formats.",
+     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Papon2024&skinColor=Tanned&topType=ShortHairTheCaesar&facialHairType=BeardLight&facialHairColor=Black2&clotheType=BlazerAndStripes&backgroundColor=0f172a",
+     social:[
+       {url:"https://wa.me/8801837346318",           icon:"fab fa-whatsapp"},
+       {url:"mailto:kamruzzmanpopon@gmail.com",       icon:"fas fa-envelope"}
+     ]},
+    {id:"t7", name:"MD Jasif Hasan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.",
+     img:"https://api.dicebear.com/8.x/avataaars/svg?seed=Jasif2024&skinColor=Light&topType=ShortHairFrizzle&facialHairType=Blank&clotheType=Hoodie&backgroundColor=0f172a",
+     social:[
+       {url:"https://www.facebook.com/md.superearner",         icon:"fab fa-facebook-f"},
+       {url:"https://www.instagram.com/mdjasifpro/",           icon:"fab fa-instagram"},
+       {url:"https://canva.link/cbxqb2wi7s8dh4a",             icon:"fas fa-palette"},
+       {url:"https://wa.me/8801763842599",                    icon:"fab fa-whatsapp"},
+       {url:"mailto:mdjasifpro@gmail.com",                    icon:"fas fa-envelope"}
+     ]}
   ],
 
   courses: [
@@ -1644,7 +1699,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 9,
+    version: 10,
     updatedAt: 0
   }
 };
@@ -1700,7 +1755,8 @@ let STATE = {
   fbUnsub: null,
   activePortfolioCat: 'all',
   activePortfolioSubcat: null,
-  _pendingSync: false
+  _pendingSync: 0,
+  _ignoreSyncUntil: 0
 };
 
 /* Debounced renderAll — prevents rapid successive re-renders (e.g. Firebase echo) */
@@ -1870,6 +1926,11 @@ function loadData(){
         if(_ps2 && _d9P['p-s2']) _ps2.img = _d9P['p-s2'].img;
         STATE.data.meta.version = 9;
       }
+      // v10 migration: force-reset all team members to DEFAULT_DATA (real photos + correct social links)
+      if((STATE.data.meta.version||0) < 10){
+        STATE.data.team = JSON.parse(JSON.stringify(DEFAULT_DATA.team));
+        STATE.data.meta.version = 10;
+      }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((STATE.data.meta.version||0) < 4){
         const _imgUp={'r1':'./pinaki.jpg','r2':'https://graph.facebook.com/clicksofshawon/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
@@ -1928,11 +1989,13 @@ async function persist(){
     return;
   }
   if(STATE.fbConfigured && STATE.fbDb){
-    STATE._pendingSync = true;
+    STATE._pendingSync = 3; // block up to 3 echo snapshots (local cache + 2 server confirms)
+    STATE._ignoreSyncUntil = Date.now() + 5000; // extra: ignore any snapshot for 5s after save
     try {
       await window.__fb.setDoc(window.__fb.doc(STATE.fbDb, 'site','main'), STATE.data);
     } catch(e){
-      STATE._pendingSync = false;
+      STATE._pendingSync = 0;
+      STATE._ignoreSyncUntil = 0;
       console.warn('Firebase save failed', e);
       showToast('Cloud save failed — saved locally', 'error');
     }
@@ -2230,7 +2293,7 @@ function renderTeam(){
   }
   $('#team-grid').innerHTML = members.map((t,i)=>`
     <div class="glass-card team-card" data-scroll data-scroll-delay="${Math.min(i,3)*80}">
-      <div class="team-avatar"><img src="${esc(t.img)}" alt="${esc(t.name)}" loading="lazy"/></div>
+      <div class="team-avatar"><img src="${esc(t.img||'')}" alt="${esc(t.name)}" loading="lazy" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${esc(encodeURIComponent(t.name))}&background=0f172a&color=06b6d4&size=256&bold=true&format=png'"/></div>
       <h4>${esc(t.name)}</h4>
       <div class="team-role">${esc(t.role)}</div>
       <p class="team-bio">${esc(t.bio||'')}</p>
@@ -2316,6 +2379,8 @@ function detectSocialIcon(url){
     [/threads\.net/, 'fab fa-threads'],
     [/quora\.com/, 'fab fa-quora'],
     [/skype\.com|skype:/, 'fab fa-skype'],
+    [/canva\.com|canva\.link/, 'fas fa-palette'],
+    [/netlify\.app|github\.io|lovable\.app/, 'fas fa-globe'],
     [/^mailto:/, 'fas fa-envelope'],
     [/^tel:|^callto:/, 'fas fa-phone']
   ];
@@ -2335,6 +2400,10 @@ const _SSVG={
   'telegram':'M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z',
   'tiktok':'M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.79a8.19 8.19 0 0 0 4.77 1.52V6.82a4.85 4.85 0 0 1-1-.13z',
   'discord':'M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963.021-.04.001-.088-.041-.104a13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028z',
+  'envelope':'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
+  'globe':'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+  'palette':'M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z',
+  'behance':'M6.938 4.503c.702 0 1.34.06 1.92.188.577.13 1.07.33 1.485.61.41.28.733.65.96 1.12.225.47.34 1.05.34 1.73 0 .74-.17 1.36-.507 1.86-.338.5-.837.9-1.502 1.22.906.26 1.576.72 2.022 1.37.448.66.67 1.45.67 2.36 0 .75-.13 1.4-.4 1.96-.27.56-.65 1.02-1.14 1.39-.49.37-1.075.64-1.752.82-.68.18-1.39.27-2.143.27H.17V4.503h6.768zM6.354 9.1c.577 0 1.05-.13 1.422-.4.37-.27.557-.696.557-1.278 0-.32-.06-.58-.175-.78-.117-.2-.277-.36-.48-.47-.202-.11-.43-.185-.683-.225C6.74 5.907 6.467 5.89 6.18 5.89H2.56V9.1h3.793zm.232 5.55c.328 0 .633-.033.916-.1.283-.066.53-.175.74-.327.21-.153.375-.355.495-.608.12-.253.18-.565.18-.94 0-.75-.215-1.29-.645-1.62-.43-.33-1.008-.494-1.73-.494H2.56v4.09h4.026zm8.99.61c.338.327.825.49 1.46.49.455 0 .847-.115 1.178-.344.332-.23.535-.475.61-.735h1.938c-.31 1.01-.786 1.73-1.43 2.167-.643.437-1.42.655-2.333.655-.634 0-1.205-.103-1.712-.307-.508-.207-.94-.503-1.298-.888-.358-.385-.633-.843-.823-1.375-.19-.534-.284-1.118-.284-1.75 0-.614.097-1.187.292-1.717.196-.53.473-.987.832-1.373.358-.386.795-.69 1.31-.915.516-.224 1.088-.337 1.716-.337.7 0 1.31.134 1.828.4.517.268.943.633 1.278 1.095.336.464.578.99.726 1.58.147.59.21 1.205.19 1.845H15.2c0 .64.21 1.05.576 1.357zm2.492-3.84c-.27-.295-.695-.44-1.278-.44-.376 0-.682.06-.92.18-.24.12-.434.27-.582.454-.148.183-.25.376-.304.578-.056.202-.087.387-.095.556H19.4c-.07-.618-.33-1.033-.6-1.33zm-3.08-4.74h4.44V5.25h-4.44v1.43z',
   'link':'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24 5-5-5z'
 };
 function getSVGIcon(cls){
@@ -3642,9 +3711,10 @@ async function bootFirebase(){
     // Track lead count for new-lead browser notifications
     let _lastLeadCount = (STATE.data.leads||[]).length;
 
-    // Live listen — skip echo when we triggered the save ourselves (_pendingSync flag)
+    // Live listen — skip our own save echo using counter + time lock
     STATE.fbUnsub = window.__fb.onSnapshot(window.__fb.doc(STATE.fbDb,'site','main'), snap => {
-      if(STATE._pendingSync){ STATE._pendingSync = false; return; }
+      if(STATE._pendingSync > 0){ STATE._pendingSync--; return; }
+      if(STATE._ignoreSyncUntil && Date.now() < STATE._ignoreSyncUntil) return;
       if(snap.exists()){
         const d = snap.data();
         const cloudTs = d?.meta?.updatedAt || 0;
