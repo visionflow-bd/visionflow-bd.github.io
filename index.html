@@ -332,19 +332,60 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .glass-card::after,.portfolio-item::after{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(500px circle at var(--cx,50%) var(--cy,50%),rgba(6,182,212,.13),transparent 50%);opacity:0;transition:opacity .35s;pointer-events:none;z-index:1}
 .glass-card:hover::after,.portfolio-item:hover::after{opacity:1}
 
-/* SERVICES */
-.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
-.service-card{padding:28px;text-align:left}
-.service-icon{
-  width:54px;height:54px;border-radius:14px;
-  display:grid;place-items:center;font-size:1.3rem;color:#fff;
-  background:var(--gradient-1);margin-bottom:18px;
-  box-shadow:0 8px 20px rgba(6,182,212,.25);
+/* SERVICES — Ultra Premium */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}
+.service-card{
+  padding:30px 26px 26px;text-align:left;
+  position:relative;overflow:hidden;
+  border-top:2px solid transparent;
+  transition:var(--transition);
 }
-.service-card h3{font-size:1.15rem;margin-bottom:8px}
-.service-card p{font-size:.92rem;color:var(--text-muted)}
-.service-card .service-list{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
-.service-card .service-list span{font-size:.7rem;padding:4px 9px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);color:#67e8f9;border-radius:999px}
+.service-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(6,182,212,.06) 0%,rgba(139,92,246,.04) 100%);
+  opacity:0;transition:opacity .4s;
+  pointer-events:none;
+}
+.service-card:hover{border-color:rgba(6,182,212,.0);transform:translateY(-6px)}
+.service-card:hover::before{opacity:1}
+.service-card-accent{
+  position:absolute;top:0;left:0;right:0;
+  height:2px;background:var(--gradient-1);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+}
+.service-card:hover .service-card-accent{transform:scaleX(1)}
+.service-num{
+  position:absolute;top:16px;right:18px;
+  font-size:3.8rem;font-weight:900;font-family:'Outfit',sans-serif;
+  line-height:1;letter-spacing:-.04em;
+  background:var(--gradient-1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  opacity:.11;pointer-events:none;
+  transition:opacity .4s;
+}
+.service-card:hover .service-num{opacity:.22}
+.service-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:grid;place-items:center;font-size:1.25rem;color:#fff;
+  background:var(--gradient-1);margin-bottom:18px;
+  box-shadow:0 8px 24px rgba(6,182,212,.3);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+}
+.service-card:hover .service-icon{
+  transform:scale(1.1) rotate(-5deg);
+  box-shadow:0 14px 32px rgba(6,182,212,.5);
+}
+.service-card h3{font-size:1.15rem;margin-bottom:9px;font-weight:800}
+.service-card p{font-size:.9rem;color:var(--text-muted);line-height:1.67}
+.service-card .service-list{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px}
+.service-card .service-list span{
+  font-size:.69rem;padding:5px 10px;
+  background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.18);
+  color:#67e8f9;border-radius:999px;
+  transition:background .25s,border-color .25s;
+}
+.service-card:hover .service-list span{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.35)}
 
 /* PORTFOLIO TABS */
 .portfolio-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:40px}
@@ -670,10 +711,77 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   border:0;cursor:pointer;
   box-shadow:var(--shadow-glow);
   font-size:1.3rem;
-  transition:var(--transition);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
 }
-.fab:hover{transform:scale(1.1) rotate(8deg)}
+.fab:hover{transform:scale(1.1)}
 @media(max-width:580px){.fab{bottom:18px;left:18px;width:50px;height:50px}}
+
+/* WhatsApp FAB — real brand green */
+#wa-fab{
+  background:#25D366;
+  box-shadow:0 4px 24px rgba(37,211,102,.45);
+  overflow:visible;
+}
+#wa-fab:hover{
+  transform:scale(1.13) translateY(-3px);
+  box-shadow:0 12px 36px rgba(37,211,102,.6);
+}
+#wa-fab::before{
+  content:'';position:absolute;
+  inset:-14px;border-radius:50%;
+  background:rgba(37,211,102,.22);
+  animation:wa-pulse 2.2s ease-in-out infinite;
+  pointer-events:none;
+  z-index:-1;
+}
+@keyframes wa-pulse{
+  0%,100%{transform:scale(.85);opacity:.6}
+  60%{transform:scale(1.5);opacity:0}
+}
+
+/* Custom scroll animation — replaces AOS for dynamic renders */
+[data-scroll]{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
+[data-scroll].in-view{opacity:1;transform:none}
+[data-scroll-delay="80"]{transition-delay:.08s}
+[data-scroll-delay="160"]{transition-delay:.16s}
+[data-scroll-delay="240"]{transition-delay:.24s}
+[data-scroll-delay="320"]{transition-delay:.32s}
+
+/* Language toggle button */
+.lang-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:7px 13px;border-radius:20px;
+  background:rgba(6,182,212,.07);
+  border:1px solid rgba(6,182,212,.28);
+  color:var(--accent);font-size:.8rem;font-weight:700;
+  cursor:pointer;transition:var(--transition);
+  letter-spacing:.05em;flex-shrink:0;
+}
+.lang-btn:hover{background:rgba(6,182,212,.16);border-color:var(--accent);color:#fff}
+.lang-btn .flag{font-size:.95rem;line-height:1}
+
+/* Bangladesh badge */
+.bd-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  background:rgba(0,182,75,.1);border:1px solid rgba(0,182,75,.2);
+  color:#4ade80;font-size:.68rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+
+/* Portfolio code peek (tech showcase) */
+.portfolio-code-peek{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,rgba(2,6,18,.98) 0%,rgba(2,6,18,.85) 80%,transparent 100%);
+  padding:12px 14px 14px;
+  transform:translateY(100%);
+  transition:transform .38s cubic-bezier(.4,0,.2,1);
+  z-index:5;
+  pointer-events:none;
+}
+.portfolio-item:hover .portfolio-code-peek{transform:translateY(0)}
+.pcp-filename{font-family:'Fira Code','Courier New',monospace;font-size:.6rem;color:rgba(100,180,255,.6);margin-bottom:5px;letter-spacing:.04em}
+.pcp-code{font-family:'Fira Code','Courier New',monospace;font-size:.62rem;line-height:1.6;color:#7dd3fc;white-space:pre;overflow:hidden;max-height:72px}
 
 /* Animations on scroll for hero */
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
@@ -746,6 +854,60 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
 .social-icon-labeled{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none}
 .social-icon-labeled .social-lbl{font-size:.62rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:center;max-width:72px;line-height:1.2}
 .social-icon-labeled:hover .social-lbl{color:var(--accent)}
+
+/* ========== LIGHT THEME (OS preference) ========== */
+@media(prefers-color-scheme:light){
+  :root{
+    --bg-deep:#eef4fc;
+    --bg-dark:#e2ecf8;
+    --bg-card:rgba(255,255,255,.88);
+    --bg-card-hover:rgba(255,255,255,.98);
+    --bg-glass:rgba(0,0,0,.025);
+    --text-primary:#0c1220;
+    --text-secondary:#1d3154;
+    --text-muted:#4a6585;
+    --border-light:rgba(0,40,100,.1);
+    --border-mid:rgba(0,40,100,.16);
+    --border-hover:rgba(6,182,212,.55);
+    --shadow-sm:0 2px 8px rgba(0,20,60,.1);
+    --shadow-md:0 8px 32px rgba(0,20,60,.12);
+    --shadow-lg:0 16px 48px rgba(0,20,60,.15);
+    --shadow-glow:0 8px 28px rgba(6,182,212,.22);
+  }
+  body{background:#dce8f7}
+  .topbar{background:rgba(220,232,248,.9);border-color:rgba(6,182,212,.2)}
+  .topbar.scrolled{background:rgba(255,255,255,.96);box-shadow:0 4px 20px rgba(0,20,60,.1)}
+  h1,h2,h3,h4,h5{color:var(--text-primary)}
+  .navlinks button.nav-link{color:#4a6585}
+  .navlinks button.nav-link:hover{color:#0c1220;background:rgba(0,0,0,.05)}
+  .section-label{color:var(--accent)}
+  .text-muted{color:#4a6585}
+  .glass-card{background:rgba(255,255,255,.82);border-color:rgba(6,182,212,.14)}
+  .glass-card:hover{background:rgba(255,255,255,.98)}
+  .ticker-section{background:rgba(255,255,255,.45);border-color:rgba(6,182,212,.12)}
+  .ticker-section::before{background:linear-gradient(to right,#dce8f7,transparent)}
+  .ticker-section::after{background:linear-gradient(to left,#dce8f7,transparent)}
+  .ticker-brand{color:#1d3154;background:rgba(255,255,255,.7)}
+  .ticker-brand:hover{background:rgba(6,182,212,.12);color:#0c1220}
+  .ticker-person{color:#1d3154;background:rgba(255,255,255,.7)}
+  section.section-alt{background:linear-gradient(180deg,#d4e4f5 0%,#dce8f7 100%)}
+  .portfolio-item{background:rgba(255,255,255,.85);border-color:rgba(0,40,100,.1)}
+  .portfolio-media{background:#c8d8ec}
+  .portfolio-no-thumb{background:linear-gradient(135deg,#c8d8ec 0%,#b8cce0 100%)}
+  .portfolio-no-thumb i{color:var(--accent)}
+  .portfolio-no-thumb span{color:#4a6585}
+  .portfolio-body p{color:#4a6585}
+  .service-card p{color:#4a6585}
+  .tab-btn{background:rgba(6,182,212,.06);border-color:rgba(6,182,212,.15);color:#4a6585}
+  .tab-btn:hover{color:#0c1220}
+  .tab-btn.active{color:#fff}
+  .hero-stat-label{color:#4a6585}
+  footer{background:linear-gradient(180deg,#0a1628 0%,#060d1e 100%)}
+  .modal{background:#0f1e38}
+  input,select,textarea{background:rgba(255,255,255,.8)!important;color:#0c1220!important;border-color:rgba(6,182,212,.3)!important}
+  .code-card{background:#0c1425;border-color:rgba(6,182,212,.2)}
+  .admin-panel{background:#0a1628}
+}
 </style>
 </head>
 <body>
@@ -761,15 +923,18 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
     </button>
     <div class="navlinks" id="navlinks">
       <button class="nav-link" data-section="home" onclick="switchMode('agency');goSection('home')">Home</button>
-      <button class="nav-link" data-section="services" onclick="switchMode('agency');goSection('services')">Services</button>
-      <button class="nav-link" data-section="portfolio" onclick="switchMode('agency');goSection('portfolio')">Portfolio</button>
+      <button class="nav-link" data-section="services" onclick="switchMode('agency');goSection('services')" data-i18n="Services">Services</button>
+      <button class="nav-link" data-section="portfolio" onclick="switchMode('agency');goSection('portfolio')" data-i18n="Portfolio">Portfolio</button>
       <button class="nav-link" data-section="code" onclick="switchMode('agency');goSection('code')">Code Demos</button>
       <button class="nav-link" data-section="portfolio" onclick="goLiveSites()">Live Sites</button>
       <button class="nav-link" data-section="team" onclick="goSection('team')">Our Team</button>
       <button class="nav-link" data-section="courses" onclick="switchMode('academy');goSection('courses')">Academy</button>
-      <button class="nav-link" data-section="reviews" onclick="goSection('reviews')">Reviews</button>
-      <button class="nav-link" data-section="contact" onclick="goSection('contact')">Contact</button>
-      <button class="btn btn-primary btn-sm" onclick="goSection('contact')"><i class="fas fa-rocket"></i> Hire Us</button>
+      <button class="nav-link" data-section="reviews" onclick="goSection('reviews')" data-i18n="Reviews">Reviews</button>
+      <button class="nav-link" data-section="contact" onclick="goSection('contact')" data-i18n="Contact">Contact</button>
+      <button class="btn btn-primary btn-sm" onclick="goSection('contact')"><i class="fas fa-rocket"></i> <span data-i18n="Hire Us">Hire Us</span></button>
+      <button class="lang-btn" id="lang-toggle-btn" onclick="toggleLang()" title="Switch language / ভাষা পরিবর্তন">
+        <span class="flag" id="lang-flag">🇧🇩</span><span id="lang-label">বাংলা</span>
+      </button>
     </div>
     <button class="menu-btn" id="menu-btn" onclick="const n=document.getElementById('navlinks');const o=n.classList.toggle('open');this.setAttribute('aria-expanded',o)" aria-label="Menu" aria-expanded="false" aria-controls="navlinks"><i class="fas fa-bars"></i></button>
   </nav>
@@ -780,7 +945,10 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
   <div class="hero-bg"></div>
   <div class="hero-grid-bg"></div>
   <div class="container hero-inner">
-    <div class="eyebrow" data-aos="fade-up">Premium Digital Solutions • Bangladesh &amp; Worldwide</div>
+    <div class="eyebrow" data-aos="fade-up" style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
+      <span>Premium Digital Solutions • Bangladesh &amp; Worldwide</span>
+      <span class="bd-badge">🇧🇩 Bangladeshi Dev Agency</span>
+    </div>
     <h1 data-aos="fade-up" data-aos-delay="100" id="hero-h1">
       Empowering Brands With <br/>
       <span class="flow">Vision &amp; Flow</span>
@@ -836,16 +1004,16 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
       <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
       <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
       <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
-      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill='%235B21B6'/%3E%3Ctext x='22' y='27' text-anchor='middle' font-size='14' font-weight='900' fill='white' font-family='Arial'%3EHC%3C/text%3E%3C/svg%3E" width="44" height="44" alt="HyperConnect"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill='%23059669'/%3E%3Ctext x='22' y='19' text-anchor='middle' font-size='9' font-weight='900' fill='white' font-family='Arial'%3ETAQWA%3C/text%3E%3Ctext x='22' y='31' text-anchor='middle' font-size='7.5' font-weight='700' fill='%2386efac' font-family='Arial'%3EACADEMY%3C/text%3E%3C/svg%3E" width="44" height="44" alt="Taqwa Talent Academy"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
       <!-- duplicate for seamless loop -->
       <a class="ticker-brand" href="https://www.yamaha.com" target="_blank" rel="noopener" data-name="Yamaha"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Yamaha_logo.svg/250px-Yamaha_logo.svg.png" width="44" height="44" alt="Yamaha" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">YM</span>Yamaha</a>
       <a class="ticker-brand" href="https://www.unilever.com" target="_blank" rel="noopener" data-name="Unilever"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Unilever_text_logo.svg/250px-Unilever_text_logo.svg.png" width="44" height="44" alt="Unilever" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">UNI</span>Unilever</a>
       <a class="ticker-brand" href="https://pranfoods.net" target="_blank" rel="noopener" data-name="Pran"><img class="ticker-brand-logo" src="https://pranfoods.net/storage/site-icons/ac5a068e-83bc-4e4d-9708-713ec8a38d1a.gif" width="44" height="44" alt="Pran" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">PR</span>Pran</a>
       <a class="ticker-brand" href="https://www.sunsilk.com" target="_blank" rel="noopener" data-name="Sunsilk"><img class="ticker-brand-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sunsilk_%282022%29.png/250px-Sunsilk_%282022%29.png" width="44" height="44" alt="Sunsilk" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">SUN</span>Sunsilk</a>
       <a class="ticker-brand" href="https://www.facebook.com/bangladeshtimes71" target="_blank" rel="noopener" data-name="Bangladesh Times"><img class="ticker-brand-logo" src="https://graph.facebook.com/bangladeshtimes71/picture?type=large" width="44" height="44" alt="Bangladesh Times" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">BT</span>Bangladesh Times</a>
-      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="https://logo.clearbit.com/hyperconnect.com" width="44" height="44" alt="HyperConnect" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
-      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="https://graph.facebook.com/61559334671232/picture?type=large" width="44" height="44" alt="Taqwa Talent Academy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
+      <a class="ticker-brand" href="https://hyperconnect.com" target="_blank" rel="noopener" data-name="HyperConnect"><img class="ticker-brand-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill='%235B21B6'/%3E%3Ctext x='22' y='27' text-anchor='middle' font-size='14' font-weight='900' fill='white' font-family='Arial'%3EHC%3C/text%3E%3C/svg%3E" width="44" height="44" alt="HyperConnect"/><span class="ticker-brand-badge" style="display:none">HC</span>HyperConnect</a>
+      <a class="ticker-brand" href="https://www.facebook.com/profile.php?id=61559334671232" target="_blank" rel="noopener" data-name="Taqwa Talent Academy"><img class="ticker-brand-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill='%23059669'/%3E%3Ctext x='22' y='19' text-anchor='middle' font-size='9' font-weight='900' fill='white' font-family='Arial'%3ETAQWA%3C/text%3E%3Ctext x='22' y='31' text-anchor='middle' font-size='7.5' font-weight='700' fill='%2386efac' font-family='Arial'%3EACADEMY%3C/text%3E%3C/svg%3E" width="44" height="44" alt="Taqwa Talent Academy"/><span class="ticker-brand-badge" style="display:none">TTA</span>Taqwa Talent Academy</a>
     </div>
   </div>
 
@@ -1061,7 +1229,10 @@ footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:r
     </div>
     <div class="foot-bottom">
       <div>© <span id="year"></span> <span id="foot-brand">Vision Flow</span>. All rights reserved.</div>
-      <div id="secret-admin-trigger">Crafted with <i class="fas fa-heart" style="color:#f43f5e"></i> in Bangladesh</div>
+      <div id="secret-admin-trigger" style="display:flex;align-items:center;gap:10px">
+        <span>Crafted with <i class="fas fa-heart" style="color:#f43f5e"></i> in Bangladesh</span>
+        <span class="bd-badge">🇧🇩 Made in BD</span>
+      </div>
     </div>
   </div>
 </footer>
@@ -1408,7 +1579,7 @@ app.post('/login', async (req, res) => {
 
   liveSites: [
     {id:"l1", title:"Babylist BD", desc:"Bangladesh's leading baby products marketplace — full e-commerce with payment gateway integration.", img:"data:image/png;base64,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", url:"https://babylist-bd.com", stack:"Laravel + Vue + MySQL"},
-    {id:"l2", title:"Vision Flow Agency & Academy", desc:"Full-stack agency & academy website with admin panel, Firebase sync & real-time data.", img:"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 900 600%22%3E%3Crect fill=%22%23050810%22 width=%22900%22 height=%22600%22/%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2306b6d4%22/%3E%3Cstop offset=%221%22 stop-color=%22%238b5cf6%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x=%22450%22 y=%22260%22 text-anchor=%22middle%22 dominant-baseline=%22central%22 fill=%22url(%23g)%22 font-size=%22100%22 font-family=%22Arial%22 font-weight=%22900%22%3EVF%3C/text%3E%3Ctext x=%22450%22 y=%22340%22 text-anchor=%22middle%22 fill=%22%23f8fafc%22 font-size=%2228%22 font-family=%22Arial%22 font-weight=%22700%22%3EVision Flow%3C/text%3E%3Ctext x=%22450%22 y=%22378%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2220%22 font-family=%22Arial%22%3EAgency %26amp%3B Academy%3C/text%3E%3C/svg%3E", url:"https://visionflow-bd.github.io/Agency-Academy/", stack:"HTML + JS + Firebase"},
+    {id:"l2", title:"Vision Flow Agency & Academy", desc:"Full-stack agency & academy website with admin panel, Firebase sync & real-time data.", img:"https://visionflow-bd.github.io/Agency-Academy/og-image.png", url:"https://visionflow-bd.github.io/Agency-Academy/", stack:"HTML + JS + Firebase"},
     {id:"l3", title:"Vision Flow Portfolio", desc:"Personal portfolio site for the founder — premium dark theme.", img:"https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=900&q=70", url:"#", stack:"HTML + CSS + JS"},
     {id:"l4", title:"Modern Restaurant", desc:"Demo template — online ordering & reservation system.", img:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70", url:"#", stack:"Next.js + Stripe"},
     {id:"l5", title:"SaaS Landing", desc:"Demo template — high-converting SaaS landing page.", img:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=70", url:"#", stack:"React + Tailwind"},
@@ -1445,7 +1616,7 @@ app.post('/login', async (req, res) => {
     {id:"r-pm", name:"Pori Moni", role:"Actress · Bangladesh", country:"Bangladesh", rating:5, text:"Working with Vision Flow on my social media content has been a seamless experience. The editing is glamorous, on-brand and always on time. I trust no one else with my online presence.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg/250px-Porimoni_in_Dhaka_%287%29_%28cropped%29.jpg"},
     {id:"r5", name:"Belal Hussain", role:"YouTube Creator", country:"Bangladesh", rating:5, text:"Running an English-language YouTube channel demands top-tier editing — and Vision Flow delivers every time. My international audience has grown 40% since working with them. Professional, fast and always on-brand.", img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=70"},
     // ── Web Development + E-commerce ──
-    {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://graph.facebook.com/babylistbd/picture?type=large"},
+    {id:"r6", name:"Sharmin Sultana", role:"Founder, Babylist BD", country:"Bangladesh", rating:5, text:"Vision Flow built our entire e-commerce platform with custom code — beautiful design, lightning-fast performance, and a seamless admin panel. They also handle our SEO and Facebook page management. Best decision we made.", img:"https://randomuser.me/api/portraits/women/68.jpg"},
     {id:"r7", name:"David Chen", role:"SaaS Founder", country:"Singapore", rating:5, text:"Hired Vision Flow for our dashboard rebuild. Communication was flawless, code quality was enterprise-grade, and they delivered ahead of schedule. Will definitely work with them again on our next product.", img:"https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70"},
     // ── Social Media + Content Creation ──
     {id:"r8", name:"Sadia Islam Tuli", role:"Content Creator & Vlogger", country:"USA", rating:5, text:"Vision Flow handles everything — vlog editing, UGC content, YouTube, Instagram, Facebook setup and management. Being in New York and having a team this reliable in Bangladesh is incredible. They feel like my creative partner.", img:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=70"},
@@ -1462,7 +1633,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 7,
+    version: 8,
     updatedAt: 0
   }
 };
@@ -1662,6 +1833,16 @@ function loadData(){
         }
         STATE.data.meta.version = 6;
       }
+      // v8 migration: og-image for VF live site; Bangladeshi woman photo for r6; fix SEO images
+      if((STATE.data.meta.version||0) < 8){
+        const _l2v8 = (STATE.data.liveSites||[]).find(l=>l.id==='l2');
+        if(_l2v8) _l2v8.img = 'https://visionflow-bd.github.io/Agency-Academy/og-image.png';
+        const _r6v8 = (STATE.data.reviews||[]).find(r=>r.id==='r6');
+        if(_r6v8) _r6v8.img = 'https://randomuser.me/api/portraits/women/68.jpg';
+        const _d8P = {}; (DEFAULT_DATA.portfolio||[]).forEach(p=>{ _d8P[p.id]=p; });
+        ['p-s1','p-s3','p-s4','p-s5'].forEach(id=>{ const p=(STATE.data.portfolio||[]).find(p=>p.id===id); if(p&&_d8P[id]) p.img=_d8P[id].img; });
+        STATE.data.meta.version = 8;
+      }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((STATE.data.meta.version||0) < 4){
         const _imgUp={'r1':'./pinaki.jpg','r2':'https://graph.facebook.com/clicksofshawon/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
@@ -1834,25 +2015,31 @@ function renderAll(){
   renderContact();
   // Update lead badge only — do NOT refresh admin tab (it destroys unsaved edits mid-typing)
   $('#lead-badge').textContent = (STATE.data.leads||[]).length;
-  // After the initial render: suppress AOS re-animation for elements already in the viewport
-  if(_initialRenderDone && window.AOS){
-    const vh = window.innerHeight;
-    document.querySelectorAll('[data-aos]').forEach(el=>{
-      if(el.getBoundingClientRect().top < vh - 30) el.classList.add('aos-init','aos-animate');
-    });
-  }
+  observeScrollItems();
   _initialRenderDone = true;
 }
 
 function renderServices(){
   $('#services-grid').innerHTML = (STATE.data.services||[]).map((s,i)=>`
-    <div class="glass-card service-card">
+    <div class="glass-card service-card" data-scroll data-scroll-delay="${(i%4)*80}">
+      <div class="service-card-accent"></div>
+      <div class="service-num">${String(i+1).padStart(2,'0')}</div>
       <div class="service-icon"><i class="${esc(s.icon)}"></i></div>
       <h3>${esc(s.title)}</h3>
       <p>${esc(s.desc)}</p>
       <div class="service-list">${(s.tags||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div>
     </div>`).join('');
 }
+
+const _TECH_PEEK = {
+  'cat-web': {file:'index.php',code:`<?php\nRoute::get('/products', [ProductCtrl::class,\n  'index'])->middleware('auth:sanctum');\n\nDB::table('orders')\n  ->where('status','pending')\n  ->orderByDesc('created_at')\n  ->get();`},
+  'cat-app': {file:'App.tsx',code:`const [data, setData] = useState([]);\n\nuseEffect(()=>{\n  fetch('/api/v1/dashboard')\n    .then(r => r.json())\n    .then(setData);\n}, []);\n\nreturn <FlatList data={data}\n  renderItem={({item}) =>\n    <Card key={item.id} {...item}/>}/>`},
+  'cat-ai': {file:'agent.py',code:`chain = LLMChain(\n  llm=ChatOpenAI(model='gpt-4o'),\n  prompt=PromptTemplate(\n    input_variables=['query'],\n    template=SYSTEM_PROMPT\n  )\n)\nresult = chain.run(query=user_input)\nreturn {'response': result}`},
+  'cat-seo': {file:'sitemap.xml',code:`<!-- Technical SEO Audit -->\n<urlset xmlns="http://..sitemaps..">\n  <url>\n    <loc>/products/best-baby-gear</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n</urlset>`},
+  'cat-video': {file:'timeline.aep',code:`// After Effects Expression\nvar fps = thisComp.frameDuration;\nvar t = time - inPoint;\nvar v = linear(t,0,.5,0,1);\neaseOut(v, 0, 1) * 100 + '%';`},
+  'cat-design': {file:'design.css',code:`.hero-section {\n  background: linear-gradient(\n    135deg,\n    #06b6d4 0%,\n    #8b5cf6 50%,\n    #ec4899 100%\n  );\n  border-radius: 24px;\n  padding: 80px 60px;\n  box-shadow: 0 32px 80px\n    rgba(6,182,212,.35);\n}`},
+  'cat-social': {file:'campaign.js',code:`// Meta Ads Automation\nconst campaign = await fb.ads\n  .createCampaign({\n    objective: 'CONVERSIONS',\n    budget: 50_000,\n    targeting: {\n      age_min: 18,\n      interests: ['ecommerce']\n    }\n  });`}
+};
 
 function _portfolioCard(p, catLabel, idx){
   const ytId = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1];
@@ -1864,9 +2051,11 @@ function _portfolioCard(p, catLabel, idx){
       ? `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'portfolio-no-thumb\\'><i class=\\'fas fa-photo-video\\'></i><span>Preview Coming Soon</span></div>')"/>`
       : noThumb;
   const delay = ((idx||0) % 4) * 80;
+  const peek = _TECH_PEEK[p.catId];
+  const codePeek = peek ? `<div class="portfolio-code-peek"><div class="pcp-filename">⬡ ${peek.file}</div><div class="pcp-code">${peek.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>` : '';
   return `
-  <div class="portfolio-item" data-aos="fade-up" data-aos-delay="${delay}">
-    <div class="portfolio-media">${media}</div>
+  <div class="portfolio-item" data-scroll data-scroll-delay="${delay}">
+    <div class="portfolio-media">${media}${codePeek}</div>
     <div class="portfolio-body">
       <span class="portfolio-cat">${esc(catLabel||'')}</span>
       <h4>${esc(p.title)}</h4>
@@ -1990,7 +2179,7 @@ function renderCode(){
 
 function renderLive(){
   $('#live-grid').innerHTML = (STATE.data.liveSites||[]).map((l,i)=>`
-    <div class="glass-card live-card" data-aos="fade-up" data-aos-delay="${(i%3)*80}">
+    <div class="glass-card live-card" data-scroll data-scroll-delay="${(i%3)*80}">
       <div class="live-thumb"><img src="${esc(l.img)}" loading="lazy" alt="${esc(l.title)}"/><span class="live-badge">LIVE</span></div>
       <div class="live-body">
         <h4>${esc(l.title)}</h4>
@@ -2010,7 +2199,7 @@ function renderTeam(){
     return;
   }
   $('#team-grid').innerHTML = members.map((t,i)=>`
-    <div class="glass-card team-card" data-aos="fade-up" data-aos-delay="${i*80}">
+    <div class="glass-card team-card" data-scroll data-scroll-delay="${Math.min(i,3)*80}">
       <div class="team-avatar"><img src="${esc(t.img)}" alt="${esc(t.name)}" loading="lazy"/></div>
       <h4>${esc(t.name)}</h4>
       <div class="team-role">${esc(t.role)}</div>
@@ -2030,7 +2219,7 @@ function renderCourses(){
     return;
   }
   $('#courses-grid').innerHTML = courses.map((c,i)=>`
-    <div class="glass-card course-card" data-aos="fade-up" data-aos-delay="${(i%3)*80}">
+    <div class="glass-card course-card" data-scroll data-scroll-delay="${(i%3)*80}">
       <div class="course-thumb">
         <img src="${esc(c.img)}" loading="lazy" alt="${esc(c.title)}"/>
         <span class="course-level">${esc(c.level||'All Levels')}</span>
@@ -2057,7 +2246,7 @@ function renderReviews(){
     const stars = '★'.repeat(r.rating||5) + '☆'.repeat(5-(r.rating||5));
     const initial = (r.name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
     return `
-    <div class="glass-card review-card" data-aos="fade-up" data-aos-delay="${(i%4)*70}">
+    <div class="glass-card review-card" data-scroll data-scroll-delay="${(i%4)*70}">
       <div class="review-rating">${stars}</div>
       <p class="review-text">"${esc(r.text)}"</p>
       <div class="review-author">
@@ -3558,6 +3747,69 @@ function initTickerPreview(){
   });
 }
 
+/* ===== Scroll animation observer (no-repeat, no-blinking) ===== */
+function observeScrollItems(){
+  if(!window._sio) return;
+  document.querySelectorAll('[data-scroll]:not(.in-view)').forEach(el=>_sio.observe(el));
+}
+
+/* ===== Language System ===== */
+const TRANSLATIONS = {
+  bn: {
+    // Nav
+    'Services': 'সেবাসমূহ', 'Portfolio': 'পোর্টফোলিও', 'Team': 'আমাদের দল',
+    'Reviews': 'রিভিউ', 'Contact': 'যোগাযোগ', 'Hire Us': 'আমাদের নিয়োগ করুন',
+    'Academy': 'একাডেমি', 'Agency': 'এজেন্সি',
+    // Hero
+    'Agency & Academy': 'এজেন্সি ও একাডেমি',
+    'Scale Your Brand': 'আপনার ব্র্যান্ড সামনে নিন',
+    'with Premium Creative Solutions': 'প্রিমিয়াম ক্রিয়েটিভ সমাধান দিয়ে',
+    'Get Started': 'শুরু করুন', 'See Our Work': 'আমাদের কাজ দেখুন',
+    // Sections
+    'What We Do': 'আমরা যা করি', 'Our Portfolio': 'আমাদের পোর্টফোলিও',
+    'Live Websites': 'লাইভ ওয়েবসাইট', 'Meet The Team': 'আমাদের দল',
+    'Client Reviews': 'ক্লায়েন্ট রিভিউ', 'Get In Touch': 'যোগাযোগ করুন',
+    'Our Courses': 'আমাদের কোর্সসমূহ',
+    // CTA text
+    'Trusted by brands across Bangladesh & beyond': 'বাংলাদেশ ও বিশ্বের বিভিন্ন ব্র্যান্ডের বিশ্বস্ত পার্টনার',
+    'Start a Project': 'প্রজেক্ট শুরু করুন',
+    'All': 'সকল',
+    // Contact
+    'Send Message': 'বার্তা পাঠান', 'Full name': 'পুরো নাম',
+    'Your Name': 'আপনার নাম', 'Email': 'ইমেইল', 'Phone / WhatsApp': 'ফোন / হোয়াটসঅ্যাপ',
+    'Interested In': 'আগ্রহী বিষয়', 'Message': 'বার্তা',
+    'Describe your project...': 'আপনার প্রজেক্ট বর্ণনা করুন...',
+    // Footer
+    'All rights reserved.': 'সর্বস্বত্ব সংরক্ষিত।',
+    'Crafted with': 'তৈরি করা হয়েছে',
+    'in Bangladesh': 'বাংলাদেশে'
+  }
+};
+let _currentLang = 'en';
+function applyLanguage(lang){
+  _currentLang = lang;
+  localStorage.setItem('vf:lang', lang);
+  const btn = $('#lang-toggle-btn');
+  if(lang === 'bn'){
+    if(btn){ $('#lang-flag').textContent='🇬🇧'; $('#lang-label').textContent='EN'; }
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.dataset.i18n;
+      if(TRANSLATIONS.bn[key]) el.textContent = TRANSLATIONS.bn[key];
+    });
+    document.title = 'ভিশন ফ্লো | প্রিমিয়াম ডিজিটাল এজেন্সি ও একাডেমি';
+  } else {
+    if(btn){ $('#lang-flag').textContent='🇧🇩'; $('#lang-label').textContent='বাংলা'; }
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.dataset.i18n;
+      el.textContent = key;
+    });
+    document.title = 'Vision Flow | Premium Digital Agency & Academy — Bangladesh';
+  }
+}
+function toggleLang(){
+  applyLanguage(_currentLang === 'en' ? 'bn' : 'en');
+}
+
 /* ===== Counter Animation ===== */
 let _counterObserver = null;
 let _countersInView = false;
@@ -3632,7 +3884,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderAll(); // renderHeroStats() inside renderAll handles animateCounters()
   initScrollWatch();
   initTickerPreview();
-  if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60 });
+  if(window.AOS) AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 60, disableMutationObserver: true });
+  // Custom scroll animation observer (fires once per element, never repeats)
+  window._sio = new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){ en.target.classList.add('in-view'); _sio.unobserve(en.target); }
+    });
+  },{threshold:0.08,rootMargin:'0px 0px -20px 0px'});
+  observeScrollItems();
+  // Language toggle
+  const _savedLang = localStorage.getItem('vf:lang') || 'en';
+  if(_savedLang === 'bn') { setTimeout(()=>applyLanguage('bn'),200); }
   document.addEventListener('mousemove', e=>{
     document.querySelectorAll('.glass-card,.portfolio-item').forEach(c=>{
       const r=c.getBoundingClientRect();
