@@ -369,6 +369,9 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .portfolio-media img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
 .portfolio-item:hover .portfolio-media img{transform:scale(1.08)}
 .portfolio-media iframe{width:100%;height:100%;border:0}
+.portfolio-no-thumb{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:12px;background:linear-gradient(135deg,#0c1018 0%,#161e30 60%,#0b1120 100%)}
+.portfolio-no-thumb i{font-size:2.4rem;color:var(--accent);opacity:.28}
+.portfolio-no-thumb span{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);opacity:.5}
 .portfolio-play{
   position:absolute;inset:0;display:grid;place-items:center;
   background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.6));
@@ -1820,9 +1823,12 @@ function renderServices(){
 function _portfolioCard(p, catLabel, idx){
   const ytId = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1];
   const imgSrc = p.img || '';
+  const noThumb = `<div class="portfolio-no-thumb"><i class="fas fa-photo-video"></i><span>Preview Coming Soon</span></div>`;
   const media = ytId
     ? `<iframe src="https://www.youtube.com/embed/${ytId}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
-    : `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.opacity='.4';this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 250%22%3E%3Crect fill=%22%230f172a%22 width=%22400%22 height=%22250%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%2364748b%22 font-family=%22Arial%22 font-size=%2218%22%3ENo Preview%3C/text%3E%3C/svg%3E'"/>`;
+    : imgSrc
+      ? `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'portfolio-no-thumb\\'><i class=\\'fas fa-photo-video\\'></i><span>Preview Coming Soon</span></div>')"/>`
+      : noThumb;
   const delay = ((idx||0) % 4) * 80;
   return `
   <div class="portfolio-item" data-aos="fade-up" data-aos-delay="${delay}">
@@ -3515,18 +3521,17 @@ function animateCounters(){
   const els = $$('[data-target]');
   if(!els.length) return;
   _counterObserver = new IntersectionObserver(entries => {
-    // Pass 1: handle exits — reset flag so next scroll-in re-animates
-    entries.forEach(en => { if(!en.isIntersecting) _countersInView = false; });
-    // Pass 2: handle ALL entering elements as a batch (so they all animate together)
+    // Only animate elements entering the viewport for the first time
     const entering = entries.filter(en => en.isIntersecting && !en.target._counting);
     if(!entering.length) return;
     if(_countersInView){
       // Re-render while still in view — snap all to final value immediately
       entering.forEach(en => {
         en.target.textContent = parseInt(en.target.dataset.target,10).toLocaleString() + (en.target.dataset.suffix||'+');
+        _counterObserver && _counterObserver.unobserve(en.target);
       });
     } else {
-      // Fresh viewport entry — animate ALL counters simultaneously
+      // First time in viewport — animate ALL counters simultaneously
       _countersInView = true;
       entering.forEach(en => {
         const el = en.target;
@@ -3540,7 +3545,7 @@ function animateCounters(){
             const eased = 1-Math.pow(1-p,3);
             el.textContent = Math.floor(target*eased).toLocaleString()+suffix;
             if(p<1) requestAnimationFrame(update);
-            else el._counting = false;
+            else { el.textContent = target.toLocaleString()+suffix; _counterObserver && _counterObserver.unobserve(el); }
           };
           requestAnimationFrame(update);
         },400);
