@@ -1617,7 +1617,7 @@ app.post('/login', async (req, res) => {
        {url:"mailto:shihabjessore7@gmail.com",          icon:"fas fa-envelope"}
      ]},
     {id:"t2", name:"MD Rafiul Islam Shubho", role:"Co-Founder & Managing Director", bio:"The strategic mastermind behind Vision Flow's operations & growth. SEO expert and operations architect who lets results speak louder than recognition.",
-     img:"https://ui-avatars.com/api/?name=MD+Rafiul+Shubho&background=1e3a5f&color=06b6d4&size=256&bold=true&format=png",
+     img:"https://api.dicebear.com/8.x/avataaars/png?seed=Shubho2024&size=256&topType=ShortHairShortFlat&facialHairType=BeardMedium&facialHairColor=BrownDark&clotheType=BlazerShirt&skinColor=Tanned&backgroundColor=b6e3f4,c0aede",
      social:[
        {url:"https://web.facebook.com/sejofrenia.shuvo", icon:"fab fa-facebook-f"},
        {url:"https://wa.me/8801676302084",               icon:"fab fa-whatsapp"},
@@ -1656,13 +1656,13 @@ app.post('/login', async (req, res) => {
        {url:"mailto:foraiwork143@gmail.com",                    icon:"fas fa-envelope"}
      ]},
     {id:"t6", name:"MD Kamruzzaman Papon", role:"Software Engineer & Video Editor", bio:"Software engineer and cinematic storyteller — combines technical depth with creative precision to deliver premium edits across commercial, social & documentary formats.",
-     img:"https://ui-avatars.com/api/?name=MD+Kamruzzaman+Papon&background=1e1b4b&color=8b5cf6&size=256&bold=true&format=png",
+     img:"https://api.dicebear.com/8.x/avataaars/png?seed=Papon2024&size=256&topType=ShortHairTheCaesar&facialHairType=BeardLight&facialHairColor=BrownDark&clotheType=BlazerAndStripes&skinColor=Tanned&backgroundColor=c0aede,b6e3f4",
      social:[
        {url:"https://wa.me/8801837346318",           icon:"fab fa-whatsapp"},
        {url:"mailto:kamruzzmanpopon@gmail.com",       icon:"fas fa-envelope"}
      ]},
     {id:"t7", name:"MD Jasif Hasan", role:"DaVinci Resolve Specialist", bio:"High-end video editor and colorist — turns raw footage into cinematic masterpieces using DaVinci Resolve's full power with precision and artistry.",
-     img:"https://ui-avatars.com/api/?name=MD+Jasif+Hasan&background=172554&color=38bdf8&size=256&bold=true&format=png",
+     img:"https://api.dicebear.com/8.x/avataaars/png?seed=Jasif2024&size=256&topType=ShortHairFrizzle&facialHairType=Blank&clotheType=Hoodie&skinColor=Light&backgroundColor=d1d4f9,b6e3f4",
      social:[
        {url:"https://www.facebook.com/md.superearner",         icon:"fab fa-facebook-f"},
        {url:"https://www.instagram.com/mdjasifpro/",           icon:"fab fa-instagram"},
@@ -1709,7 +1709,7 @@ app.post('/login', async (req, res) => {
   leads: [],
 
   meta: {
-    version: 12,
+    version: 13,
     updatedAt: 0
   }
 };
@@ -1960,6 +1960,15 @@ function loadData(){
         });
         STATE.data.meta.version = 12;
       }
+      // v13 migration: upgrade avatar members from ui-avatars initials → DiceBear PNG professional avatars
+      if((STATE.data.meta.version||0) < 13){
+        const _d13 = {}; (DEFAULT_DATA.team||[]).forEach(t=>{ _d13[t.id]=t; });
+        ['t2','t6','t7'].forEach(tid => {
+          const m = (STATE.data.team||[]).find(t=>t.id===tid);
+          if(m && _d13[tid] && !m.img?.startsWith('data:')) m.img = _d13[tid].img;
+        });
+        STATE.data.meta.version = 13;
+      }
       // v4 migration: real profile images for known reviewers; shorten social names
       if((STATE.data.meta.version||0) < 4){
         const _imgUp={'r1':'./pinaki.jpg','r2':'https://graph.facebook.com/clicksofshawon/picture?type=large','r3':'https://graph.facebook.com/TahmidHasanOfficial1/picture?type=large','r4':'https://graph.facebook.com/seostationaoyon/picture?type=large'};
@@ -2017,27 +2026,38 @@ function _stripLargeBase64(obj, maxB = 55000){
   if(obj && typeof obj==='object'){ const o={}; for(const[k,v] of Object.entries(obj)) o[k]=_stripLargeBase64(v,maxB); return o; }
   return obj;
 }
+/* persist() — Firebase is the source of truth.
+   If Firebase is connected: save to Firestore FIRST, then cache locally on success.
+   If Firestore fails: revert timestamp so the next cloud snapshot stays authoritative.
+   Returns true on success, false on failure. */
 async function persist(){
-  try { saveLocal(); }
-  catch(e){
-    console.warn('LocalStorage save failed', e);
-    showToast('Storage full — could not save. Free up browser storage.','error');
-    return;
-  }
   if(STATE.fbConfigured && STATE.fbDb){
-    STATE._pendingSync = 3; // block up to 3 echo snapshots (local cache + 2 server confirms)
-    STATE._ignoreSyncUntil = Date.now() + 5000; // extra: ignore any snapshot for 5s after save
+    const savedTs = STATE.data.meta?.updatedAt || 0;
+    STATE._pendingSync = 3;
+    STATE._ignoreSyncUntil = Date.now() + 5000;
     try {
-      // Strip base64 images > 55KB before Firestore save to stay within 1MB document limit.
-      // Compressed team photos (~15-25KB) pass through and sync cross-browser.
-      // Large portfolio/original uploads are only kept in localStorage.
-      const fbData = _stripLargeBase64(STATE.data);
+      STATE.data.meta = STATE.data.meta || {};
+      STATE.data.meta.updatedAt = Date.now();
+      const fbData = _stripLargeBase64(STATE.data); // strip base64 > 55KB
       await window.__fb.setDoc(window.__fb.doc(STATE.fbDb, 'site','main'), fbData);
+      // Cloud save succeeded — cache locally for fast reloads
+      try { localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data)); } catch {}
+      return true;
     } catch(e){
+      // Revert timestamp: cloud remains authoritative; next snapshot will restore correct state
+      if(STATE.data.meta) STATE.data.meta.updatedAt = savedTs;
       STATE._pendingSync = 0;
       STATE._ignoreSyncUntil = 0;
       console.warn('Firebase save failed', e);
-      showToast('Cloud save failed — saved locally', 'error');
+      showToast('☁️ Save failed! Check internet connection & try again.','error');
+      return false;
+    }
+  } else {
+    // No Firebase — save locally only (offline / unconfigured)
+    try { saveLocal(); return true; }
+    catch(e){
+      showToast('Storage full — could not save. Free up browser storage.','error');
+      return false;
     }
   }
 }
@@ -3013,10 +3033,11 @@ function editItem(key, id){
       STATE.data[key] = STATE.data[key] || [];
       STATE.data[key].push(data);
     }
-    await persist();
+    const _saved = await persist();
     if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-save"></i> ${id?'Update':'Create'}`; }
+    if(!_saved) return; // persist() already showed the error toast — keep modal open
     closeModal('edit-modal');
-    showToast('Saved successfully','success');
+    showToast('Saved successfully ✓','success');
     renderAll();
     if(_adminCurrentTab) adminTab(_adminCurrentTab);
   });
@@ -3797,6 +3818,11 @@ async function bootFirebase(){
             const _cm12 = {}; (DEFAULT_DATA.team||[]).forEach(t=>{ _cm12[t.id]=t; });
             (STATE.data.team||[]).forEach(m=>{ if(m.img&&!m.img.startsWith('data:')&&(m.img.includes('graph.facebook.com')||m.img.includes('dicebear'))){ if(_cm12[m.id]) m.img=_cm12[m.id].img; } });
             STATE.data.meta.version = 12; _cloudNeedsPush = true;
+          }
+          if((STATE.data.meta?.version||0) < 13){
+            const _cm13 = {}; (DEFAULT_DATA.team||[]).forEach(t=>{ _cm13[t.id]=t; });
+            ['t2','t6','t7'].forEach(tid=>{ const m=(STATE.data.team||[]).find(t=>t.id===tid); if(m&&_cm13[tid]&&!m.img?.startsWith('data:')) m.img=_cm13[tid].img; });
+            STATE.data.meta.version = 13; _cloudNeedsPush = true;
           }
           localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data));
           renderAllDebounced();
