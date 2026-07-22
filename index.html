@@ -1111,6 +1111,8 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
   .ticker-brand{color:#1d3154;background:rgba(255,255,255,.7)}
   .ticker-brand:hover{background:rgba(6,182,212,.12);color:#0c1220}
   .ticker-person{color:#1d3154;background:rgba(255,255,255,.7)}
+  .ticker-person-name{color:#0c1220}
+  .ticker-person-role{color:#4a6585}
   section.section-alt{background:linear-gradient(180deg,#d4e4f5 0%,#dce8f7 100%)}
   .portfolio-item{background:rgba(255,255,255,.85);border-color:rgba(0,40,100,.1)}
   .portfolio-media{background:#c8d8ec}
@@ -1122,6 +1124,9 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
   .tab-btn{background:rgba(6,182,212,.06);border-color:rgba(6,182,212,.15);color:#4a6585}
   .tab-btn:hover{color:#0c1220}
   .tab-btn.active{color:#fff}
+  .btn-secondary{color:#0c1220;background:rgba(0,40,100,.06);border-color:rgba(0,40,100,.18)}
+  .btn-secondary:hover{color:#0c1220;background:rgba(0,40,100,.11);border-color:rgba(0,40,100,.28)}
+  .subtab-btn:hover{color:#0c1220}
   .hero-stat-label{color:#4a6585}
   footer{background:linear-gradient(180deg,#0a1628 0%,#060d1e 100%)}
   .modal{background:#0f1e38}
@@ -1141,7 +1146,7 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
      text/border inheriting those vars inside these permanently-dark containers
      rendered as near-invisible dark-on-dark. Re-scope the dark-surface-appropriate
      (light) values back onto just these containers so contrast is restored. */
-  .modal, footer, .admin-layout, .choice-card-inner{
+  .modal, footer, .admin-layout, .choice-card-inner, .code-card, #thc-popup{
     --text-primary:#f8fafc;
     --text-secondary:#cbd5e1;
     --text-muted:#94a3b8;
