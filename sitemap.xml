@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Main page — highest priority -->
+  <url>
+    <loc>https://visionflow-bd.github.io/</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://visionflow-bd.github.io/og-image.png</image:loc>
+      <image:title>Vision Flow Agency &amp; Academy — Digital Agency in Dhaka, Bangladesh</image:title>
+    </image:image>
+  </url>
+
+  <!-- Services section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#services</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Portfolio section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#portfolio</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Academy / Courses section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#courses</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Team section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#team</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Reviews section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#reviews</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Contact section -->
+  <url>
+    <loc>https://visionflow-bd.github.io/#contact</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
