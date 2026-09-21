@@ -221,7 +221,7 @@ padding:32px;margin:12px 0;backdrop-filter:blur(18px);position:relative;overflow
 <button class="btn btn-p" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:4px"><i class="fas fa-sign-in-alt"></i> Sign In</button>
 <div class="err" id="aErr"></div></div></div>
 
-<div id="loadScreen"><div style="text-align:center">
+<div id="loadScreen" style="display:flex"><div style="text-align:center">
 <div class="load-logo"><img src="../logo.png" alt="VisionFlow" class="load-logo-img"></div>
 <h2 style="color:var(--text-primary);font-family:'Outfit',sans-serif;font-size:32px;font-weight:800;margin-top:24px;background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vision Flow</h2>
 <p style="color:var(--text-muted);font-size:14px;margin-top:8px;letter-spacing:3px;text-transform:uppercase;font-weight:600">Client Portal</p>
@@ -231,6 +231,7 @@ padding:32px;margin:12px 0;backdrop-filter:blur(18px);position:relative;overflow
 <div style="width:10px;height:10px;border-radius:50%;background:var(--accent-2);animation:ldot 1.4s ease-in-out .4s infinite"></div>
 </div>
 <p style="color:var(--text-dim);font-size:12px;margin-top:16px">Loading your portal...</p></div></div>
+<script>setTimeout(()=>{const ls=document.getElementById('loadScreen');const ao=document.getElementById('authO');if(ls&&ls.style.display!=='none'){ls.style.display='none';if(ao&&ao.style.display==='none')ao.style.display='flex'}},6000)</script>
 
 <div class="page" id="pDash"><div class="cnt" id="dashCnt"></div></div>
 <div class="page" id="pClient"><div class="cnt" id="clientCnt"></div></div>
