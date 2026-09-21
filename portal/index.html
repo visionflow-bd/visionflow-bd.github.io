@@ -284,12 +284,16 @@ function updateNav(){if(S.admin){$('navR').innerHTML=`<div class="pill" onclick=
 else if(S.clientMode){$('navR').innerHTML=`<div class="pill on" style="background:rgba(139,92,246,.12);color:var(--accent-2);border-color:rgba(139,92,246,.3)"><i class="fas fa-eye"></i> Client View</div>`}}
 
 onAuthStateChanged(auth,async u=>{try{S.u=u;const isAdmin=!!u&&!u.isAnonymous&&u.email===ADMIN_EMAIL;
-if(forceClient&&urlClient){S.admin=false;S.clientMode=true;updateNav();await loadClientBySlug(urlClient);$('loadScreen').style.display='none';return}
-S.admin=isAdmin;$('authO').style.display='none';
-if(S.admin){updateNav();await loadAllClients();if(urlClient){S.cc=urlClient;if(urlProject){S.cp=urlProject;showProject()}else showClient()}else showDash();$('loadScreen').style.display='none'}
-else if(urlClient){S.clientMode=true;updateNav();await loadClientBySlug(urlClient);$('loadScreen').style.display='none'}
+if(forceClient&&urlClient){S.admin=false;S.clientMode=true;updateNav();$('loadScreen').style.display='none';$('authO').style.display='none';
+try{await loadClientBySlug(urlClient)}catch(e2){toast('Error loading client: '+e2.message,'er')};return}
+S.admin=isAdmin;
+if(S.admin){$('authO').style.display='none';$('loadScreen').style.display='none';updateNav();
+try{await loadAllClients();if(urlClient){S.cc=urlClient;if(urlProject){S.cp=urlProject;showProject()}else showClient()}else showDash()}
+catch(e2){toast('Error loading data: '+e2.message,'er');showDash()}}
+else if(urlClient){S.clientMode=true;$('authO').style.display='none';$('loadScreen').style.display='none';updateNav();
+try{await loadClientBySlug(urlClient)}catch(e2){toast('Error loading client: '+e2.message,'er')}}
 else{$('authO').style.display='flex';$('loadScreen').style.display='none'}}
-catch(err){console.error('Auth state error:',err);$('loadScreen').style.display='none';$('authO').style.display='flex';toast('Error: '+err.message,'er')}});
+catch(err){console.error('Auth state error:',err);$('loadScreen').style.display='none';toast('Error: '+err.message,'er')}});
 
 document.addEventListener('mousemove',e=>{document.querySelectorAll('.gc').forEach(c=>{const r=c.getBoundingClientRect();c.style.setProperty('--cx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');c.style.setProperty('--cy',((e.clientY-r.top)/r.height*100).toFixed(1)+'%')})});
 
