@@ -353,7 +353,9 @@ async function publishToPublic(slug){
   const c=S.clients[slug];if(!c)return;
   if(!c.accessToken){const a=new Uint8Array(12);crypto.getRandomValues(a);c.accessToken=Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')}
   await setDoc(doc(db,'portal_clients',slug),c);
-  const pub={...JSON.parse(JSON.stringify(c)),clientSlug:slug,defaultProject:c.projects?Object.keys(c.projects)[0]:null};
+  const pks=c.projects?Object.keys(c.projects):[];
+  const pub={...JSON.parse(JSON.stringify(c)),clientSlug:slug};
+  if(pks.length)pub.defaultProject=pks[0];
   delete pub.accessToken;
   await setDoc(doc(db,'portal_public',c.accessToken),pub);return slug}
 
