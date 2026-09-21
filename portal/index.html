@@ -373,7 +373,7 @@ pays.forEach((py,i)=>{runT+=py.amount||0;
 payRows+=`<tr><td style="font-weight:700;color:var(--accent)">${i+1}</td><td>${py.date||'—'}</td>
 <td style="color:var(--green);font-weight:700">৳${(py.amount||0).toLocaleString()}</td>
 <td>${esc(py.type)||''}</td><td>${esc(py.note)||''}</td>
-<td>${py.proofUrl?`<a href="${py.proofUrl}" target="_blank"><i class="fas fa-image"></i></a>`:''}</td>
+<td>${py.proofUrl?`<a href="${py.proofUrl}" target="_blank" title="View proof"><img src="${py.proofUrl}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid var(--border-light);vertical-align:middle"></a>`:''}</td>
 <td style="font-weight:600">৳${runT.toLocaleString()}</td>
 ${S.admin?`<td><div class="act-row"><button class="btn-icon" onclick="event.stopPropagation();openEditPayment(${i})" title="Edit"><i class="fas fa-pen"></i></button>
 <button class="btn-icon danger" onclick="event.stopPropagation();delPayment(${i})" title="Delete"><i class="fas fa-trash"></i></button></div></td>`:''}</tr>`});
@@ -503,7 +503,9 @@ await navigator.clipboard.writeText(url);toast('Link copied! '+url);
 if(btn){btn.innerHTML='<i class="fas fa-check"></i> Copied!';btn.classList.add('copied-anim');
 setTimeout(()=>{btn.innerHTML='<i class="fas fa-link"></i> Share Link';btn.style.pointerEvents='';btn.classList.remove('copied-anim')},2500)}}
 catch(e){const url=location.origin+'/portal/?c='+slug+'&view=client';prompt('Copy:',url);if(btn){btn.innerHTML='<i class="fas fa-link"></i> Share Link';btn.style.pointerEvents=''}}};
-window.previewAsClient=async slug=>{await publishToPublic(slug);window.open(location.origin+'/portal/?c='+slug+'&view=client','_blank')};
+window.previewAsClient=async slug=>{const btn=event?.target?.closest('.btn');if(btn){btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Loading...';btn.style.pointerEvents='none'}
+toast('Publishing & opening client view...');await publishToPublic(slug);window.open(location.origin+'/portal/?c='+slug+'&view=client','_blank');
+if(btn){btn.innerHTML='<i class="fas fa-eye"></i> Preview';btn.style.pointerEvents=''}};
 window.deleteClient=async slug=>{if(!confirm('Delete "'+slug+'"?'))return;await setDoc(doc(db,'portal_clients',slug),{_deleted:true,_deletedAt:Date.now()});delete S.clients[slug];toast('Deleted');showDash()};
 window.deleteProject=async()=>{if(!confirm('Delete project "'+S.cp+'"? This cannot be undone.'))return;
 const c=S.clients[S.cc];delete c.projects[S.cp];await saveClient(S.cc,c);S.cp=null;showClient();toast('Project deleted')};
@@ -654,9 +656,10 @@ window.openAddPayment=()=>openModal('Record Payment',`<label>Date</label><input 
 <label>Method</label><select id="mPT2"><option>Advance</option><option>Milestone</option><option>bKash</option><option>Nagad</option><option>Bank Transfer</option><option>Final</option></select>
 <label>Note</label><input id="mPNo">
 <label>Payment Screenshot</label><div class="uz" onclick="document.getElementById('proofF').click()"><input type="file" id="proofF" accept="image/*" onchange="prevProof(this)"><i class="fas fa-cloud-upload-alt"></i> Upload</div><div id="proofPrev"></div>`,
-async()=>{const c=S.clients[S.cc],p=c.projects[S.cp];if(!p.payments)p.payments=[];
+async()=>{const saveBtn=document.querySelector('.mo .btn-p');if(saveBtn){saveBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';saveBtn.style.pointerEvents='none'}
+const c=S.clients[S.cc],p=c.projects[S.cp];if(!p.payments)p.payments=[];
 let proofUrl='';const fi=document.getElementById('proofF');
-if(fi&&fi.files[0]){toast('Uploading...');proofUrl=await uploadCld(fi.files[0])}
+if(fi&&fi.files[0]){toast('Uploading proof image...');proofUrl=await uploadCld(fi.files[0]);toast('Proof uploaded!')}
 p.payments.push({date:$('mPD').value,amount:parseInt($('mPA').value)||0,type:$('mPT2').value,note:$('mPNo').value,proofUrl,recordedAt:Date.now()});
 await saveClient(S.cc,c);closeModal();showProject()});
 
@@ -667,8 +670,9 @@ openModal('Edit Payment #'+(i+1),`<label>Date</label><input id="mPD" value="${py
 <label>Note</label><input id="mPNo" value="${py.note||''}">
 <label>Payment Screenshot</label><div class="uz" onclick="document.getElementById('proofF').click()"><input type="file" id="proofF" accept="image/*" onchange="prevProof(this)"><i class="fas fa-cloud-upload-alt"></i> Upload new</div>
 <div id="proofPrev">${py.proofUrl?`<img src="${py.proofUrl}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;margin-top:8px">`:''}</div>`,
-async()=>{py.date=$('mPD').value;py.amount=parseInt($('mPA').value)||0;py.type=$('mPT2').value;py.note=$('mPNo').value;
-const fi=document.getElementById('proofF');if(fi&&fi.files[0]){toast('Uploading...');py.proofUrl=await uploadCld(fi.files[0])}
+async()=>{const saveBtn=document.querySelector('.mo .btn-p');if(saveBtn){saveBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';saveBtn.style.pointerEvents='none'}
+py.date=$('mPD').value;py.amount=parseInt($('mPA').value)||0;py.type=$('mPT2').value;py.note=$('mPNo').value;
+const fi=document.getElementById('proofF');if(fi&&fi.files[0]){toast('Uploading proof image...');py.proofUrl=await uploadCld(fi.files[0]);toast('Proof uploaded!')}
 await saveClient(S.cc,c);closeModal();showProject()})};
 
 window.openAddApproval=()=>openModal('Approval Request',`<label>Title</label><input id="mAT" placeholder="Week 1 Review">
