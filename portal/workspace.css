@@ -1,0 +1,38 @@
+/* Workspace enhancements preserve the established portal palette. */
+.wrap,.actions,.row-actions{flex-wrap:wrap}
+.scope-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0 0}
+.scope-grid strong{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.prewrap{white-space:pre-wrap;overflow-wrap:anywhere}
+.small{font-size:11px}
+.response{margin:10px 0;padding:12px;border-left:3px solid var(--brand);background:var(--surface2);border-radius:0 8px 8px 0}
+.signature-image{display:block;max-width:280px;max-height:110px;margin:12px 0;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.login-logo{width:90px;height:70px;object-fit:contain;margin-bottom:12px;background:white;border-radius:12px;padding:10px}
+.brand img{background:white;padding:3px}
+.login-card form{text-align:left;margin-top:24px}
+.form-error{margin:12px 0 0;color:var(--rose);font-size:12px;white-space:pre-wrap}
+.form-error:empty{display:none}
+.file-links{display:grid;gap:6px;min-width:80px}
+.file-links a,.panel a,.agreement a{color:var(--brand)}
+.modal-open{overflow:hidden}
+.modal .select{width:100%}
+.button:disabled{opacity:.55;cursor:wait;transform:none}
+button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+.panel,.hero,.card,.record>div{min-width:0;overflow-wrap:anywhere}
+.record>.row-actions{flex:0 1 auto}
+.panel-head{flex-wrap:wrap}
+.top-actions{flex-wrap:wrap;justify-content:flex-end}
+.signature-pad{background:#fff}
+@media(max-width:600px){
+  .topbar{align-items:flex-start;gap:10px}
+  .top-actions .button:not(.primary){display:inline-flex;align-items:center;min-height:32px;padding:4px 8px;font-size:10px}
+  .top-actions .badge{display:none}
+  .brand strong{font-size:12px}
+  .brand img{width:32px;height:32px}
+  .scope-grid{grid-template-columns:1fr;gap:0}
+  .record{flex-wrap:wrap}
+  .record>.row-actions{width:100%;justify-content:flex-start;padding-left:0}
+  .tabbar{align-items:center}
+  .tabbar>.badge{display:none}
+  .signature-image{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

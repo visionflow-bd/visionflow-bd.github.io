@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pin the existing Firebase Authentication account, not an unverified email claim.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == 'm1PGSw7ViEb1xOJoj8INQllra3p1';
+    }
+
+    function boundedString(value, minimum, maximum) {
+      return value is string && value.size() >= minimum && value.size() <= maximum;
+    }
+
+    function isoDate(value) {
+      return boundedString(value, 24, 24)
+        && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$');
+    }
+
+    function optionalUserAgent(data) {
+      return boundedString(data.get('userAgent', ''), 0, 2048);
+    }
+
+    function portalActive(token) {
+      return exists(/databases/$(database)/documents/portal_public/$(token))
+        && get(/databases/$(database)/documents/portal_public/$(token)).data.get('enabled', true) == true;
+    }
+
+    function knownProject(token, projectKey) {
+      return boundedString(projectKey, 1, 200)
+        && projectKey in get(/databases/$(database)/documents/portal_public/$(token)).data.projects;
+    }
+
+    function validSignature(token, sigId, data) {
+      return data.keys().hasAll(['projectKey', 'name', 'image', 'signedAt'])
+        && data.keys().hasOnly(['id', 'projectKey', 'name', 'image', 'signedAt', 'userAgent', 'termsSnapshot', 'termsDigest'])
+        && data.get('id', sigId) == sigId
+        && knownProject(token, data.projectKey)
+        && boundedString(data.name, 1, 200)
+        && boundedString(data.image, 30, 500000)
+        && data.image.matches('^data:image/png;base64,[A-Za-z0-9+/=]+$')
+        && isoDate(data.signedAt)
+        && optionalUserAgent(data)
+        && (!('termsSnapshot' in data) || validTerms(token, data));
+    }
+
+    function validTerms(token, data) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data.projects[data.projectKey];
+      let t = data.termsSnapshot;
+      return t is map
+        && t.keys().hasOnly(['projectName', 'totalItems', 'rate', 'budget', 'scope', 'terms', 'deadline', 'weeklyTarget', 'milestoneText'])
+        && t.projectName == p.name && t.totalItems == p.totalItems
+        && t.rate == p.rate && t.budget == p.budget
+        && t.scope == p.get('scope', '') && t.terms == p.get('terms', '')
+        && t.deadline == p.get('deadline', '') && t.weeklyTarget == p.get('weeklyTarget', 0)
+        && t.milestoneText == p.get('milestoneText', '')
+        && data.termsDigest is string && data.termsDigest.matches('^[a-f0-9]{64}$');
+    }
+
+    function validFeedback(token, data) {
+      return data.keys().hasAll(['projectKey', 'itemNumber', 'message', 'submittedAt'])
+        && data.keys().hasOnly(['kind', 'requestType', 'projectKey', 'itemNumber', 'message', 'submittedAt', 'userAgent'])
+        && data.get('kind', 'feedback') == 'feedback'
+        && data.get('requestType', 'feedback') in ['feedback', 'revision', 'question']
+        && knownProject(token, data.projectKey)
+        && data.itemNumber is int && data.itemNumber >= 0 && data.itemNumber <= 100000
+        && boundedString(data.message, 1, 4000)
+        && isoDate(data.submittedAt)
+        && optionalUserAgent(data);
+    }
+
+    function validConfirmation(token, confId, data) {
+      let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let approvals = portal.get('approvalProjects', {});
+      return data.keys().hasAll(['confirmedAt'])
+        && data.keys().hasOnly(['projectKey', 'confirmedAt', 'userAgent'])
+        && confId in portal.get('approvalIds', [])
+        && confId in approvals
+        && data.get('projectKey', approvals[confId]) == approvals[confId]
+        && knownProject(token, approvals[confId])
+        && isoDate(data.confirmedAt)
+        && optionalUserAgent(data);
+    }
+
+    // Existing public website and contact form remain supported.
+    match /site/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /leads/{docId} {
+      allow create: if isAdmin() || (
+        request.resource.data.keys().hasAll(['id', 'name', 'email', 'phone', 'interest', 'message', 'source', 'createdAt', 'status'])
+        && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'phone', 'interest', 'message', 'source', 'createdAt', 'status'])
+        && boundedString(request.resource.data.id, 1, 200)
+        && boundedString(request.resource.data.name, 1, 100)
+        && boundedString(request.resource.data.email, 0, 150)
+        && boundedString(request.resource.data.phone, 0, 30)
+        && boundedString(request.resource.data.interest, 0, 60)
+        && boundedString(request.resource.data.message, 0, 3000)
+        && request.resource.data.source in ['Agency', 'Academy']
+        && request.resource.data.createdAt is int
+        && request.resource.data.status == 'new'
+      );
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /portal_clients/{slug} {
+      allow read, write: if isAdmin();
+    }
+
+    // Possession of the long random link grants access to ONE public snapshot.
+    // Listing this collection would disclose all client links, so it is admin-only.
+    match /portal_public/{token} {
+      allow get: if isAdmin() || resource.data.get('enabled', true) == true;
+      allow list, delete: if isAdmin();
+      // Retired browser tabs must not republish the old, unfiltered snapshot.
+      allow create, update: if isAdmin()
+        && request.resource.data.portalVersion == 4
+        && request.resource.data.enabled is bool
+        && request.resource.data.keys().hasOnly(['clientSlug', 'name', 'enabled', 'projects', 'feedbackReviews', 'signatureReviews', 'approvalIds', 'approvalProjects', 'lastUpdated', 'portalVersion']);
+
+      match /sigs/{sigId} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && validSignature(token, sigId, request.resource.data));
+        allow update, delete: if isAdmin();
+      }
+
+      match /confirms/{confId} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && (
+          (request.resource.data.get('kind', '') == 'feedback' && validFeedback(token, request.resource.data))
+          || validConfirmation(token, confId, request.resource.data)
+        ));
+        allow update, delete: if isAdmin();
+      }
+
+      // Read legacy feedback; all new versions may still safely use this schema.
+      match /feedback/{feedbackId} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && validFeedback(token, request.resource.data));
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
