@@ -38,3 +38,4 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
   .signature-image{max-width:100%}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.confirmation-dialog{width:min(480px,calc(100vw - 32px));border:1px solid #63758b;border-radius:16px;padding:24px;background:var(--bg,#fff);color:var(--text,#17233a);box-shadow:0 24px 80px #0005}.confirmation-dialog::backdrop{background:#071529aa}.confirmation-dialog h2{margin-top:0}.confirmation-dialog p{margin:16px 0 24px;line-height:1.6}.confirmation-dialog .actions{justify-content:flex-end}
