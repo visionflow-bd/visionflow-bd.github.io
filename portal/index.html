@@ -41,14 +41,15 @@
   <div id="toast" class="toast" role="status"></div>
   <script>
     (()=>{
-      const showError=()=>{
+      const showError=error=>{
+        if(error){window.__visionFlowBootError=String(error.message||error);console.error('Vision Flow portal startup failed',error);}
         const view=document.getElementById('view');
         if(!view.querySelector('.status-dot'))return;
         view.innerHTML='<section class="state-card"><h2>Connection is taking longer than expected</h2><p>Check your internet connection, then reload the portal. Your saved records are safe.</p><button class="button primary" id="retryBoot">Reload portal</button></section>';
         document.getElementById('retryBoot').onclick=()=>location.reload();
       };
       const timeout=setTimeout(showError,20000);
-      import('./workspace.js?v=workspace-20260925-r2').then(()=>clearTimeout(timeout)).catch(showError);
+      import('./workspace.js?v=workspace-20260925-r3').then(()=>clearTimeout(timeout)).catch(showError);
     })();
   </script>
 </body>
