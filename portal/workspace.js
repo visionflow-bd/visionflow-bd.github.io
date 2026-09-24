@@ -5,7 +5,7 @@ import { ADMIN_UID, STATUS, LABEL, clone, esc, text, money, safeUrl, signatureIm
 import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260925-r1';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
-const firebaseConfig = { apiKey:'AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM', authDomain:'visionflow-bd.firebaseapp.com', projectId:'visionflow-bd', storageBucket:'visionflow-bd.firebasestorage.app', messagingSenderId:'233587493754', appId:'1:233587493754:web:a9d064de81e4c3' };
+const firebaseConfig = { apiKey:'AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM', authDomain:'visionflow-bd.firebaseapp.com', projectId:'visionflow-bd', storageBucket:'visionflow-bd.firebasestorage.app', messagingSenderId:'233587493754', appId:'1:233587493754:web:a9d064de81f356ab81e4c3' };
 // A named Firebase app keeps the public client route outside the administrator
 // Auth persistence namespace, even when both views are open in one browser.
 const firebaseApp = initialAccess ? initializeApp(firebaseConfig,'client-view') : initializeApp(firebaseConfig);
