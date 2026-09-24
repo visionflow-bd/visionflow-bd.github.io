@@ -48,9 +48,10 @@
         view.innerHTML='<section class="state-card"><h2>Connection is taking longer than expected</h2><p>Check your internet connection, then reload the portal. Your saved records are safe.</p><button class="button primary" id="retryBoot">Reload portal</button></section>';
         document.getElementById('retryBoot').onclick=()=>location.reload();
       };
-      const timeout=setTimeout(showError,20000);
-      import('./workspace.js?v=workspace-20260925-r3').then(()=>clearTimeout(timeout)).catch(showError);
+      window.addEventListener('error',event=>showError(event.error||event.message),{once:true});
+      setTimeout(showError,20000);
     })();
   </script>
+  <script type="module" src="./workspace.js?v=workspace-20260925-r4"></script>
 </body>
 </html>
