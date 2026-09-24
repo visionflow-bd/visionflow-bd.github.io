@@ -2,7 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/fireba
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, runTransaction, setDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { ADMIN_UID, STATUS, LABEL, clone, esc, text, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns } from './data.js?v=20260925-r1';
-import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260925-r1';
+import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260925-r2';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
 const firebaseConfig = { apiKey:'AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM', authDomain:'visionflow-bd.firebaseapp.com', projectId:'visionflow-bd', storageBucket:'visionflow-bd.firebasestorage.app', messagingSenderId:'233587493754', appId:'1:233587493754:web:a9d064de81f356ab81e4c3' };

@@ -1,4 +1,4 @@
-import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION } from './data.js';
+import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION } from './data.js?v=20260925-r1';
 
 const date = value => { const d=new Date(value); return Number.isNaN(d.valueOf())?String(value||'—'):d.toLocaleString('en-GB'); };
 const url = (value,label) => safeUrl(value)?`<a href="${esc(safeUrl(value))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:'';
