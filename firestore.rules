@@ -47,12 +47,15 @@ service cloud.firestore {
       let p = get(/databases/$(database)/documents/portal_public/$(token)).data.projects[data.projectKey];
       let t = data.termsSnapshot;
       return t is map
-        && t.keys().hasOnly(['projectName', 'totalItems', 'rate', 'budget', 'scope', 'terms', 'deadline', 'weeklyTarget', 'milestoneText'])
+        && t.keys().hasOnly(['projectName', 'totalItems', 'rate', 'budget', 'scope', 'terms', 'deadline', 'weeklyTarget', 'milestoneText', 'agreementVersion'])
         && t.projectName == p.name && t.totalItems == p.totalItems
         && t.rate == p.rate && t.budget == p.budget
         && t.scope == p.get('scope', '') && t.terms == p.get('terms', '')
         && t.deadline == p.get('deadline', '') && t.weeklyTarget == p.get('weeklyTarget', 0)
         && t.milestoneText == p.get('milestoneText', '')
+        // Permit existing browser tabs to finish a legacy signature during rollout;
+        // the current portal always captures the immutable template version.
+        && (!('agreementVersion' in t) || t.agreementVersion == 'VF-2026-09')
         && data.termsDigest is string && data.termsDigest.matches('^[a-f0-9]{64}$');
     }
 

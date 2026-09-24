@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=workspace-20260923">
-  <link rel="stylesheet" href="./workspace.css?v=workspace-20260923-r3">
+  <link rel="stylesheet" href="./workspace.css?v=workspace-20260925-r1">
   <style>
     @media (max-width:600px) {
       .actions,.row-actions { flex-wrap:wrap; }
@@ -39,6 +39,17 @@
     </section>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script type="module" src="./workspace.js?v=workspace-20260923-r3"></script>
+  <script>
+    (()=>{
+      const showError=()=>{
+        const view=document.getElementById('view');
+        if(!view.querySelector('.status-dot'))return;
+        view.innerHTML='<section class="state-card"><h2>Connection is taking longer than expected</h2><p>Check your internet connection, then reload the portal. Your saved records are safe.</p><button class="button primary" id="retryBoot">Reload portal</button></section>';
+        document.getElementById('retryBoot').onclick=()=>location.reload();
+      };
+      const timeout=setTimeout(showError,20000);
+      import('./workspace.js?v=workspace-20260925-r1').then(()=>clearTimeout(timeout)).catch(showError);
+    })();
+  </script>
 </body>
 </html>

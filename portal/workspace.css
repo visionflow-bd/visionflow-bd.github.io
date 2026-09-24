@@ -1,5 +1,6 @@
 /* Workspace enhancements preserve the established portal palette. */
 .wrap,.actions,.row-actions{flex-wrap:wrap}
+.check-field{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--muted);font-size:12px}.check-field input{margin-top:3px;accent-color:var(--brand)}
 .scope-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0 0}
 .scope-grid strong{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .prewrap{white-space:pre-wrap;overflow-wrap:anywhere}

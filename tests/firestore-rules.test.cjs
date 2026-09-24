@@ -104,7 +104,7 @@ test('reject malformed signatures, unknown projects and injected admin fields', 
 });
 
 test('captured terms must match the project; new schema needs no redundant ID', async () => {
-  const termsSnapshot={projectName:'Project',totalItems:1,rate:400,budget:400,scope:'',terms:'',deadline:'',weeklyTarget:0,milestoneText:''};
+  const termsSnapshot={projectName:'Project',totalItems:1,rate:400,budget:400,scope:'',terms:'',deadline:'',weeklyTarget:0,milestoneText:'',agreementVersion:'VF-2026-09'};
   const data=signature('captured',{termsSnapshot,termsDigest:'a'.repeat(64)});delete data.id;
   await assertSucceeds(setDoc(doc(visitor,`${portalPath}/sigs/captured`),data));
   await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/forged`),{...data,termsSnapshot:{...termsSnapshot,budget:0}}));

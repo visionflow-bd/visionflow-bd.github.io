@@ -2,7 +2,7 @@
   "name": "vision-flow-portal-checks",
   "private": true,
   "scripts": {
-    "test": "node --test tests/data.test.mjs",
+    "test": "node --test tests/data.test.mjs tests/recovery.test.mjs tests/custom-labels.test.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-visionflow-rules \"node --test tests/firestore-rules.test.cjs\""
   },
   "devDependencies": {
