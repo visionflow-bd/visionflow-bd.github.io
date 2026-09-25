@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -687,25 +687,36 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .review-author h5{font-size:.95rem;color:var(--text-primary);margin-bottom:2px}
 .review-author small{font-size:.78rem;color:var(--text-muted)}
 
-/* CERTIFICATIONS & SECURITY RESEARCH */
-.certs-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
-.certs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px}
+/* CREDENTIALS VAULT */
+.creds-stats{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;margin-bottom:36px}
+.creds-stat{text-align:center}
+.creds-stat-num{font-size:2rem;font-weight:900;background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.creds-stat-label{font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-top:4px}
+.creds-signature{position:relative;display:flex;justify-content:center;margin-bottom:32px;opacity:.18;pointer-events:none;user-select:none}
+.creds-signature img{height:56px;object-fit:contain;filter:brightness(1.8) contrast(.7)}
+.certs-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;justify-content:center}
+.certs-filter .tab-btn{position:relative;overflow:hidden}
+.certs-filter .tab-btn.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--gradient-1);border-radius:2px}
+.certs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:24px}
 .cert-card{
   background:var(--bg-card);border:1px solid var(--border-light);
   border-radius:var(--radius-md);overflow:hidden;
   transition:var(--transition);position:relative;
   display:flex;flex-direction:column;
 }
-.cert-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.cert-card::before{content:'';position:absolute;inset:-1px;border-radius:var(--radius-md);padding:1px;background:linear-gradient(135deg,transparent 40%,rgba(6,182,212,.3) 50%,transparent 60%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .5s}
+.cert-card:hover::before{opacity:1}
+.cert-card:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(6,182,212,.08)}
 .cert-card.type-report{border-left:3px solid var(--rose)}
 .cert-card.type-award{border-left:3px solid var(--gold)}
 .cert-card.type-cert{border-left:3px solid var(--accent)}
+.cert-card.type-legal{border-left:3px solid var(--green)}
 .cert-img-wrap{
   aspect-ratio:16/9;background:var(--bg-glass);overflow:hidden;
   display:flex;align-items:center;justify-content:center;position:relative;
 }
 .cert-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
-.cert-card:hover .cert-img-wrap img{transform:scale(1.05)}
+.cert-card:hover .cert-img-wrap img{transform:scale(1.08)}
 .cert-img-placeholder{
   width:100%;height:100%;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;
@@ -719,7 +730,10 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 }
 .cert-type-badge.badge-cert{background:rgba(6,182,212,.18);color:var(--accent);border:1px solid rgba(6,182,212,.3)}
 .cert-type-badge.badge-award{background:rgba(251,191,36,.18);color:var(--gold);border:1px solid rgba(251,191,36,.3)}
-.cert-type-badge.badge-report{background:rgba(244,63,94,.18);color:var(--rose);border:1px solid rgba(244,63,94,.3)}
+.cert-type-badge.badge-report{background:rgba(244,63,94,.22);color:var(--rose);border:1px solid rgba(244,63,94,.3)}
+.cert-type-badge.badge-legal{background:rgba(16,185,129,.22);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.cert-verified-tag{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:var(--green);margin-top:6px}
+.cert-verified-tag i{font-size:.6rem}
 .cert-body{padding:18px;flex:1;display:flex;flex-direction:column}
 .cert-issuer{font-size:.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
 .cert-title{font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;line-height:1.3}
@@ -1394,14 +1408,16 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
   </div>
 </section>
 
-<!-- ==================== CERTIFICATIONS & SECURITY RESEARCH ==================== -->
+<!-- ==================== CREDENTIALS VAULT ==================== -->
 <section id="certifications" style="background:rgba(255,255,255,.012)">
   <div class="container">
     <div class="section-head" data-aos="fade-up">
-      <div class="eyebrow"><i class="fas fa-shield-halved" style="margin-right:6px"></i>Verified Credentials</div>
-      <h2><span class="gradient-text">Certifications</span> &amp; Security Research</h2>
-      <p>Professional certificates, cybersecurity awards &amp; published vulnerability research.</p>
+      <div class="eyebrow"><i class="fas fa-shield-halved" style="margin-right:6px"></i>Credentials Vault</div>
+      <h2><span class="gradient-text">Trust</span> &amp; Credentials</h2>
+      <p>Verified certificates, legal documents, cybersecurity awards &amp; published vulnerability research.</p>
     </div>
+    <div class="creds-stats" id="creds-stats" data-aos="fade-up"></div>
+    <div class="creds-signature" id="creds-signature" data-aos="fade-up"></div>
     <div class="certs-filter" id="certs-filter" data-aos="fade-up"></div>
     <div class="certs-grid" id="certs-grid"></div>
   </div>
@@ -2899,20 +2915,44 @@ function renderReviews(){
   }).join('');
 }
 
-/* ===== Certifications & Security Research ===== */
+/* ===== Credentials Vault ===== */
 let _activeCertFilter = 'all';
 function renderCertifications(){
   const items = STATE.data.certificationsAndResearch || [];
   const filterEl = $('#certs-filter');
   const gridEl   = $('#certs-grid');
+  const statsEl  = $('#creds-stats');
+  const sigEl    = $('#creds-signature');
   if(!filterEl || !gridEl) return;
+
+  // Render stats counter
+  if(statsEl && items.length){
+    const certs = items.filter(i=>i.category==='General Certificate').length;
+    const awards = items.filter(i=>i.category==='Security Award/Badge').length;
+    const reports = items.filter(i=>i.category==='Vulnerability Report').length;
+    const legal = items.filter(i=>i.category==='Legal Document').length;
+    const stats = [];
+    if(certs) stats.push({n:certs, l:'Certificates'});
+    if(awards) stats.push({n:awards, l:'Awards'});
+    if(reports) stats.push({n:reports, l:'Reports'});
+    if(legal) stats.push({n:legal, l:'Legal Docs'});
+    if(stats.length) statsEl.innerHTML = stats.map(s=>`<div class="creds-stat"><div class="creds-stat-num">${s.n}</div><div class="creds-stat-label">${s.l}</div></div>`).join('');
+    else statsEl.innerHTML = '';
+  }
+  // Render founder signature watermark
+  if(sigEl){
+    const agency = STATE.data.site?.agency || {};
+    const sigUrl = safeUrl(agency.founderSignature);
+    sigEl.innerHTML = sigUrl ? `<img src="${esc(sigUrl)}" alt="Authorized" loading="lazy">` : '';
+  }
 
   // Build filter tabs
   const cats = [
     {k:'all',     label:'All'},
     {k:'General Certificate',    label:'Certificates'},
     {k:'Security Award/Badge',   label:'Awards & Badges'},
-    {k:'Vulnerability Report',   label:'Vulnerability Reports'}
+    {k:'Vulnerability Report',   label:'Vulnerability Reports'},
+    {k:'Legal Document',         label:'Legal Documents'}
   ];
   filterEl.innerHTML = cats.map(c=>`
     <button class="tab-btn${_activeCertFilter===c.k?' active':''}" onclick="_setCertFilter('${c.k}')">
@@ -2929,10 +2969,10 @@ function renderCertifications(){
 
   gridEl.innerHTML = visible.map(c=>{
     const cat = c.category || 'General Certificate';
-    const typeClass = cat==='Vulnerability Report'?'report': cat==='Security Award/Badge'?'award':'cert';
+    const typeClass = cat==='Vulnerability Report'?'report': cat==='Security Award/Badge'?'award': cat==='Legal Document'?'legal':'cert';
     const badgeClass = 'badge-'+typeClass;
-    const icon = cat==='Vulnerability Report'?'fas fa-bug': cat==='Security Award/Badge'?'fas fa-trophy':'fas fa-certificate';
-    const iconColor = cat==='Vulnerability Report'?'var(--rose)': cat==='Security Award/Badge'?'var(--gold)':'var(--accent)';
+    const icon = cat==='Vulnerability Report'?'fas fa-bug': cat==='Security Award/Badge'?'fas fa-trophy': cat==='Legal Document'?'fas fa-file-shield':'fas fa-certificate';
+    const iconColor = cat==='Vulnerability Report'?'var(--rose)': cat==='Security Award/Badge'?'var(--gold)': cat==='Legal Document'?'var(--green)':'var(--accent)';
 
     const imgPart = c.img
       ? `<img src="${esc(c.img)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'cert-img-placeholder\\'><i class=\\'${icon}\\' style=\\'color:${iconColor}\\'></i></div>'"/>`
@@ -2951,6 +2991,7 @@ function renderCertifications(){
         ${c.issuer ? `<div class="cert-issuer"><i class="fas fa-building" style="margin-right:4px"></i>${esc(c.issuer)}</div>` : ''}
         <div class="cert-title">${esc(c.title||'')}</div>
         ${c.desc ? `<div class="cert-desc">${esc(c.desc)}</div>` : ''}
+        ${cat==='Legal Document' ? `<div class="cert-verified-tag"><i class="fas fa-circle-check"></i> Government Verified Document</div>` : ''}
         ${(linkBtn||pdfBtn) ? `<div class="cert-actions">${linkBtn}${pdfBtn}</div>` : ''}
       </div>
     </div>`;
@@ -3674,7 +3715,7 @@ function fieldHTML(f, val){
     return `<div class="form-row"><label>${esc(f.label)}</label><select name="${f.k}">${cats.map(c=>`<option value="${esc(c.id)}" ${val===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>`;
   }
   if(f.type==='certcategory'){
-    const opts = ['General Certificate','Security Award/Badge','Vulnerability Report'];
+    const opts = ['General Certificate','Security Award/Badge','Vulnerability Report','Legal Document'];
     return `<div class="form-row"><label>${esc(f.label)}</label><select name="${f.k}">${opts.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
   }
   if(f.type==='imgupload'){
