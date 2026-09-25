@@ -2722,8 +2722,9 @@ function _portfolioCard(p, catLabel, idx){
   const imgSrc = p.img || '';
   const noThumb = `<div class="portfolio-no-thumb"><i class="fas fa-photo-video"></i><span>Preview Coming Soon</span></div>`;
   const isCloudVid = /res\.cloudinary\.com\/.*\/video\//.test(p.video||'');
+  const cloudPoster = isCloudVid ? p.video.replace('/video/upload/', '/video/upload/so_0,w_640,h_400,c_fill,f_jpg,q_auto/').replace(/\.[^.]+$/, '.jpg') : '';
   const media = isCloudVid
-    ? `<video src="${esc(p.video)}" controls preload="metadata" style="width:100%;height:100%;object-fit:contain;background:#000" title="${esc(p.title)}"></video>`
+    ? `<video src="${esc(p.video)}" poster="${esc(cloudPoster)}" controls playsinline preload="metadata" controlslist="nodownload" style="width:100%;height:100%;object-fit:contain;background:#000;border-radius:inherit" title="${esc(p.title)}"></video>`
     : ytId
     ? `<iframe src="https://www.youtube.com/embed/${esc(ytId)}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
     : imgSrc
@@ -3638,7 +3639,11 @@ function renderAdminTicker(sec){
 }
 
 function adminRow(key, it){
-  const img = it.img || it.logo || '';
+  let img = it.img || it.logo || '';
+  // Generate Cloudinary video thumbnail if no image but has Cloudinary video
+  if(!img && it.video && /res\.cloudinary\.com\/.*\/video\/upload\//.test(it.video)){
+    img = it.video.replace('/video/upload/', '/video/upload/so_0,w_100,h_100,c_fill,f_jpg/').replace(/\.[^.]+$/, '.jpg');
+  }
   const title = it.title || it.name || it.lang || it.heroTitle || '(untitled)';
   const sub = it.role || it.desc || it.level || it.lang || it.url || '';
   return `
@@ -3824,7 +3829,92 @@ async function _inlineImgUpload(e, targetName){
     fileInput.value    = ''; /* allow re-selecting the same file if needed */
   }
 }
-/* ── Video upload with auto-fallback pipeline ── */
+/* ── Upload Progress Manager ── */
+const _uploadQueue = [];
+let _uploadPanel = null;
+
+function _getUploadPanel(){
+  if(_uploadPanel && document.body.contains(_uploadPanel)) return _uploadPanel;
+  _uploadPanel = document.createElement('div');
+  _uploadPanel.id = 'upload-progress-panel';
+  _uploadPanel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;width:380px;max-width:calc(100vw - 32px)';
+  document.body.appendChild(_uploadPanel);
+  return _uploadPanel;
+}
+
+function _formatBytes(b){
+  if(b<1024) return b+'B';
+  if(b<1048576) return (b/1024).toFixed(1)+'KB';
+  if(b<1073741824) return (b/1048576).toFixed(1)+'MB';
+  return (b/1073741824).toFixed(2)+'GB';
+}
+
+function _formatTime(sec){
+  if(sec<60) return Math.ceil(sec)+'s';
+  if(sec<3600) return Math.floor(sec/60)+'m '+Math.ceil(sec%60)+'s';
+  return Math.floor(sec/3600)+'h '+Math.floor((sec%3600)/60)+'m';
+}
+
+function _createUploadCard(fileName, fileSize){
+  const panel = _getUploadPanel();
+  const card = document.createElement('div');
+  card.style.cssText = 'background:rgba(7,11,24,.95);backdrop-filter:blur(16px);border:1px solid rgba(6,182,212,.3);border-radius:14px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Inter,sans-serif;min-width:0';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+        <i class="fas fa-cloud-upload-alt" style="color:var(--accent);font-size:1.1rem;flex-shrink:0"></i>
+        <span style="color:#f8fafc;font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${fileName}">${fileName.length>28?fileName.substring(0,25)+'...':fileName}</span>
+      </div>
+      <span class="up-pct" style="color:var(--accent);font-weight:800;font-size:.9rem;flex-shrink:0;margin-left:8px">0%</span>
+    </div>
+    <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;margin-bottom:8px">
+      <div class="up-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6);border-radius:6px;transition:width .3s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8">
+      <span class="up-detail">${_formatBytes(0)} / ${_formatBytes(fileSize)}</span>
+      <span class="up-speed">Preparing...</span>
+      <span class="up-eta">--</span>
+    </div>
+  `;
+  panel.appendChild(card);
+  return card;
+}
+
+function _updateUploadCard(card, loaded, total, startTime){
+  const pct = Math.round((loaded/total)*100);
+  const elapsed = (Date.now()-startTime)/1000;
+  const speed = elapsed>0 ? loaded/elapsed : 0;
+  const remaining = speed>0 ? (total-loaded)/speed : 0;
+
+  card.querySelector('.up-pct').textContent = pct+'%';
+  card.querySelector('.up-bar').style.width = pct+'%';
+  card.querySelector('.up-detail').textContent = _formatBytes(loaded)+' / '+_formatBytes(total);
+  card.querySelector('.up-speed').textContent = speed>0 ? _formatBytes(speed)+'/s' : 'Starting...';
+  card.querySelector('.up-eta').textContent = speed>0 ? '~'+_formatTime(remaining)+' left' : '--';
+}
+
+function _finishUploadCard(card, success, msg){
+  const icon = card.querySelector('.fa-cloud-upload-alt');
+  const bar = card.querySelector('.up-bar');
+  const pctEl = card.querySelector('.up-pct');
+  const etaEl = card.querySelector('.up-eta');
+  if(success){
+    if(icon){icon.className='fas fa-check-circle';icon.style.color='#10b981';}
+    if(bar) bar.style.background='linear-gradient(90deg,#10b981,#06b6d4)';
+    if(pctEl){pctEl.textContent='Done';pctEl.style.color='#10b981';}
+    if(etaEl) etaEl.textContent='Complete';
+    card.style.borderColor='rgba(16,185,129,.4)';
+  } else {
+    if(icon){icon.className='fas fa-times-circle';icon.style.color='#f43f5e';}
+    if(bar){bar.style.background='#f43f5e';bar.style.width='100%';}
+    if(pctEl){pctEl.textContent='Failed';pctEl.style.color='#f43f5e';}
+    if(etaEl) etaEl.textContent=msg||'Error';
+    card.style.borderColor='rgba(244,63,94,.4)';
+  }
+  setTimeout(()=>{if(card.parentNode) card.parentNode.removeChild(card);}, success?5000:10000);
+}
+
+/* ── Video upload with progress + auto-fallback pipeline ── */
 async function _inlineVideoUpload(e, targetName){
   const file = e.target.files[0]; if(!file) return;
   if(file.size > 500*1024*1024){ showToast('Video must be under 500MB','error'); return; }
@@ -3835,48 +3925,73 @@ async function _inlineVideoUpload(e, targetName){
   const origPlaceholder = inp ? inp.placeholder : '';
 
   fileInput.disabled = true;
-  if(inp) inp.placeholder = '⏳ Uploading video — this may take a few minutes…';
-  showToast('⏳ Uploading video to cloud storage…','success');
+  if(inp) inp.placeholder = 'Uploading video...';
+
+  const card = _createUploadCard(file.name, file.size);
+  const startTime = Date.now();
 
   const vidAccounts = _getVidAccounts();
-  if(!vidAccounts.length){ showToast('No video accounts!','error'); fileInput.disabled=false; return; }
+  if(!vidAccounts.length){ showToast('No video accounts!','error'); _finishUploadCard(card,false,'No accounts'); fileInput.disabled=false; return; }
+
   for(let i=0; i<vidAccounts.length; i++){
     const acc = vidAccounts[i];
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('upload_preset', acc.preset);
-      fd.append('resource_type', 'video');
+      const url = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', _vidUploadUrl(acc));
 
-      const res = await fetch(_vidUploadUrl(acc), { method:'POST', body: fd });
+        xhr.upload.onprogress = (pe) => {
+          if(pe.lengthComputable) _updateUploadCard(card, pe.loaded, pe.total, startTime);
+        };
 
-      if(!res.ok){
-        const errBody = await res.json().catch(()=>({}));
-        const msg = errBody?.error?.message || '';
-        // If storage/quota exceeded, try next account
-        if(msg.includes('limit') || msg.includes('quota') || msg.includes('exceeded') || msg.includes('storage') || res.status === 420 || res.status === 429){
-          showToast(`⚠️ ${acc.label} full — trying next storage…`,'success');
-          continue;
-        }
-        throw new Error(msg || `HTTP ${res.status}`);
-      }
+        xhr.onload = () => {
+          if(xhr.status >= 200 && xhr.status < 300){
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if(data.secure_url) resolve(data.secure_url);
+              else reject(new Error('No URL returned'));
+            } catch(err){ reject(err); }
+          } else {
+            try {
+              const errBody = JSON.parse(xhr.responseText);
+              const msg = errBody?.error?.message || '';
+              if(msg.includes('limit') || msg.includes('quota') || msg.includes('exceeded') || msg.includes('storage') || xhr.status===420 || xhr.status===429){
+                reject({quota:true, msg:msg});
+              } else {
+                reject(new Error(msg || 'HTTP '+xhr.status));
+              }
+            } catch{ reject(new Error('HTTP '+xhr.status)); }
+          }
+        };
 
-      const data = await res.json();
-      const secureUrl = data?.secure_url;
-      if(!secureUrl) throw new Error('No URL returned');
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.ontimeout = () => reject(new Error('Upload timed out'));
+        xhr.timeout = 600000; // 10 min timeout
 
-      if(inp){
-        inp.value = secureUrl;
-        inp.placeholder = origPlaceholder;
-      }
-      showToast(`✅ Video uploaded to ${acc.label} — click Update to save`,'success');
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', acc.preset);
+        fd.append('resource_type', 'video');
+        xhr.send(fd);
+      });
+
+      // Success
+      if(inp){ inp.value = url; inp.placeholder = origPlaceholder; }
+      _finishUploadCard(card, true);
+      showToast('Video uploaded — click Update to save','success');
       fileInput.disabled = false;
       fileInput.value = '';
       return;
 
     } catch(err){
+      if(err && err.quota && i < vidAccounts.length-1){
+        _updateUploadCard(card, 0, file.size, Date.now());
+        card.querySelector('.up-speed').textContent = 'Switching storage...';
+        continue;
+      }
       if(i === vidAccounts.length - 1){
-        showToast('❌ Upload failed: ' + (err.message || 'All storage accounts failed'),'error');
+        _finishUploadCard(card, false, err.message || 'All accounts failed');
+        showToast('Upload failed: '+(err.message||'Error'),'error');
         if(inp) inp.placeholder = origPlaceholder;
         console.error('[Video upload error]', err);
       }
