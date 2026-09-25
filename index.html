@@ -311,10 +311,11 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
   min-height:48px;
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
   padding:13px 26px;
-  border:1px solid transparent;
+  border:1px solid var(--border-mid);
   border-radius:var(--radius-sm);
   cursor:pointer;
   font-weight:700;font-size:.92rem;
+  color:#fff;background:rgba(255,255,255,.06);
   transition:var(--transition);
   white-space:nowrap;
 }
@@ -798,6 +799,9 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 }
 .form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:0;border-color:var(--accent);background:rgba(255,255,255,.06);box-shadow:0 0 0 3px var(--accent-glow)}
 .form-row textarea{min-height:110px;resize:vertical}
+select{appearance:auto;cursor:pointer}
+select option{background:#0f1e38;color:#f8fafc;padding:8px}
+select option:checked{background:var(--accent);color:#fff}
 
 /* FOOTER */
 footer{padding:60px 0 28px;border-top:1px solid var(--border-light);background:rgba(0,0,0,.3);color:var(--text-primary)}
@@ -1197,6 +1201,12 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
   footer{background:linear-gradient(180deg,#0a1628 0%,#060d1e 100%)}
   .modal{background:#0f1e38}
   input,select,textarea{background:rgba(255,255,255,.8)!important;color:#0c1220!important;border-color:rgba(6,182,212,.3)!important}
+  select option{background:#fff;color:#0c1220}
+  select option:checked{background:var(--accent);color:#fff}
+  .modal input,.modal select,.modal textarea,
+  .admin-layout input,.admin-layout select,.admin-layout textarea{background:rgba(255,255,255,.08)!important;color:#f8fafc!important;border-color:rgba(255,255,255,.14)!important}
+  .modal select option,.admin-layout select option{background:#0f1e38;color:#f8fafc}
+  .modal select option:checked,.admin-layout select option:checked{background:var(--accent);color:#fff}
   .code-card{background:#0c1425;border-color:rgba(6,182,212,.2)}
   .admin-panel{background:#0a1628}
 
