@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -2839,7 +2839,7 @@ function renderTeam(){
     return;
   }
   const agency=STATE.data.site?.agency||{};
-  $('#team-grid').innerHTML = members.map((t,i)=>{const isFounder=t.id==='t1'||/founder/i.test(t.role||'');return `
+  $('#team-grid').innerHTML = members.map((t,i)=>{const isFounder=false;return `
     <div class="glass-card team-card" data-scroll data-scroll-delay="${Math.min(i,3)*80}">
       <div class="team-avatar"><img src="${esc(t.img||'')}" alt="${esc(t.name)}" loading="lazy" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${esc(encodeURIComponent(t.name))}&background=0f172a&color=06b6d4&size=256&bold=true&format=png'"/></div>
       <h4>${esc(t.name)}</h4>
