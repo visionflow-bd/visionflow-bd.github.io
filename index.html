@@ -3690,7 +3690,7 @@ function editItem(key, id){
     if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
     const data = {};
     fields.forEach(f => {
-      if(f.type==='imgupload') return; // file input only — already wrote into the target field
+      if(f.type==='imgupload' || f.type==='videoupload') return; // file input only — already wrote into the target field
       const el = $(`[name="${f.k}"]`, body);
       if(!el) return;
       if(f.type==='checkbox'){ data[f.k] = el.checked; return; }
