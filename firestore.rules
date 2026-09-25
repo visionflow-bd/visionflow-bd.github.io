@@ -1,10 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Pin the existing Firebase Authentication account, not an unverified email claim.
+    // ── ADMIN IDENTITY ──────────────────────────────────────────────
+    // To change the administrator, update BOTH the UID and email below.
+    // UID: Firebase Console → Authentication → Users → copy the UID
+    // Email: the Google account email used to sign in to the portal
     function isAdmin() {
       return request.auth != null
-        && request.auth.uid == 'm1PGSw7ViEb1xOJoj8INQllra3p1';
+        && request.auth.uid == 'm1PGSw7ViEb1xOJoj8INQllra3p1'
+        && request.auth.token.email == 'shihabjessore7@gmail.com';
     }
 
     function boundedString(value, minimum, maximum) {
