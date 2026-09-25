@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1618,6 +1618,7 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
         <button onclick="adminTab('ticker')"><i class="fas fa-users-rectangle"></i> Clients Ticker</button>
         <button onclick="adminTab('leads')"><i class="fas fa-inbox"></i> Lead Inbox <span class="badge" id="lead-badge">0</span></button>
         <button onclick="adminTab('firebase')"><i class="fas fa-fire"></i> Firebase Setup</button>
+      <button onclick="adminTab('cloud')"><i class="fas fa-cloud"></i> Cloud Storage</button>
         <button onclick="adminTab('account')"><i class="fas fa-user-shield"></i> Account</button>
       </aside>
       <div class="admin-main" id="admin-main">
@@ -2038,6 +2039,16 @@ app.post('/login', async (req, res) => {
   ],
 
   leads: [],
+
+  cloudStorage: {
+    imageAccounts: [
+      { cloud: 'dohlemsrz', preset: 'visionflow', label: 'Images (Primary)', active: true }
+    ],
+    videoAccounts: [
+      { cloud: 'ybu8i7ip', preset: 'vf-video1', label: 'Video Storage A', active: true },
+      { cloud: 'y96vdxl5', preset: 'vf-video2', label: 'Video Storage B', active: true }
+    ]
+  },
 
   meta: {
     version: 14,
@@ -2698,7 +2709,10 @@ function _portfolioCard(p, catLabel, idx){
   const ytId = /^[A-Za-z0-9_-]{6,20}$/.test(_ytRaw) ? _ytRaw : '';
   const imgSrc = p.img || '';
   const noThumb = `<div class="portfolio-no-thumb"><i class="fas fa-photo-video"></i><span>Preview Coming Soon</span></div>`;
-  const media = ytId
+  const isCloudVid = /res\.cloudinary\.com\/.*\/video\//.test(p.video||'');
+  const media = isCloudVid
+    ? `<video src="${esc(p.video)}" controls preload="metadata" style="width:100%;height:100%;object-fit:cover" title="${esc(p.title)}"></video>`
+    : ytId
     ? `<iframe src="https://www.youtube.com/embed/${esc(ytId)}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
     : imgSrc
       ? `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'portfolio-no-thumb\\'><i class=\\'fas fa-photo-video\\'></i><span>Preview Coming Soon</span></div>')"/>`
@@ -3458,6 +3472,7 @@ function adminTab(name){
   else if(name==='leads')      renderAdminLeads(sec);
   else if(name==='ticker')     renderAdminTicker(sec);
   else if(name==='firebase')   renderAdminFirebase(sec);
+  else if(name==='cloud')      renderAdminCloud(sec);
   else if(name==='account')    renderAdminAccount(sec);
 }
 
@@ -3481,7 +3496,8 @@ function portfolioFields(){ return [
   {k:'desc',     label:'Description', type:'textarea'},
   {k:'img',      label:'Image URL', type:'text', placeholder:'https://...'},
   {k:'imgFile',  label:'📤 Or Upload Image', type:'imgupload', target:'img'},
-  {k:'video',    label:'YouTube Embed URL (optional)', type:'text', placeholder:'https://www.youtube.com/embed/VIDEO_ID'},
+  {k:'video',    label:'Video URL (YouTube embed or Cloudinary)', type:'text', placeholder:'https://www.youtube.com/embed/VIDEO_ID or Cloudinary URL'},
+  {k:'videoFile',label:'\u{1F4F9} Or Upload Video File', type:'videoupload', target:'video'},
   {k:'link',     label:'External Link (optional)', type:'text'},
   {k:'client',   label:'Client Name', type:'text'},
   {k:'year',     label:'Year', type:'text'}
@@ -3718,6 +3734,9 @@ function fieldHTML(f, val){
     const opts = ['General Certificate','Security Award/Badge','Vulnerability Report','Legal Document'];
     return `<div class="form-row"><label>${esc(f.label)}</label><select name="${f.k}">${opts.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
   }
+  if(f.type==='videoupload'){
+    return <div class="form-row"><label>{esc(f.label)} <small style="color:var(--text-muted);font-weight:400">(MP4 / MOV / WEBM — auto-routed to video cloud)</small></label><input type="file" accept="video/*" onchange="_inlineVideoUpload(event,'{esc(f.target||'video')}')"/></div>;
+  }
   if(f.type==='imgupload'){
     // Uploads file to Cloudinary (unsigned) → writes secure_url into the target text field
     return `<div class="form-row"><label>${esc(f.label)} <small style="color:var(--text-muted);font-weight:400">(PNG / JPG / WEBP — hosted on Cloudinary)</small></label><input type="file" accept="image/*" onchange="_inlineImgUpload(event,'${esc(f.target||'img')}')"/></div>`;
@@ -3741,12 +3760,11 @@ function fieldHTML(f, val){
 
 /* Helpers for the new field types in the edit modal */
 
-/* ── Cloudinary config ── */
-const _CLOUDINARY = {
-  cloud: 'dohlemsrz',
-  preset: 'visionflow',
-  get url(){ return `https://api.cloudinary.com/v1_1/${this.cloud}/image/upload`; }
-};
+/* -- Cloudinary config (dynamic multi-account pipeline) -- */
+function _getImgAccounts(){ return (STATE.data.cloudStorage?.imageAccounts || [{cloud:'dohlemsrz',preset:'visionflow',label:'Fallback',active:true}]).filter(a=>a.active); }
+function _getVidAccounts(){ return (STATE.data.cloudStorage?.videoAccounts || [{cloud:'ybu8i7ip',preset:'vf-video1',label:'Fallback',active:true}]).filter(a=>a.active); }
+function _imgUploadUrl(acc){ return `https://api.cloudinary.com/v1_1/${acc.cloud}/image/upload`; }
+function _vidUploadUrl(acc){ return `https://api.cloudinary.com/v1_1/${acc.cloud}/video/upload`; }
 
 async function _inlineImgUpload(e, targetName){
   const file = e.target.files[0]; if(!file) return;
@@ -3757,6 +3775,9 @@ async function _inlineImgUpload(e, targetName){
   const origPlaceholder = inp ? inp.placeholder : '';
 
   /* Disable input + show progress */
+  const imgAccounts = _getImgAccounts();
+  if(!imgAccounts.length){ showToast('No image accounts!','error'); return; }
+  const acc = imgAccounts[0]; /* Primary account */
   fileInput.disabled = true;
   if(inp){ inp.placeholder = '⏳ Uploading to Cloudinary…'; }
   showToast('⏳ Uploading image — please wait…','success');
@@ -3764,9 +3785,9 @@ async function _inlineImgUpload(e, targetName){
   try {
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('upload_preset', _CLOUDINARY.preset);
+    fd.append('upload_preset', acc.preset);
 
-    const res = await fetch(_CLOUDINARY.url, { method:'POST', body: fd });
+    const res = await fetch(_imgUploadUrl(acc), { method:'POST', body: fd });
 
     if(!res.ok){
       const errBody = await res.json().catch(()=>({}));
@@ -3791,6 +3812,151 @@ async function _inlineImgUpload(e, targetName){
     fileInput.value    = ''; /* allow re-selecting the same file if needed */
   }
 }
+/* ── Video upload with auto-fallback pipeline ── */
+async function _inlineVideoUpload(e, targetName){
+  const file = e.target.files[0]; if(!file) return;
+  if(file.size > 500*1024*1024){ showToast('Video must be under 500MB','error'); return; }
+  if(!file.type.startsWith('video/')){ showToast('Please select a video file','error'); return; }
+
+  const inp = document.querySelector([name="{targetName}"]);
+  const fileInput = e.target;
+  const origPlaceholder = inp ? inp.placeholder : '';
+
+  fileInput.disabled = true;
+  if(inp) inp.placeholder = '⏳ Uploading video — this may take a few minutes…';
+  showToast('⏳ Uploading video to cloud storage…','success');
+
+  const vidAccounts = _getVidAccounts();
+  if(!vidAccounts.length){ showToast('No video accounts!','error'); fileInput.disabled=false; return; }
+  for(let i=0; i<vidAccounts.length; i++){
+    const acc = vidAccounts[i];
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', acc.preset);
+      fd.append('resource_type', 'video');
+
+      const res = await fetch(_vidUploadUrl(acc), { method:'POST', body: fd });
+
+      if(!res.ok){
+        const errBody = await res.json().catch(()=>({}));
+        const msg = errBody?.error?.message || '';
+        // If storage/quota exceeded, try next account
+        if(msg.includes('limit') || msg.includes('quota') || msg.includes('exceeded') || msg.includes('storage') || res.status === 420 || res.status === 429){
+          showToast(⚠️ {acc.label} full — trying next storage…,'success');
+          continue;
+        }
+        throw new Error(msg || HTTP {res.status});
+      }
+
+      const data = await res.json();
+      const secureUrl = data?.secure_url;
+      if(!secureUrl) throw new Error('No URL returned');
+
+      if(inp){
+        inp.value = secureUrl;
+        inp.placeholder = origPlaceholder;
+      }
+      showToast(✅ Video uploaded to {acc.label} — click Update to save,'success');
+      fileInput.disabled = false;
+      fileInput.value = '';
+      return;
+
+    } catch(err){
+      if(i === vidAccounts.length - 1){
+        showToast('❌ Upload failed: ' + (err.message || 'All storage accounts failed'),'error');
+        if(inp) inp.placeholder = origPlaceholder;
+        console.error('[Video upload error]', err);
+      }
+    }
+  }
+  fileInput.disabled = false;
+  fileInput.value = '';
+}
+
+/* ── Cloud Storage Admin Panel ── */
+function renderAdminCloud(sec){
+  const cs = STATE.data.cloudStorage || {imageAccounts:[], videoAccounts:[]};
+
+  function accountRows(accounts, type){
+    if(!accounts || !accounts.length) return '<div class="hint" style="margin:8px 0">No accounts configured</div>';
+    return accounts.map((a,i)=> <div style="display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-sm)">
+      <div style="flex:1">
+        <strong style="color:var(--text-primary)">{esc(a.label||'Account '+(i+1))}</strong><br>
+        <small style="color:var(--text-muted)">Cloud: <code>{esc(a.cloud)}</code> | Preset: <code>{esc(a.preset)}</code></small>
+      </div>
+      <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text-muted);cursor:pointer">
+        <input type="checkbox" {a.active?'checked':''} onchange="_toggleCloudAccount('{type}',{i},this.checked)" style="width:16px;height:16px;accent-color:var(--accent)"> Active
+      </label>
+      <button class="btn btn-sm" style="background:var(--rose);border:none;color:#fff;padding:4px 10px;border-radius:var(--radius-sm);cursor:pointer" onclick="_removeCloudAccount('{type}',{i})"><i class="fas fa-trash"></i></button>
+    </div>).join('');
+  }
+
+  sec.innerHTML = 
+    <h3 style="color:var(--text-primary);margin-bottom:20px"><i class="fas fa-cloud" style="margin-right:8px;color:var(--accent)"></i>Cloud Storage Accounts</h3>
+    <div class="hint" style="margin-bottom:20px">Add unlimited Cloudinary accounts. Uploads auto-fallback to the next account when one fills up (like water tanks).</div>
+
+    <h4 style="color:var(--text-primary);margin:16px 0 8px"><i class="fas fa-image" style="margin-right:6px;color:var(--accent)"></i>Image Accounts</h4>
+    <div id="cloud-img-list">{accountRows(cs.imageAccounts,'imageAccounts')}</div>
+    <button class="btn" onclick="_addCloudAccountForm('imageAccounts')" style="margin-top:8px"><i class="fas fa-plus"></i> Add Image Account</button>
+
+    <hr style="border-color:var(--border-light);margin:24px 0">
+
+    <h4 style="color:var(--text-primary);margin:16px 0 8px"><i class="fas fa-video" style="margin-right:6px;color:var(--accent)"></i>Video Accounts</h4>
+    <div id="cloud-vid-list">{accountRows(cs.videoAccounts,'videoAccounts')}</div>
+    <button class="btn" onclick="_addCloudAccountForm('videoAccounts')" style="margin-top:8px"><i class="fas fa-plus"></i> Add Video Account</button>
+
+    <div id="cloud-add-form" style="display:none;margin-top:16px;padding:16px;border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--bg-card)">
+      <input id="ca-label" placeholder="Label (e.g. Video Storage C)" style="width:100%;margin-bottom:8px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-light);border-radius:var(--radius-sm);color:var(--text-primary)"/>
+      <input id="ca-cloud" placeholder="Cloud Name (e.g. dxyz123)" style="width:100%;margin-bottom:8px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-light);border-radius:var(--radius-sm);color:var(--text-primary)"/>
+      <input id="ca-preset" placeholder="Upload Preset (unsigned)" style="width:100%;margin-bottom:8px;padding:8px;background:var(--bg-deep);border:1px solid var(--border-light);border-radius:var(--radius-sm);color:var(--text-primary)"/>
+      <input type="hidden" id="ca-type"/>
+      <button class="btn" onclick="_saveCloudAccount()" style="margin-right:8px"><i class="fas fa-save"></i> Save Account</button>
+      <button class="btn" onclick="#cloud-add-form.style.display='none'" style="background:var(--border-light)">Cancel</button>
+    </div>
+  ;
+}
+
+function _addCloudAccountForm(type){
+  const form = #cloud-add-form;
+  form.style.display = 'block';
+  #ca-type.value = type;
+  #ca-label.value = '';
+  #ca-cloud.value = '';
+  #ca-preset.value = '';
+  #ca-label.focus();
+}
+
+async function _saveCloudAccount(){
+  const type = #ca-type.value;
+  const label = #ca-label.value.trim();
+  const cloud = #ca-cloud.value.trim();
+  const preset = #ca-preset.value.trim();
+  if(!cloud || !preset){ showToast('Cloud name and preset are required','error'); return; }
+
+  if(!STATE.data.cloudStorage) STATE.data.cloudStorage = {imageAccounts:[], videoAccounts:[]};
+  if(!STATE.data.cloudStorage[type]) STATE.data.cloudStorage[type] = [];
+  STATE.data.cloudStorage[type].push({ cloud, preset, label: label || Account {STATE.data.cloudStorage[type].length+1}, active: true });
+
+  await syncToFirestore();
+  showToast('✅ Cloud account added','success');
+  renderAdminCloud(#admin-content);
+}
+
+async function _removeCloudAccount(type, idx){
+  if(!confirm('Remove this cloud account?')) return;
+  STATE.data.cloudStorage[type].splice(idx, 1);
+  await syncToFirestore();
+  showToast('Account removed','success');
+  renderAdminCloud(#admin-content);
+}
+
+async function _toggleCloudAccount(type, idx, active){
+  STATE.data.cloudStorage[type][idx].active = active;
+  await syncToFirestore();
+  showToast(active ? 'Account activated' : 'Account deactivated','success');
+}
+
 function _readSocialItems(){
   try{ return JSON.parse(document.getElementById('sl-hidden').value || '[]') || []; }
   catch{ return []; }
