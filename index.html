@@ -2723,7 +2723,7 @@ function _portfolioCard(p, catLabel, idx){
   const noThumb = `<div class="portfolio-no-thumb"><i class="fas fa-photo-video"></i><span>Preview Coming Soon</span></div>`;
   const isCloudVid = /res\.cloudinary\.com\/.*\/video\//.test(p.video||'');
   const media = isCloudVid
-    ? `<video src="${esc(p.video)}" controls preload="metadata" style="width:100%;height:100%;object-fit:cover" title="${esc(p.title)}"></video>`
+    ? `<video src="${esc(p.video)}" controls preload="metadata" style="width:100%;height:100%;object-fit:contain;background:#000" title="${esc(p.title)}"></video>`
     : ytId
     ? `<iframe src="https://www.youtube.com/embed/${esc(ytId)}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
     : imgSrc
