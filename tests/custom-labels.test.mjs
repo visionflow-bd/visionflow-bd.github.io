@@ -103,7 +103,13 @@ test('delivery columns appear only after a field is populated, including each fi
 
 test('agreement is a labeled white-paper document with project particulars and captured terms version', () => {
   const client = clientWith({ scope:'A clear project scope', terms:'Pay after approval', milestoneText:'First cut' });
-  const agreement = buildProjectAgreement({ client, project:client.projects.campaign });
+  const founder = { founderSignatureUrl:'https://res.cloudinary.com/demo/image/upload/signature.png', authorizedName:'Founder Name', authorizedTitle:'Founder & CEO' };
+  const agreement = buildProjectAgreement({ client, project:client.projects.campaign, ...founder });
   for (const expected of ['PROJECT AGREEMENT','Project particulars','Scope / description','Project-specific payment & delivery terms','Terms and conditions','1. Project scope','Vision Flow']) assert.ok(agreement.includes(expected));
   assert.ok(agreement.includes('VF-2026-09'));
+  assert.ok(agreement.includes(founder.founderSignatureUrl));
+  assert.ok(agreement.includes('Founder Name'));
+  const report = buildProjectReport({ client, project:client.projects.campaign, ...founder });
+  assert.ok(report.includes('Vision Flow authorization'));
+  assert.ok(report.includes(founder.founderSignatureUrl));
 });
