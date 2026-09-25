@@ -47,7 +47,7 @@ function render() {
   if (!$('modalLayer').hidden || state.busy) return;
   $('topActions').innerHTML = state.mode==='admin' ? `${badge('active','Admin')}${button('Dashboard','dashboard')}${button('Recycle bin','trash')}${button('Sign out','logout')}` : state.mode==='client' ? badge('completed','Private client view') : '';
   if(state.mode==='login') return renderLogin();
-  if(state.mode==='error') { $('view').innerHTML=empty('Workspace unavailable',state.error)+button('Try again','refresh'); return; }
+  if(state.mode==='error') { $('view').innerHTML=`<section class="empty"><h2>Workspace unavailable</h2><p>${esc(state.error)}</p><p class="muted" style="margin-top:12px;font-size:11px">If you believe this is a mistake, contact your Vision Flow administrator or request a new private link.</p></section>`+button('Try again','refresh'); return; }
   if(state.mode==='loading')return;
   state.loaded=true;
   setRoute();
@@ -107,7 +107,7 @@ function startAdmin(){
 }
 function startClient(access){
   clearSubscriptions();watchBranding();state.mode='client';state.token=access;const q=new URLSearchParams(location.search);state.projectKey=q.get('p');state.tab=q.get('tab')==='log'?'log':'overview';
-  rootStop=onSnapshot(doc(db,'portal_public',access),snap=>{if(!snap.exists()||snap.data().enabled===false){state.publicClient=null;render();return;}state.publicClient=normalizeClient(snap.data(),snap.data().clientSlug);state.clientKey=state.publicClient.clientSlug;watchArtifacts(state.clientKey,{accessToken:access});render();},error=>{state.mode='error';state.error=error.code?.includes('permission-denied')?'This private link is unavailable or has been disabled. Ask Vision Flow for a current link.':errorMessage(error);render();});
+  rootStop=onSnapshot(doc(db,'portal_public',access),snap=>{if(!snap.exists()||snap.data().enabled===false){state.mode='error';state.error='This private link is no longer active. It may have been replaced or disabled by the administrator. Please contact Vision Flow for a current link.';render();return;}state.publicClient=normalizeClient(snap.data(),snap.data().clientSlug);state.clientKey=state.publicClient.clientSlug;watchArtifacts(state.clientKey,{accessToken:access});render();},error=>{state.mode='error';state.error=error.code?.includes('permission-denied')?'This private link is unavailable or has been disabled. Ask Vision Flow for a current link.':errorMessage(error);render();});
 }
 async function saveClient(draft,notice='Saved',operations=[]){
   requireAdmin();const next=normalizeClient(draft,draft.slug);const expected=Number(draft._revision)||0;next.lastUpdated=now();next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
