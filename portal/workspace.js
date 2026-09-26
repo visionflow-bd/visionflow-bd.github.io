@@ -42,6 +42,23 @@ const countdown = deadline => {
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
   return '<span class="badge active" style="font-size:11px">' + h + 'h ' + m + 'm remaining</span>';
 };
+
+// Auto-verify expired approvals (client side)
+async function autoVerifyExpired(){
+  if(!state.token || !state.projectKey) return;
+  const p = project(); if(!p) return;
+  for(const a of (p.approvals||[])){
+    if(!a.verifyDeadline) continue;
+    if(new Date(a.verifyDeadline) > new Date()) continue;
+    const c = confirmation(a); if(c) continue;
+    try{
+      await setDoc(doc(db,'portal_public',state.token,'confirms',a.id),{
+        projectKey:state.projectKey,confirmedAt:new Date().toISOString(),
+        userAgent:'auto-verified',kind:'auto'
+      });
+    }catch(e){}
+  }
+}
 const client = () => state.mode === 'client' ? state.publicClient : state.clients[state.clientKey];
 const project = () => client()?.projects?.[state.projectKey];
 const deliveryLabels = p => ({ item:text(p?.itemLabel)||'Item / subject', title:text(p?.titleLabel)||'Deliverable title', showItem:p?.showItemField!==false });
@@ -75,6 +92,7 @@ function render() {
   if(state.mode==='error') { $('view').innerHTML=`<section class="empty"><h2>Workspace unavailable</h2><p>${esc(state.error)}</p><p class="muted" style="margin-top:12px;font-size:11px">If you believe this is a mistake, contact your Vision Flow administrator or request a new private link.</p></section>`+button('Try again','refresh'); return; }
   if(state.mode==='loading')return;
   state.loaded=true;
+  autoVerifyExpired();
   setRoute();
   if(admin() && state.page==='trash') return renderTrash();
   if(state.mode==='admin' && !state.clientKey) return renderDashboard();
