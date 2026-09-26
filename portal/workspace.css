@@ -50,7 +50,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 /* Terms acceptance popup */
 .terms-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(7,21,41,.92);backdrop-filter:blur(12px);padding:24px;animation:termsFade .4s ease}
 @keyframes termsFade{from{opacity:0}to{opacity:1}}
-.terms-card{max-width:520px;width:100%;background:var(--surface,#1c2a3d);border:1px solid var(--line,#2a3d54);border-radius:20px;padding:40px 36px;text-align:center;animation:termsSlide .5s cubic-bezier(.16,1,.3,1)}
+.terms-card{max-width:520px;width:100%;background:var(--surface,#1c2a3d);border:1px solid var(--line,#2a3d54);border-radius:20px;padding:40px 36px;text-align:center;animation:termsSlide .4s cubic-bezier(.16,1,.3,1) both}
 @keyframes termsSlide{from{transform:translateY(30px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 .terms-logo{width:64px;height:64px;object-fit:contain;border-radius:14px;background:#fff;padding:8px;margin-bottom:16px}
 .terms-card h1{font-size:22px;margin:0 0 6px;color:var(--text,#fff)}
