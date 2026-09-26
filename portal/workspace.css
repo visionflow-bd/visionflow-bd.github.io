@@ -83,3 +83,9 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .terms-detail-panel ul{padding-left:18px;margin:8px 0}
 .terms-detail-panel li{font-size:12px;line-height:1.7;color:var(--text,#c8d6e5);margin-bottom:6px}
 .terms-detail-panel strong{color:var(--brand,#5cc8b0)}
+.rejection-card{margin:10px 0;padding:14px 18px;border-left:4px solid var(--danger,#e74c5e);background:rgba(231,76,94,.08);border-radius:0 8px 8px 0}
+.rejection-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rejection-date{font-size:12px;color:var(--muted,#8899aa)}
+.rejection-reason{padding:10px 14px;background:rgba(0,0,0,.15);border-radius:6px}
+.rejection-reason strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--danger,#e74c5e);margin-bottom:6px}
+.rejection-reason p{font-size:13px;line-height:1.6;color:var(--text,#c8d6e5);margin:0}
