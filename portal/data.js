@@ -68,8 +68,8 @@ export function publicSnapshot(client, slug) {
     projects[key] = pick(p,['slug','name','rate','budget','status','createdAt','lastUpdated','scope','terms','deadline','weeklyTarget','milestoneText','sourceScriptUrl','avatarFolderUrl','itemLabel','titleLabel','showItemField']);
     projects[key].items = itemsOf(p).map(item => pick(item,['n','b','t','s','sd','dd','dur','dl','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']));
     projects[key].totalItems = projects[key].items.length;
-    projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt']));
-    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt']));
+    projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt','verifyDeadline']));
+    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt','verifyDeadline']));
     for (const approval of p.approvals || []) { approvalIds.push(approval.id); approvalProjects[approval.id] = key; }
   }
   const hiddenIds = new Set(Object.values(client.trash || {}).flatMap(entry => [entry.value?.id, ...(entry.records || []).map(r=>r.id)]).filter(Boolean));
