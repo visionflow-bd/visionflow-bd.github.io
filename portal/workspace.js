@@ -18,6 +18,7 @@ async function sendNotification(payload){
     payload.portalUrl = payload.portalUrl || clientUrl(c, state.projectKey);
     if(payload.type==='payment')payload.portalUrl+='#payments';
     if(payload.type==='approval')payload.portalUrl+='#approvals';
+    if(payload.type==='delivery')payload.portalUrl+='#deliveries';
     payload.portalBaseUrl = payload.portalBaseUrl || clientUrl(c, null);
     payload.to = payload.to || c.email;
     payload.clientName = payload.clientName || c.name;
@@ -393,7 +394,7 @@ async function action(name,source){
   if(name==='purge-trash'){if(!await confirmAction('Permanently delete this recycled record? It cannot be restored.'))return;const c=clone(state.clients[source.dataset.client]);delete c.trash[source.dataset.id];await saveClient(c,'Recycled record permanently deleted');return render();}
   if(name==='purge-client'){if(await confirmAction('Permanently delete this client and every project, signature, request and payment? This cannot be undone.'))await purgeClient(source.dataset.client);return render();}
   if(name==='restore-row'||name==='purge-row'){const c=clone(client()),p=c.projects[state.projectKey],number=Number(source.dataset.number),i=p.items.find(i=>Number(i.n)===number);if(!i?.deleted)throw new Error('Archived row not found.');if(name==='purge-row'){if(!await confirmAction('Permanently delete this archived production row?'))return;p.items=p.items.filter(x=>x!==i);}else{delete i.deleted;delete i.deletedAt;}p.totalItems=itemsOf(p).length;await saveClient(c,name==='restore-row'?'Row restored':'Row permanently deleted');finishModal();return;}
-  if(name==='reset-approval'){const id=source.dataset.id;if(!await confirmAction('Reset the client confirmation? The approval request will remain available to confirm again.'))return;await saveClient(clone(client()),'Confirmation reset',[{path:['confirms',id],delete:true}]);return render();}
+  if(name==='reset-approval'){const id=source.dataset.id;const c=client();const conf=project()?.approvals?.find(a=>a.id===id);let wasRejPending=false;try{const tk=c.accessToken||state.token;if(tk){const snap=await getDoc(doc(db,'portal_public',tk,'confirms',id));wasRejPending=snap.exists()&&snap.data()?.kind==='rejection-pending';}}catch(e){}if(!await confirmAction(wasRejPending?'Dismiss this rejection? The client will be notified.':'Reset the client confirmation? The approval request will remain available to confirm again.'))return;await saveClient(clone(client()),'Confirmation reset',[{path:['confirms',id],delete:true}]);if(wasRejPending){sendNotification({type:'approval',subject:'Update: Your feedback has been reviewed',message:'Your rejection has been reviewed by the team. The update remains available for your confirmation. Please revisit your portal for details.'});}return render();}
   if(name==='toggle-sharing'){const c=clone(client());c.accessEnabled=c.accessEnabled===false;await saveClient(c,c.accessEnabled?'Sharing enabled':'Sharing paused');return finishModal();}
   if(name==='rotate-link'){if(await confirmAction('Replace the private link? The old link will stop working.'))await rotateLink();return;}
 }
