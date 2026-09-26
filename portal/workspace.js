@@ -162,7 +162,20 @@ function signatureView(p){
 function feedbackView(){const rs=admin()?requests():visibleRequests();return `<section class="panel" style="margin-top:16px"><div class="panel-head"><h3>Feedback & revisions</h3>${badge('revision',rs.length+' requests')}</div>${rs.map(r=>{const review=reviewOf(r);return `<div class="list-row"><strong>${esc(r.requestType||'Feedback')} · ${r.itemNumber?'Deliverable '+esc(r.itemNumber):'Project-wide'}</strong><p class="prewrap">${esc(review.displayMessage??r.message)}</p><p>${esc(dateText(r.submittedAt))} · ${esc(review.status||'new')}</p>${review.response?`<div class="response"><strong>Vision Flow</strong><p class="prewrap">${esc(review.response)}</p></div>`:''}${admin()?button('Edit / respond','review-feedback',`data-id="${esc(r.id)}" data-collection="${r.collection}"`):''}</div>`;}).join('')||'<p class="muted">No requests yet. Send project feedback here or use the button beside any deliverable.</p>'}${!admin()?button('Send feedback / revision','feedback-project'):''}</section>`;}
 function productionView(){
   const p=project(),columns=deliveryColumns(p,{includeInternal:admin()}),searchLabels=columns.filter(column=>['b','t'].includes(column.key)).map(column=>column.label).join(', ')||'deliverable number';
-  const cell=(item,column)=>column.type==='link'?(link(item[column.key],'Open')||'—'):column.type==='date'&&item[column.key]?fmtDate(item[column.key]):esc(item[column.key]||'—');
+  const verifiedKey = n => 'vf-verified-' + (state.token||'admin') + '-' + state.projectKey + '-' + n;
+  const isVerified = n => admin() || localStorage.getItem(verifiedKey(n)) === 'yes';
+  const cell=(item,column)=>{
+    if(column.type==='link'){
+      const url = safeUrl(item[column.key]);
+      if(!url) return '—';
+      // In client mode, final delivery links require verify-to-download
+      if(!admin() && column.key==='dl' && isDone(item) && !isVerified(item.n)){
+        return '<button class="button small" data-action="verify-download" data-number="' + item.n + '" data-url="' + esc(url) + '">Verify \u0026 Download</button>';
+      }
+      return link(url, column.key==='dl' && !admin() ? 'Download' : 'Open');
+    }
+    return column.type==='date'&&item[column.key]?fmtDate(item[column.key]):esc(item[column.key]||'—');
+  };
   return `<section class="panel" style="margin-top:18px"><div class="panel-head"><div><h3>Production log</h3><p class="muted small">Only populated fields appear. Each attached file type gets its own column; blank rows show a dash only after that column is in use.</p></div>${admin()?button('Archived rows','archived-rows')+button('Export CSV','export-csv'):button('Export CSV','export-csv')}</div><div class="filter-row"><input class="input" id="itemSearch" aria-label="Search production log" placeholder="Search ${esc(searchLabels)}" value="${esc(state.filter)}"><select class="select" id="itemStatus" aria-label="Filter status"><option value="">All statuses</option>${STATUS.map(s=>`<option value="${s}" ${s===state.status?'selected':''}>${LABEL[s]}</option>`).join('')}</select><select class="select" id="itemBatch" aria-label="Filter batch"><option value="">All batches</option><option value="1" ${state.batch==='1'?'selected':''}>Batch 1</option><option value="2" ${state.batch==='2'?'selected':''}>Batch 2</option></select></div><p class="small muted" id="filterCount"></p><div class="table-wrap"><table><thead><tr><th>#</th>${columns.map(column=>`<th>${esc(column.label)}</th>`).join('')}<th>Status</th><th>Actions</th></tr></thead><tbody>${itemsOf(p).map(i=>`<tr data-item-row data-status="${i.s}" data-batch="${i.batch||(i.n<=50?1:2)}" data-search="${esc(`${i.n} ${i.b||''} ${i.t||''}`.toLowerCase())}"><td>${String(i.n).padStart(3,'0')}</td>${columns.map(column=>`<td>${cell(i,column)}</td>`).join('')}<td>${badge(i.s)}</td><td>${admin()?button('Edit','edit-item',`data-number="${i.n}"`):button('Feedback / revision','feedback-item',`data-number="${i.n}"`)}</td></tr>`).join('')}</tbody></table></div></section>`;}
 function applyFilters(){let count=0;document.querySelectorAll('[data-item-row]').forEach(r=>{r.hidden=!!((state.filter&&!r.dataset.search.includes(state.filter.toLowerCase()))||(state.status&&r.dataset.status!==state.status)||(state.batch&&r.dataset.batch!==state.batch));if(!r.hidden)count++;});if($('filterCount'))$('filterCount').textContent=`${count} of ${itemsOf(project()).length} deliverables shown`;}
 
@@ -360,6 +373,7 @@ async function action(name,source){
 }
 document.addEventListener('click',event=>{const source=event.target.closest('[data-action]');if(!source||state.busy)return;const name=source.dataset.action;
   if(name==='accept-terms'){localStorage.setItem(termsKey(),'accepted');render();return;}
+  if(name==='verify-download'){const n=source.dataset.number;const url=source.dataset.url;localStorage.setItem('vf-verified-'+(state.token||'admin')+'-'+state.projectKey+'-'+n,'yes');notify('Delivery #'+n+' verified — download link unlocked');window.open(url,'_blank','noopener');render();return;}
   if(name==='confirm-approval'){source.disabled=true;source.textContent='Confirming…';setDoc(doc(db,'portal_public',state.token,'confirms',source.dataset.id),{projectKey:state.projectKey,confirmedAt:now(),userAgent:navigator.userAgent}).then(()=>notify('Update confirmed')).catch(fail).finally(()=>{source.disabled=false;source.textContent='Confirm update';});return;}
   const old=source.textContent;let result;try{result=action(name,source);}catch(error){fail(error);return;}if(result?.then){source.disabled=true;source.textContent='Working…';result.catch(fail).finally(()=>{source.disabled=false;source.textContent=old;render();});}
 });
