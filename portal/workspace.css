@@ -91,3 +91,17 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .rejection-reason p{font-size:13px;line-height:1.6;color:var(--text,#c8d6e5);margin:0}
 .rejection-card.rejection-pending{border-left-color:var(--warn,#f0a946);background:rgba(240,169,70,.08)}
 .rejection-card.rejection-pending .rejection-reason strong{color:var(--warn,#f0a946)}
+
+.notif-bar{background:linear-gradient(135deg,#fff3cd,#ffeeba);color:#856404;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;margin-top:8px;text-align:center;border:1px solid #ffc107;animation:fadeIn .3s ease}
+
+#notif-area{display:flex;flex-direction:column;gap:6px;margin:8px 0 4px;width:100%}
+.notif-card{padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.4;display:flex;align-items:center;gap:8px;transition:transform .15s}
+.notif-card:hover{transform:translateX(4px)}
+.notif-warning{background:#fff8e1;color:#8d6e00;border-left:3px solid #ffc107}
+.notif-urgent{background:#fde8e8;color:#b71c1c;border-left:3px solid #e53935;font-weight:500}
+.notif-info{background:#e3f2fd;color:#1565c0;border-left:3px solid #42a5f5}
+@media(prefers-color-scheme:dark){
+  .notif-warning{background:#3e2e00;color:#ffe082;border-color:#ff8f00}
+  .notif-urgent{background:#3e0000;color:#ef9a9a;border-color:#c62828}
+  .notif-info{background:#0d293e;color:#90caf9;border-color:#1e88e5}
+}
