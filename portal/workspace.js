@@ -13,14 +13,14 @@ async function sendNotification(payload){
   try{
     const siteDoc = await getDoc(doc(db,'site','main'));
     const notif = siteDoc.data()?.site?.notifications || {};
-    if(!notif.enableEmail || !notif.emailWebhookUrl) return;
+    if(!notif.enableEmail || !notif.emailWebhookUrl){console.warn('Email disabled or no webhook URL');return;}
     const c = client();
     payload.portalUrl = payload.portalUrl || clientUrl(c, state.projectKey);
     payload.to = payload.to || c.email;
     payload.clientName = payload.clientName || c.name;
-    if(!payload.to) return;
+    if(!payload.to){console.warn('No email for client');if(admin())notify('Email skipped — no email address set for this client',true);return;}
     payload.timerHours = payload.timerHours || notif.autoVerifyHours || 72;
-    fetch(notif.emailWebhookUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>{if(!r.ok)console.warn('Email webhook returned',r.status);return r.json();}).then(j=>{if(j&&j.ok)console.log('Email sent to',payload.to);else console.warn('Email webhook error:',j);}).catch(e=>{console.warn('Email notification failed:',e);});
+    fetch(notif.emailWebhookUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>{if(!r.ok)console.warn('Email webhook returned',r.status);return r.json();}).then(j=>{if(j&&j.ok){console.log('Email sent to',payload.to);if(admin())notify('Email sent to '+payload.to);}else console.warn('Email webhook error:',j);}).catch(e=>{console.warn('Email notification failed:',e);});
   }catch(e){console.warn('Notification error:',e);}
 }
 // A named Firebase app keeps the public client route outside the administrator
