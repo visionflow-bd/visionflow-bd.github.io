@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, runTransaction, setDoc, updateDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { ADMIN_UID, STATUS, LABEL, clone, esc, text, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns } from './data.js?v=20260925-r1';
+import { ADMIN_UID, STATUS, LABEL, clone, esc, text, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns } from './data.js?v=20260926-r2';
 import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260925-r3';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
