@@ -92,6 +92,7 @@ function render() {
   if(state.mode==='error') { $('view').innerHTML=`<section class="empty"><h2>Workspace unavailable</h2><p>${esc(state.error)}</p><p class="muted" style="margin-top:12px;font-size:11px">If you believe this is a mistake, contact your Vision Flow administrator or request a new private link.</p></section>`+button('Try again','refresh'); return; }
   if(state.mode==='loading')return;
   state.loaded=true;
+  if(showTermsPopup()) return;
   autoVerifyExpired();
   setRoute();
   if(admin() && state.page==='trash') return renderTrash();
@@ -101,6 +102,33 @@ function render() {
   $('view').innerHTML=(state.projectKey ? projectView() : clientView())+`<p class="footer-note">Vision Flow · Live project workspace · ${client().lastUpdated ? `Updated ${esc(dateText(client().lastUpdated))}` : 'Ready for your next update'}</p>`;
   if(state.tab==='log') applyFilters();
 }
+// First-time terms acceptance popup
+const termsKey = () => 'vf-terms-' + (state.token||'admin');
+const hasAcceptedTerms = () => localStorage.getItem(termsKey()) === 'accepted';
+function showTermsPopup(){
+  if(admin() || hasAcceptedTerms()) return false;
+  view.innerHTML = '<div class="terms-overlay">' +
+    '<div class="terms-card">' +
+    '<img class="terms-logo" src="../logo.png" alt="Vision Flow">' +
+    '<h1>Welcome to Vision Flow</h1>' +
+    '<p class="terms-sub">Your private project workspace</p>' +
+    '<div class="terms-body">' +
+    '<p>By accessing this workspace, you acknowledge that:</p>' +
+    '<ul>' +
+    '<li>This is a <strong>private, confidential</strong> project portal created exclusively for you.</li>' +
+    '<li>All project details, deliverables, payment records, and communication within this workspace are <strong>strictly confidential</strong>.</li>' +
+    '<li>You agree not to share your unique access link with unauthorized parties.</li>' +
+    '<li>Deliverables will be reviewed and confirmed through this portal as per the project agreement.</li>' +
+    '<li>Payments, approvals, and feedback are tracked and time-stamped for mutual transparency.</li>' +
+    '</ul>' +
+    '<p class="terms-note">If you have any questions about these terms, please contact Vision Flow before proceeding.</p>' +
+    '</div>' +
+    '<button class="button primary terms-accept" data-action="accept-terms">I Understand & Accept</button>' +
+    '<p class="terms-footer">Vision Flow · Creative Production Agency</p>' +
+    '</div></div>';
+  return true;
+}
+
 function renderLogin(message='') {
   $('view').innerHTML=`<section class="empty login-card"><img class="login-logo" src="../logo.png" alt="Vision Flow"><p class="eyebrow">Vision Flow workspace</p><h1>Welcome back</h1><p>Sign in to manage your clients, projects and delivery records.</p><form id="loginForm" class="form-grid">${field('Email','email','','email','autocomplete="username" required')}${field('Password','password','','password','autocomplete="current-password" required')}<p class="form-error" role="alert">${esc(message)}</p><button class="button primary" type="submit">Sign in securely</button></form></section>`;
 }
@@ -329,6 +357,7 @@ async function action(name,source){
   if(name==='rotate-link'){if(await confirmAction('Replace the private link? The old link will stop working.'))await rotateLink();return;}
 }
 document.addEventListener('click',event=>{const source=event.target.closest('[data-action]');if(!source||state.busy)return;const name=source.dataset.action;
+  if(name==='accept-terms'){localStorage.setItem(termsKey(),'accepted');render();return;}
   if(name==='confirm-approval'){source.disabled=true;source.textContent='Confirming…';setDoc(doc(db,'portal_public',state.token,'confirms',source.dataset.id),{projectKey:state.projectKey,confirmedAt:now(),userAgent:navigator.userAgent}).then(()=>notify('Update confirmed')).catch(fail).finally(()=>{source.disabled=false;source.textContent='Confirm update';});return;}
   const old=source.textContent;let result;try{result=action(name,source);}catch(error){fail(error);return;}if(result?.then){source.disabled=true;source.textContent='Working…';result.catch(fail).finally(()=>{source.disabled=false;source.textContent=old;render();});}
 });
