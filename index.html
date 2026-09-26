@@ -4058,7 +4058,7 @@ async function testNotifyEmail(){
   showToast('Sending test email...');
   try{
     const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      type:'general',to:'jashory7@gmail.com',subject:'Test - Vision Flow Notifications',
+      type:'general',to:'jashory7@gmail.com',clientName:'Test User',subject:'Test - Vision Flow Notifications',
       message:'This is a test notification from your Vision Flow admin panel. If you received this, your email system is working correctly!',
       portalUrl:'https://visionflow-bd.github.io/portal/'
     })});
