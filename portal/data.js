@@ -36,8 +36,8 @@ export function deliveryColumns(project,{includeInternal=false}={}) {
   return [
     { key:'b', label:itemLabel, type:'text', show:showItem&&populated('b') },
     { key:'t', label:titleLabel, type:'text', show:populated('t') },
-    { key:'sd', label:'Started', type:'text', show:populated('sd') },
-    { key:'dd', label:'Delivered', type:'text', show:populated('dd') },
+    { key:'sd', label:'Started', type:'date', show:populated('sd') },
+    { key:'dd', label:'Delivered', type:'date', show:populated('dd') },
     { key:'dur', label:'Duration', type:'text', show:populated('dur') },
     { key:'dl', label:'Final delivery', type:'link', show:populated('dl') },
     { key:'scriptUrl', label:'Script', type:'link', show:populated('scriptUrl') },
