@@ -29,7 +29,7 @@ const firebaseApp = initialAccess ? initializeApp(firebaseConfig,'client-view') 
 const auth = getAuth(firebaseApp), db = getFirestore(firebaseApp);
 const $ = id => document.getElementById(id);
 const state = { mode:'loading', loaded:false, clients:{}, publicClient:null, clientKey:null, projectKey:null, tab:'overview', page:'workspace', token:null, user:null, busy:false, filter:'', status:'', batch:'', artifacts:{}, founder:{...DEFAULT_FOUNDER}, error:'' };
-let rootStop, brandingStop, artifactStops = {}, modalReturnFocus, pad, previewObjectUrl, founderPreparedBlob, toastTimer;
+let rootStop, brandingStop, artifactStops = {}, modalReturnFocus, pad, previewObjectUrl, founderPreparedBlob, toastTimer, countdownInterval;
 const now = () => new Date().toISOString();
 const localDay = () => new Date().toLocaleDateString('sv-SE');
 const dateText = value => { const d = new Date(value); return Number.isNaN(d.valueOf()) ? text(value) : d.toLocaleString('en-GB'); };
@@ -40,7 +40,7 @@ const countdown = deadline => {
   const ms = new Date(deadline) - Date.now();
   if(ms <= 0) return '<span class="badge done">Auto-verified</span>';
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
-  return '<span class="badge active" style="font-size:11px">' + h + 'h ' + m + 'm remaining</span>';
+  return '<span class="badge active" style="font-size:11px" data-deadline="' + deadline + '">' + h + 'h ' + m + 'm remaining</span>';
 };
 
 // Auto-verify expired approvals (client side)
@@ -101,6 +101,8 @@ function render() {
   if(state.projectKey && !project())state.projectKey=null;
   $('view').innerHTML=(state.projectKey ? projectView() : clientView())+`<p class="footer-note">Vision Flow · Live project workspace · ${client().lastUpdated ? `Updated ${esc(dateText(client().lastUpdated))}` : 'Ready for your next update'}</p>`;
   if(state.tab==='log') applyFilters();
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => { let expired = false; document.querySelectorAll('[data-deadline]').forEach(el => { const ms = new Date(el.dataset.deadline) - Date.now(); if(ms <= 0){ el.className = 'badge done'; el.textContent = 'Auto-verified'; el.removeAttribute('data-deadline'); expired = true; return; } const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); el.textContent = h + 'h ' + m + 'm remaining'; }); if(expired) autoVerifyExpired(); }, 30000);
 }
 // First-time terms acceptance popup
 const termsKey = () => 'vf-terms-' + (state.token||'admin');
@@ -164,7 +166,7 @@ function productionView(){
   return `<section class="panel" style="margin-top:18px"><div class="panel-head"><div><h3>Production log</h3><p class="muted small">Only populated fields appear. Each attached file type gets its own column; blank rows show a dash only after that column is in use.</p></div>${admin()?button('Archived rows','archived-rows')+button('Export CSV','export-csv'):button('Export CSV','export-csv')}</div><div class="filter-row"><input class="input" id="itemSearch" aria-label="Search production log" placeholder="Search ${esc(searchLabels)}" value="${esc(state.filter)}"><select class="select" id="itemStatus" aria-label="Filter status"><option value="">All statuses</option>${STATUS.map(s=>`<option value="${s}" ${s===state.status?'selected':''}>${LABEL[s]}</option>`).join('')}</select><select class="select" id="itemBatch" aria-label="Filter batch"><option value="">All batches</option><option value="1" ${state.batch==='1'?'selected':''}>Batch 1</option><option value="2" ${state.batch==='2'?'selected':''}>Batch 2</option></select></div><p class="small muted" id="filterCount"></p><div class="table-wrap"><table><thead><tr><th>#</th>${columns.map(column=>`<th>${esc(column.label)}</th>`).join('')}<th>Status</th><th>Actions</th></tr></thead><tbody>${itemsOf(p).map(i=>`<tr data-item-row data-status="${i.s}" data-batch="${i.batch||(i.n<=50?1:2)}" data-search="${esc(`${i.n} ${i.b||''} ${i.t||''}`.toLowerCase())}"><td>${String(i.n).padStart(3,'0')}</td>${columns.map(column=>`<td>${cell(i,column)}</td>`).join('')}<td>${badge(i.s)}</td><td>${admin()?button('Edit','edit-item',`data-number="${i.n}"`):button('Feedback / revision','feedback-item',`data-number="${i.n}"`)}</td></tr>`).join('')}</tbody></table></div></section>`;}
 function applyFilters(){let count=0;document.querySelectorAll('[data-item-row]').forEach(r=>{r.hidden=!!((state.filter&&!r.dataset.search.includes(state.filter.toLowerCase()))||(state.status&&r.dataset.status!==state.status)||(state.batch&&r.dataset.batch!==state.batch));if(!r.hidden)count++;});if($('filterCount'))$('filterCount').textContent=`${count} of ${itemsOf(project()).length} deliverables shown`;}
 
-function clearSubscriptions(){rootStop?.();rootStop=null;brandingStop?.();brandingStop=null;Object.values(artifactStops).forEach(x=>x.stop());artifactStops={};state.artifacts={};}
+function clearSubscriptions(){rootStop?.();rootStop=null;brandingStop?.();brandingStop=null;Object.values(artifactStops).forEach(x=>x.stop());artifactStops={};state.artifacts={};clearInterval(countdownInterval);countdownInterval=null;}
 function watchBranding(){brandingStop=onSnapshot(doc(db,'site','main'),snap=>{const agency=snap.data()?.site?.agency||{};state.founder={signatureUrl:safeUrl(agency.founderSignature)||DEFAULT_FOUNDER.signatureUrl,name:text(agency.founderName)||DEFAULT_FOUNDER.name,title:text(agency.founderTitle)||DEFAULT_FOUNDER.title};if(state.loaded)render();},fail);}
 function watchArtifacts(key,c){
   if(artifactStops[key]?.token===c.accessToken)return;artifactStops[key]?.stop();
