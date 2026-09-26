@@ -107,7 +107,7 @@ const termsKey = () => 'vf-terms-' + (state.token||'admin');
 const hasAcceptedTerms = () => localStorage.getItem(termsKey()) === 'accepted';
 function showTermsPopup(){
   if(admin() || hasAcceptedTerms()) return false;
-  view.innerHTML = '<div class="terms-overlay">' +
+  $('view').innerHTML = '<div class="terms-overlay">' +
     '<div class="terms-card">' +
     '<img class="terms-logo" src="../logo.png" alt="Vision Flow">' +
     '<h1>Welcome to Vision Flow</h1>' +
