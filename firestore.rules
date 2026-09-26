@@ -79,13 +79,13 @@ service cloud.firestore {
       let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
       let approvals = portal.get('approvalProjects', {});
       return data.keys().hasAll(['confirmedAt'])
-        && data.keys().hasOnly(['projectKey', 'confirmedAt', 'userAgent', 'kind'])
+        && data.keys().hasOnly(['projectKey', 'confirmedAt', 'userAgent', 'kind', 'rejectReason'])
         && confId in portal.get('approvalIds', [])
         && confId in approvals
         && data.get('projectKey', approvals[confId]) == approvals[confId]
         && knownProject(token, approvals[confId])
         && isoDate(data.confirmedAt)
-        && data.get('kind', '') in ['', 'auto']
+        && data.get('kind', '') in ['', 'auto', 'rejected']
         && optionalUserAgent(data);
     }
 
