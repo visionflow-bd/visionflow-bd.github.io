@@ -85,7 +85,7 @@ service cloud.firestore {
         && data.get('projectKey', approvals[confId]) == approvals[confId]
         && knownProject(token, approvals[confId])
         && isoDate(data.confirmedAt)
-        && data.get('kind', '') in ['', 'auto', 'rejected']
+        && data.get('kind', '') in ['', 'auto', 'rejected', 'rejection-pending']
         && optionalUserAgent(data);
     }
 

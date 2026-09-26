@@ -89,3 +89,5 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .rejection-reason{padding:10px 14px;background:rgba(0,0,0,.15);border-radius:6px}
 .rejection-reason strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--danger,#e74c5e);margin-bottom:6px}
 .rejection-reason p{font-size:13px;line-height:1.6;color:var(--text,#c8d6e5);margin:0}
+.rejection-card.rejection-pending{border-left-color:var(--warn,#f0a946);background:rgba(240,169,70,.08)}
+.rejection-card.rejection-pending .rejection-reason strong{color:var(--warn,#f0a946)}
