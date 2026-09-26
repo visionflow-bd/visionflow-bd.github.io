@@ -1631,6 +1631,7 @@ body.lang-bn code,body.lang-bn pre,body.lang-bn .pcp-code,body.lang-bn .pcp-file
         <button onclick="adminTab('leads')"><i class="fas fa-inbox"></i> Lead Inbox <span class="badge" id="lead-badge">0</span></button>
         <button onclick="adminTab('firebase')"><i class="fas fa-fire"></i> Firebase Setup</button>
       <button onclick="adminTab('cloud')"><i class="fas fa-cloud"></i> Cloud Storage</button>
+      <button onclick="adminTab('notify')"><i class="fas fa-bell"></i> Notifications</button>
         <button onclick="adminTab('account')"><i class="fas fa-user-shield"></i> Account</button>
       </aside>
       <div class="admin-main" id="admin-main">
@@ -2060,6 +2061,12 @@ app.post('/login', async (req, res) => {
       { cloud: 'ybu8i7ip', preset: 'vf-video1', label: 'Video Storage A', active: true },
       { cloud: 'y96vdxl5', preset: 'vf-video2', label: 'Video Storage B', active: true }
     ]
+  },
+  notifications: {
+    emailWebhookUrl: '',
+    autoVerifyHours: 72,
+    enableEmail: false,
+    enableWhatsApp: true
   },
 
   meta: {
@@ -3486,6 +3493,7 @@ function adminTab(name){
   else if(name==='ticker')     renderAdminTicker(sec);
   else if(name==='firebase')   renderAdminFirebase(sec);
   else if(name==='cloud')      renderAdminCloud(sec);
+  else if(name==='notify')     renderAdminNotify(sec);
   else if(name==='account')    renderAdminAccount(sec);
 }
 
@@ -3999,6 +4007,65 @@ async function _inlineVideoUpload(e, targetName){
   }
   fileInput.disabled = false;
   fileInput.value = '';
+}
+
+/* ── Notifications Admin Panel ── */
+function renderAdminNotify(sec){
+  const n = STATE.data.notifications || {emailWebhookUrl:'',autoVerifyHours:72,enableEmail:false,enableWhatsApp:true};
+  sec.innerHTML = `
+  <h3 style="color:var(--text-primary);margin-bottom:20px"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent)"></i>Notification Settings</h3>
+  <div style="display:grid;gap:16px;max-width:600px">
+    <div class="admin-field">
+      <label style="color:var(--text-primary);font-weight:600">Email Webhook URL</label>
+      <input class="admin-input" id="notify-webhook" type="url" value="${esc(n.emailWebhookUrl||'')}" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%">
+      <small style="color:var(--text-muted)">Deploy your Apps Script as Web App and paste the URL here</small>
+    </div>
+    <div class="admin-field">
+      <label style="color:var(--text-primary);font-weight:600">Auto-Verify Timer (hours)</label>
+      <input class="admin-input" id="notify-timer" type="number" min="1" max="720" value="${n.autoVerifyHours||72}" style="width:120px">
+      <small style="color:var(--text-muted)">Payments and deliveries auto-verify after this many hours if client doesn't respond</small>
+    </div>
+    <div style="display:flex;gap:24px;align-items:center">
+      <label style="color:var(--text-primary);display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="notify-email" ${n.enableEmail?'checked':''}>
+        <span>Enable Email Notifications</span>
+      </label>
+      <label style="color:var(--text-primary);display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="notify-whatsapp" ${n.enableWhatsApp!==false?'checked':''}>
+        <span>Enable WhatsApp Buttons</span>
+      </label>
+    </div>
+    <button class="btn-admin" onclick="saveNotifySettings()" style="width:fit-content">
+      <i class="fas fa-save"></i> Save Notification Settings
+    </button>
+    <button class="btn-admin" onclick="testNotifyEmail()" style="width:fit-content;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-light)">
+      <i class="fas fa-paper-plane"></i> Send Test Email
+    </button>
+  </div>`;
+}
+async function saveNotifySettings(){
+  STATE.data.notifications = {
+    emailWebhookUrl: $('#notify-webhook').value.trim(),
+    autoVerifyHours: parseInt($('#notify-timer').value)||72,
+    enableEmail: $('#notify-email').checked,
+    enableWhatsApp: $('#notify-whatsapp').checked
+  };
+  await saveData(); showToast('Notification settings saved');
+}
+async function testNotifyEmail(){
+  const url = ($('#notify-webhook')?.value||STATE.data.notifications?.emailWebhookUrl||'').trim();
+  if(!url){showToast('Set the Email Webhook URL first','error');return;}
+  showToast('Sending test email...');
+  try{
+    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      type:'general',to:'jashory7@gmail.com',subject:'Test - Vision Flow Notifications',
+      message:'This is a test notification from your Vision Flow admin panel. If you received this, your email system is working correctly!',
+      portalUrl:'https://visionflow-bd.github.io/portal/'
+    })});
+    const j = await r.json();
+    if(j.ok)showToast('Test email sent successfully!');
+    else showToast('Error: '+(j.error||'Unknown'),'error');
+  }catch(e){showToast('Failed: '+e.message,'error');}
 }
 
 /* ── Cloud Storage Admin Panel ── */
