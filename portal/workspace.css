@@ -74,3 +74,12 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .cd-lbl{font-size:9px;color:var(--muted,#5a7088);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
 .cd-sep{font-size:22px;font-weight:700;color:var(--muted,#5a7088);padding:0 2px 18px 2px}
 @media(max-width:600px){.cd-num{width:40px;height:40px;font-size:18px}.cd-sep{font-size:18px}}
+/* Clickable terms links and expandable detail panels */
+.terms-link{color:var(--brand,#5cc8b0);font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.terms-link:hover{color:#fff}
+.terms-detail-panel{margin-top:16px;padding:16px 20px;border-top:2px solid var(--brand,#5cc8b0);background:var(--surface,#1c2a3d);border-radius:0 0 10px 10px;animation:termsSlide .3s ease}
+.terms-detail-panel h3{font-size:14px;color:var(--brand,#5cc8b0);margin:0 0 10px;text-transform:uppercase;letter-spacing:.5px}
+.terms-detail-panel p{font-size:12px;line-height:1.7;color:var(--muted,#8899aa);margin:0 0 8px}
+.terms-detail-panel ul{padding-left:18px;margin:8px 0}
+.terms-detail-panel li{font-size:12px;line-height:1.7;color:var(--text,#c8d6e5);margin-bottom:6px}
+.terms-detail-panel strong{color:var(--brand,#5cc8b0)}
