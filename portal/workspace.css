@@ -32,7 +32,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .founder-signature-preview.visible{display:block}
 @media(max-width:600px){
   .topbar{align-items:flex-start;gap:10px}
-  .top-actions .button:not(.primary){display:inline-flex;align-items:center;min-height:32px;padding:4px 8px;font-size:10px}
+  .top-actions .button:not(.primary){display:inline-flex;align-items:center;min-height:32px;padding:4px 8px;font-size:10px
+  }
   .top-actions .badge{display:none}
   .brand strong{font-size:12px}
   .brand img{width:32px;height:32px}
@@ -43,6 +44,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
   .tabbar>.badge{display:none}
   .signature-image{max-width:100%}
   .founder-authority{align-items:flex-start;flex-direction:column}.founder-authority img{max-width:100%;width:220px}
+
+  #notif-area{position:relative;top:auto;right:auto;max-width:100%;margin:8px 0}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .confirmation-dialog{width:min(480px,calc(100vw - 32px));border:1px solid #63758b;border-radius:16px;padding:24px;background:var(--bg,#fff);color:var(--text,#17233a);box-shadow:0 24px 80px #0005}.confirmation-dialog::backdrop{background:#071529aa}.confirmation-dialog h2{margin-top:0}.confirmation-dialog p{margin:16px 0 24px;line-height:1.6}.confirmation-dialog .actions{justify-content:flex-end}
@@ -106,8 +109,6 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
   
 }
 
-/* Notification Bar */
-#notif-area{display:flex;flex-direction:column;gap:8px;margin:16px 0;max-width:800px}
 .notif-card{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;font-size:13px;line-height:1.4}
 .notif-warning{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#eab308}
 .notif-urgent{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444}
@@ -125,3 +126,6 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 .terms-detail-panel ul{padding-left:20px;margin:8px 0}
 .terms-detail-panel li{font-size:13px;color:var(--text-muted,#94a3b8);line-height:1.6;margin:4px 0}
 .terms-detail-panel strong{color:var(--text,#e2e8f0)}
+
+/* ── Notification Bar ── */
+#notif-area{position:fixed;top:60px;right:16px;z-index:900;display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:auto}
