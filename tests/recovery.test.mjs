@@ -22,6 +22,13 @@ test('private client links use an auth-isolated Firebase app',()=>{
   assert.match(source,/if\(initialAccess\)startClient\(initialAccess\);else onAuthStateChanged/);
 });
 
+test('legacy public relay migration deletes nested fields instead of writing blank copies',()=>{
+  const emailSettings=section('async function openEmailSettings(', 'function openPayment(');
+  assert.match(emailSettings,/batch\.update\(doc\(db,'site','main'\)/);
+  assert.match(emailSettings,/['"]site\.notifications\.emailWebhookUrl['"]:deleteField\(\)/);
+  assert.doesNotMatch(emailSettings,/['"]site\.notifications\.emailWebhookUrl['"]:''/);
+});
+
 function recoveryHarness({afterFirstSave} = {}) {
   const c = normalizeClient({ name:'Recovery test', accessToken:'private-token', projects:{ p:project('Primary'), other:project('Other') } }, 'client');
   c.projects.p.payments.push({ id:'payment', amount:100, date:'2026-09-24' });
