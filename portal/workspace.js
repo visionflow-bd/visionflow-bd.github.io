@@ -113,21 +113,39 @@ function fail(error) { console.error(error); notify(errorMessage(error),true); }
 function setRoute() { const q=new URLSearchParams(); if(state.mode==='client') q.set('access',state.token); else if(state.clientKey) q.set('c',state.clientKey); if(state.projectKey) q.set('p',state.projectKey); if(state.tab==='log') q.set('tab','log'); if(state.page==='trash') q.set('v','trash'); history.replaceState(null,'',`${location.pathname}${q.size?'?'+q:''}`); }
 function clientUrl(c, projectKey) { const u=new URL(location.pathname,location.origin); u.searchParams.set('access',c.accessToken); if(projectKey)u.searchParams.set('p',projectKey); return u.href; }
 
-function notificationBar(){
-  if(state.mode==='client'){
-    const c=client();const p=project();if(!c||!p)return'';
-    const items=[];
-    const unconfPay=(p.payments||[]).filter(pay=>!pay.confirmedAt).length;
-    if(unconfPay)items.push({icon:'💳',text:unconfPay+' payment'+(unconfPay>1?'s':'')+' awaiting your confirmation',hash:'#payments',type:'warning'});
-    const unconfApp=(p.approvals||[]).filter(a=>{const conf=state.artifacts?.confirms?.[a.id];return!conf;}).length;
-    if(unconfApp)items.push({icon:'📋',text:unconfApp+' update'+(unconfApp>1?'s':'')+' pending your approval',hash:'#approvals',type:'warning'});
-    if(!activeSignature())items.push({icon:'✍️',text:'Agreement signature required to unlock downloads',hash:'#agreement',type:'urgent'});
-    const firstVisit=!localStorage.getItem('vf-welcomed-'+state.token);
-    if(firstVisit){items.push({icon:'📧',text:'Check your email inbox (and spam folder) for project updates. Mark our emails as Not Spam to stay updated.',hash:'',type:'info'});localStorage.setItem('vf-welcomed-'+state.token,'1');}
-    if(!items.length)return'';
-    return '<div id="notif-area">'+items.map(i=>'<div class="notif-card notif-'+i.type+'"'+(i.hash?' onclick="document.querySelector(\''+i.hash+'\')?.scrollIntoView({behavior:\'smooth\'})" style="cursor:pointer"':'')+'>'+i.icon+' '+i.text+'</div>').join('')+'</div>';
+function notificationBar() {
+  if(admin()) return '';
+  const p = project();
+  const c = client();
+  if(!p || !c) return '';
+  const items = [];
+  
+  // Count pending payments
+  const payments = (p.payments||[]).filter(r => !r.clientConfirmed);
+  if(payments.length > 0) items.push({icon:'💰', text:payments.length+' payment'+(payments.length>1?'s':'')+' awaiting confirmation', type:'warning', hash:'#payments'});
+  
+  // Count pending approvals
+  const approvals = (p.approvals||[]).filter(r => !r.clientConfirmed && !r.rejectedByClient);
+  if(approvals.length > 0) items.push({icon:'📋', text:approvals.length+' update'+(approvals.length>1?'s':'')+' pending approval', type:'info', hash:'#approvals'});
+  
+  // Signature check
+  if(!c.signedTerms && p.signatureRequested) items.push({icon:'✍️', text:'Agreement signature required to unlock downloads', type:'urgent', hash:'#agreement'});
+  
+  // Welcome / email check (first visit only)
+  if(!localStorage.getItem('vf-welcomed-'+state.token)) {
+    items.push({icon:'📧', text:'Check your email inbox (and spam folder) for project updates. Mark our emails as Not Spam to stay updated.', type:'info', hash:''});
+    localStorage.setItem('vf-welcomed-'+state.token, '1');
   }
-  return'';
+  
+  if(items.length === 0) return '';
+  
+  return '<div id="notif-area">' + items.map(it => 
+    '<div class="notif-card notif-'+it.type+'">' +
+    '<span class="notif-icon">'+it.icon+'</span>' +
+    '<span class="notif-text">'+it.text+'</span>' +
+    (it.hash ? '<a href="'+it.hash+'" class="notif-link">View →</a>' : '') +
+    '</div>'
+  ).join('') + '</div>';
 }
 function pendingCounts(){const c=client();if(!c)return'';const p=project();if(!p)return'';const items=[];const unconfPay=(p.payments||[]).filter(pay=>!pay.confirmedAt).length;if(unconfPay)items.push(unconfPay+' unconfirmed payment'+(unconfPay>1?'s':''));const unconfApp=(p.approvals||[]).filter(a=>{const conf=state.artifacts?.confirms?.[a.id];return!conf;}).length;if(unconfApp)items.push(unconfApp+' pending approval'+(unconfApp>1?'s':''));if(!activeSignature())items.push('Agreement signature required');return items.length?`<div class="notif-bar">${items.join(' · ')}</div>`:'';}
 
@@ -135,11 +153,11 @@ function hashScroll(){if(location.hash){const el=document.querySelector(location
 
 
 
-document.addEventListener('click',function(e){var t=e.target.closest('[data-term]');if(!t)return;e.preventDefault();e.stopPropagation();var act=t.dataset.term,old=document.querySelector('.terms-detail-panel');if(old){old.remove();if(old.dataset.src===act)return;}var p=document.createElement('div');p.className='terms-detail-panel';p.dataset.src=act;if(act==='privacy'){p.innerHTML='<h3>Privacy \u0026 Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';}else{p.innerHTML='<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';}var b=document.querySelector('.terms-body');if(b)b.appendChild(p);},true);
+document.addEventListener('click',function(e){var t=e.target.closest('[data-term]');if(!t)return;e.preventDefault();e.stopPropagation();var act=t.dataset.term,old=document.querySelector('.terms-detail-panel');if(old){old.remove();if(old.dataset.src===act)return;}var p=document.createElement('div');p.className='terms-detail-panel';p.dataset.src=act;if(act==='privacy'){p.innerHTML='<h3>Privacy \u0026 Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';}else{p.innerHTML='<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';}var c2=document.querySelector('.terms-card');if(c2)c2.appendChild(p);},true);
 function render() {
   if (!$('modalLayer').hidden || state.busy) return;
   $('topActions').innerHTML = state.mode==='admin' ? `${badge('active','Admin')}${button('Dashboard','dashboard')}${button('Recycle bin','trash')}${button('Sign out','logout')}` : state.mode==='client' ? badge('completed','Private client view') : '';
-  const _nb=notificationBar();if(_nb){const _nd=document.createElement('div');_nd.innerHTML=_nb;$('topActions').after(_nd);}
+  document.querySelectorAll('#notif-area').forEach(el=>el.remove());const _nb=notificationBar();if(_nb){const _nd=document.createElement('div');_nd.id='notif-wrap';_nd.innerHTML=_nb;const oldWrap=document.getElementById('notif-wrap');if(oldWrap)oldWrap.remove();$('topActions').after(_nd);}
   if(state.mode==='login') return renderLogin();
   if(state.mode==='error') { $('view').innerHTML=`<section class="empty"><h2>Workspace unavailable</h2><p>${esc(state.error)}</p><p class="muted" style="margin-top:12px;font-size:11px">If you believe this is a mistake, contact your Vision Flow administrator or request a new private link.</p></section>`+button('Try again','refresh'); return; }
   if(state.mode==='loading')return;
@@ -181,7 +199,30 @@ function showTermsPopup(){
     '<button class="button primary terms-accept" data-action="accept-terms">I Understand & Accept</button>' +
     '<p class="terms-footer">Vision Flow · Creative Production Agency</p>' +
     '</div></div>';
-  return true;
+  
+  // Directly bind click handlers to terms links (failsafe)
+  setTimeout(function(){
+    document.querySelectorAll('[data-term]').forEach(function(link){
+      link.onclick = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var act = this.dataset.term;
+        var old = document.querySelector('.terms-detail-panel');
+        if(old){old.remove();if(old.dataset.src===act)return;}
+        var panel = document.createElement('div');
+        panel.className = 'terms-detail-panel';
+        panel.dataset.src = act;
+        if(act==='privacy'){
+          panel.innerHTML='<h3>Privacy \u0026 Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';
+        }else{
+          panel.innerHTML='<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';
+        }
+        var card = document.querySelector('.terms-card');
+        if(card) card.appendChild(panel);
+      };
+    });
+  }, 100);
+return true;
 }
 
 function renderLogin(message='') {
