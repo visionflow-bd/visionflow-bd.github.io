@@ -1,6 +1,6 @@
-import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION } from './data.js?v=20260927-r6';
+import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION, asValidDate } from './data.js?v=20260927-r8';
 
-const date = value => { const d=value?.toDate instanceof Function ? value.toDate() : value?.seconds!==undefined ? new Date(Number(value.seconds)*1000) : new Date(value); return Number.isNaN(d.valueOf())?String(value||'—'):d.toLocaleString('en-GB'); };
+const date = value => { const d=asValidDate(value); return d?d.toLocaleString('en-GB'):String(value||'—'); };
 const url = (value,label) => safeUrl(value)?`<a href="${esc(safeUrl(value))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:'';
 const td = value => `<td>${esc(value||'—')}</td>`;
 const fileName = value => String(value||'vision-flow-document').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'vision-flow-document';

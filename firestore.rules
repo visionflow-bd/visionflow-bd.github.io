@@ -125,6 +125,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Recycle-bin payloads (including signature PNGs) are intentionally kept
+    // outside the client summary document. They are never exposed through a
+    // private client link and are available only to the portal owner.
+    match /portal_archives/{slug}/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     // Secrets and relay endpoints must not share the publicly readable site
     // document. Only the authenticated portal administrator can access these.
     match /portal_settings/{docId} {

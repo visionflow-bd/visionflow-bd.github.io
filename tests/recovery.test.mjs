@@ -13,8 +13,13 @@ const section = (start, end) => {
   assert.ok(begin >= 0 && finish > begin, `Missing source boundary: ${start}`);
   return source.slice(begin, finish);
 };
-const recoverySource = section('function trashEntry(', 'function renderTrash(')
-  + section('async function restoreTrash(', 'function openArchivedRows(');
+const recoverySource = section('async function deletePublicRecords(', 'const archivePreview =')
+  + section('function trashEntry(', 'function renderTrash(')
+  + section('function assertTrashRestorePossible(', 'function openArchivedRows(');
+const rotationSource = section('const ROTATION_BATCH_SIZE=', 'async function purgeClient(');
+const purgeSource = section('async function claimClientPurge(', 'function download(');
+const purgeTrashSource = section('async function purgeTrash(', 'function openArchivedRows(');
+const largeArchiveSource = section('async function deletePublicRecords(', 'const archivePreview =');
 const project = name => ({ name, items:[{ n:1, s:'pending' }], payments:[], approvals:[] });
 
 test('private client links use an auth-isolated Firebase app',()=>{
@@ -45,16 +50,23 @@ function recoveryHarness({afterFirstSave} = {}) {
     { collection:'feedback', id:'other-feedback', projectKey:'other', message:'Keep this' },
     { collection:'sigs', id:'main', image:'Legacy unlinked image' },
   ];
-  const state = { clientKey:'client', projectKey:'p', clients:{ client:c } };
+  const state = { clientKey:'client', projectKey:'p', clients:{ client:c } }, archiveStore=new Map();
   let saves = 0, sequence = 0, lastOperations = [];
   const context = {
-    state, clone, itemsOf, money, requireAdmin:()=>{},
+    state, clone, itemsOf, money, requireAdmin:()=>{},notify:()=>{},MAX_SAVE_OPERATIONS:498,
     db:{}, doc:(_db,...path)=>path,
     getDoc:async path=>{const record=records.find(row=>row.collection===path.at(-2)&&row.id===path.at(-1));return {exists:()=>Boolean(record),data:()=>clone(record),id:record?.id};},
     client:()=>state.clients.client,
     uid:prefix=>`${prefix}-${++sequence}`, now:()=> '2026-09-24T00:00:00.000Z',
     $:()=>({ hidden:true }), finishModal:()=>{},
     allRecords:async()=>clone(records),
+    deletePublicRecords:async(_token,stored)=>{for(const record of stored){const index=records.findIndex(row=>row.collection===record.collection&&row.id===record.id);if(index>=0)records.splice(index,1);}},
+    writeBatch:()=>{const deletes=[];return {delete:path=>deletes.push(path),commit:async()=>{for(const [,token,collection,id] of deletes){const index=records.findIndex(row=>row.collection===collection&&row.id===id);if(index>=0)records.splice(index,1);}}};},
+    archivePreview:record=>{const {image,...preview}=record;return clone(preview);},
+    stageTrashRecords:async(_clientKey,trashId,entry)=>{const archiveKey=entry.archiveKey||trashId,stored=clone(entry.records||[]);archiveStore.set(archiveKey,stored);entry.archiveKey=archiveKey;entry.archivedRecordCount=stored.length;entry.archivedRecordIds=stored.map(record=>record.id);entry.records=[];},
+    archivedTrashRecords:async(_clientKey,entry)=>clone(entry.archiveKey?archiveStore.get(entry.archiveKey)||[]:entry.records||[]),
+    restorePublicRecords:async(_accessToken,stored)=>{for(const record of stored){const index=records.findIndex(row=>row.collection===record.collection&&row.id===record.id);if(index>=0)records[index]=clone(record);else records.push(clone(record));}},
+    deleteArchivedTrashRecords:async(_clientKey,entry)=>{if(entry.archiveKey)archiveStore.delete(entry.archiveKey);},
     projectSigs:()=>records.filter(r=>r.collection==='sigs' && (r.projectKey===state.projectKey || r.id===state.projectKey)),
     requests:()=>records.filter(r=>r.collection==='feedback' && r.projectKey===state.projectKey),
     confirmation:a=>records.find(r=>r.collection==='confirms' && r.id===a.id),
@@ -72,7 +84,7 @@ function recoveryHarness({afterFirstSave} = {}) {
     },
   };
   const api = runInNewContext(`${recoverySource}; ({ archive, restoreTrash });`, context);
-  return { ...api, state, records, saves:()=>saves, lastOperations:()=>clone(lastOperations), entry:()=>Object.entries(state.clients.client.trash)[0] };
+  return { ...api, state, records, saves:()=>saves, lastOperations:()=>clone(lastOperations), entry:()=>Object.entries(state.clients.client.trash)[0], archived:entry=>clone(entry.archiveKey?archiveStore.get(entry.archiveKey)||[]:entry.records||[]) };
 }
 
 test('project archive/restore round-trips linked and legacy records and their reviews', async()=>{
@@ -89,7 +101,7 @@ test('project archive/restore round-trips linked and legacy records and their re
   assert.equal(h.state.clients.client.feedbackReviews.feedback, undefined);
   assert.equal(h.state.clients.client.feedbackReviews.unrelated.status, 'new');
   const [id, entry] = h.entry();
-  assert.equal(entry.records.length,4);
+  assert.equal(h.archived(entry).length,4);
   assert.equal(JSON.stringify(publicSnapshot(h.state.clients.client,'client')).includes('Original answer'), false);
   await h.restoreTrash('client',id);
   assert.deepEqual(h.state.clients.client, before);
@@ -135,7 +147,7 @@ test('approval archive/restore includes the existing confirmation',async()=>{
   await h.restoreTrash('client',id);
   assert.equal(h.state.clients.client.projects.p.approvals[0].id,'approval');
   assert.equal(h.records.find(r=>r.id==='approval').confirmedAt,'2026-09-24T00:00:00.000Z');
-  assert.equal(h.lastOperations().filter(op=>op.path[0]==='confirms'&&op.path[1]==='approval').length,1);
+  assert.equal(h.lastOperations().filter(op=>op.path[0]==='confirms'&&op.path[1]==='approval').length,0,'records are restored in a separately resumable batch');
 });
 
 test('archive and restore retain Firestore Timestamp instances',async()=>{
@@ -144,7 +156,7 @@ test('archive and restore retain Firestore Timestamp instances',async()=>{
   h.records.find(record=>record.collection==='confirms'&&record.id==='approval').submittedAt=submittedAt;
   await h.archive('approval',{ dataset:{ id:'approval' } });
   const [id,entry] = h.entry();
-  assert.equal(entry.records[0].submittedAt,submittedAt);
+  assert.equal(h.archived(entry)[0].submittedAt,submittedAt);
   await h.restoreTrash('client',id);
   const restored=h.records.find(record=>record.collection==='confirms'&&record.id==='approval');
   assert.equal(restored.submittedAt,submittedAt);
@@ -155,7 +167,7 @@ test('approval archive retains a confirmation that arrives during archival',asyn
   const h = recoveryHarness({afterFirstSave:records=>records.push({collection:'confirms',id:'approval',projectKey:'p',confirmedAt:'2026-09-24T00:00:01.000Z'})});
   await h.archive('approval',{ dataset:{ id:'approval' } });
   const [id,entry] = h.entry();
-  assert.equal(entry.records.filter(record=>record.collection==='confirms'&&record.id==='approval').length,1);
+  assert.equal(h.archived(entry).filter(record=>record.collection==='confirms'&&record.id==='approval').length,1);
   assert.equal(h.records.some(record=>record.collection==='confirms'&&record.id==='approval'),false);
   await h.restoreTrash('client',id);
   assert.equal(h.records.find(record=>record.collection==='confirms'&&record.id==='approval').confirmedAt,'2026-09-24T00:00:01.000Z');
@@ -167,7 +179,7 @@ test('recovery refuses project collisions and missing parents without writing',a
   const [id] = h.entry();
   h.state.clients.client.projects.p = project('Replacement');
   await assert.rejects(h.restoreTrash('client',id),/already uses this label/);
-  assert.equal(h.saves(),1);
+  assert.equal(h.saves(),2);
   assert.ok(h.state.clients.client.trash[id]);
   const payment = recoveryHarness();
   await payment.archive('payment',{ dataset:{ id:'payment' } });
@@ -185,6 +197,181 @@ test('client archive disables public access and preserves the prior sharing pref
   assert.equal(h.state.clients.client.accessEnabled,false);
   assert.equal(publicSnapshot(h.state.clients.client,'client').enabled,false);
   assert.equal(h.records.length,6);
+});
+
+function largeArchiveHarness() {
+  const c=normalizeClient({name:'Large archive',accessToken:'private-token',projects:{p:project('Primary')}},'client');
+  const records=Array.from({length:499},(_,index)=>({collection:'feedback',id:`feedback-${index}`,projectKey:'p',message:`request ${index}`}));
+  const state={clientKey:'client',projectKey:'p',clients:{client:c}},archiveStore=new Map(),saves=[];
+  const context={
+    state,clone,itemsOf,money,requireAdmin:()=>{},notify:()=>{},MAX_SAVE_OPERATIONS:498,uid:prefix=>`${prefix}-one`,db:{},doc:(_db,...path)=>path,$:()=>({hidden:true}),now:()=> '2026-09-27T00:00:00.000Z',
+    client:()=>state.clients.client,allRecords:async()=>clone(records),archivePreview:record=>clone(record),
+    archivedTrashRecords:async(_clientKey,entry)=>clone(archiveStore.get(entry.archiveKey)||entry.records||[]),
+    stageTrashRecords:async(_clientKey,trashId,entry)=>{archiveStore.set(trashId,clone(entry.records));entry.archiveKey=trashId;entry.archivedRecordCount=entry.records.length;entry.archivedRecordIds=entry.records.map(record=>record.id);entry.records=[];},
+    deleteArchivedTrashRecords:async()=>{},
+    writeBatch:()=>{const deletes=[];return {delete:path=>deletes.push(path),commit:async()=>{for(const [,token,collection,id] of deletes){if(token!=='private-token')continue;const index=records.findIndex(record=>record.collection===collection&&record.id===id);if(index>=0)records.splice(index,1);}}};},
+    saveClient:async(next,message,operations=[])=>{saves.push({next:clone(next),message,operations:clone(operations)});state.clients[next.slug]=clone(next);return clone(next);},
+    resumeLargeArchive:async()=>{const current=clone(state.clients.client),entry=current.trash[current.archiveState.trashId];assert.equal(current.accessEnabled,false);assert.equal(entry.archivedRecordCount,499);records.splice(0,records.length);current.accessEnabled=current.archiveState.previousAccessEnabled;delete current.archiveState;state.clients[current.slug]=current;return true;},
+  };
+  const api=runInNewContext(`${recoverySource}; ({ archive });`,context);
+  return {...api,state,records,archiveStore,saves};
+}
+
+test('large archive pauses sharing, moves records externally, and resumes automatically',async()=>{
+  const h=largeArchiveHarness();
+  await h.archive('project',{dataset:{}});
+  assert.equal(h.saves[0].next.accessEnabled,false);
+  assert.equal(h.saves[0].next.archiveState.kind,'large-archive');
+  assert.equal(h.saves[0].operations.length,0);
+  assert.equal(h.archiveStore.get(h.saves[0].next.archiveState.trashId).length,499);
+  assert.equal(h.records.length,0);
+  assert.equal(h.state.clients.client.accessEnabled,undefined);
+  assert.equal(h.state.clients.client.archiveState,undefined);
+});
+
+function largeResumeHarness() {
+  const c=normalizeClient({accessToken:'private-token',accessEnabled:false,projects:{},trash:{'trash-one':{kind:'project',projectKey:'p',value:{approvals:[]},archiveKey:'trash-one',archivedRecordCount:9,archivedRecordIds:Array.from({length:9},(_,index)=>`record-${index}`)}},archiveState:{kind:'large-archive',trashId:'trash-one',previousAccessEnabled:true}},'client');
+  const source=Array.from({length:9},(_,index)=>({collection:'feedback',id:`record-${index}`,projectKey:'p',message:`request ${index}`}));
+  const archive=new Map([['trash-one',clone(source)]]),state={clients:{client:c}};
+  let injected=false,saves=0;
+  const context={
+    state,clone,client:()=>state.clients.client,requireAdmin:()=>{},db:{},uid:prefix=>`${prefix}-one`,allRecords:async()=>clone(source),archivedTrashRecords:async(_clientKey,entry)=>clone(archive.get(entry.archiveKey)||[]),
+    stageTrashRecords:async(_clientKey,trashId,entry)=>{const stored=clone(entry.records||[]);archive.set(trashId,stored);entry.archiveKey=trashId;entry.archivedRecordCount=stored.length;entry.archivedRecordIds=stored.map(record=>record.id);entry.records=[];},
+    saveClient:async(next)=>{saves++;state.clients[next.slug]=clone(next);return clone(next);},doc:(_db,...path)=>path,
+    writeBatch:()=>{const deletes=[];return {delete:path=>deletes.push(path),commit:async()=>{for(const [,token,collection,id] of deletes){if(token!=='private-token')continue;const index=source.findIndex(record=>record.collection===collection&&record.id===id);if(index>=0)source.splice(index,1);}if(!injected){injected=true;source.push({collection:'feedback',id:'arrived-after-pause',projectKey:'p',message:'late request'});}}};},
+  };
+  const api=runInNewContext(`${largeArchiveSource}; ({ resumeLargeArchive });`,context);
+  return {...api,state,source,archive,saves:()=>saves};
+}
+
+test('large archive resume retains a submission that arrives during its pause window',async()=>{
+  const h=largeResumeHarness();
+  await h.resumeLargeArchive();
+  assert.equal(h.source.length,0);
+  assert.equal(h.state.clients.client.accessEnabled,true);
+  assert.equal(h.state.clients.client.archiveState,undefined);
+  assert.equal(h.archive.get('trash-one').length,10);
+  assert.ok(h.archive.get('trash-one').some(record=>record.id==='arrived-after-pause'));
+  assert.equal(h.saves(),2);
+});
+
+function rotationHarness({recordCount=215,failFirstTransfer=false}={}) {
+  const c=normalizeClient({name:'Rotation test',accessToken:'old-token',projects:{}},'client');
+  const records=new Map([['old-token',Array.from({length:recordCount},(_,index)=>({
+    collection:index%3===0?'sigs':index%3===1?'confirms':'feedback',id:`record-${index}`,projectKey:'project',message:`record ${index}`,
+  }))]]);
+  const parents=new Map([['old-token',{enabled:true}]]),notifications=[],sourceReads=[];
+  const state={clients:{client:c}};let firstSave=true,failed=false,batches=0,finished=0;
+  const context={
+    state,clone,publicSnapshot,db:{},requireAdmin:()=>{},client:()=>state.clients.client,newToken:()=> 'new-token',now:()=> '2026-09-27T00:00:00.000Z',
+    notify:(message,error)=>notifications.push({message,error}),finishModal:()=>{finished++;},
+    allRecords:async token=>{sourceReads.push({token,enabled:parents.get(token)?.enabled});return clone(records.get(token)||[]);},
+    saveClient:async(next,_notice,operations=[])=>{
+      const saved=clone(next);state.clients[saved.slug]=saved;parents.set(saved.accessToken,publicSnapshot(saved,saved.slug));
+      for(const operation of operations){if(!operation.path.length)parents.set(operation.token,clone(operation.data));}
+      if(firstSave){firstSave=false;records.get('old-token').push({collection:'feedback',id:'arrived-during-rotation',projectKey:'project',message:'late request'});}
+      return clone(saved);
+    },
+    doc:(_db,...path)=>path,
+    writeBatch:()=>{
+      const operations=[];
+      return {set:(path,data)=>operations.push({kind:'set',path,data:clone(data)}),delete:path=>operations.push({kind:'delete',path}),commit:async()=>{
+        batches++;
+        if(failFirstTransfer&&!failed&&operations.some(operation=>operation.kind==='set'&&operation.path.length===4)){failed=true;throw new Error('simulated transfer interruption');}
+        for(const operation of operations){const [,token,collection,id]=operation.path;if(operation.path.length===2){if(operation.kind==='delete')parents.delete(token);continue;}const rows=records.get(token)||[];if(operation.kind==='delete'){const index=rows.findIndex(row=>row.collection===collection&&row.id===id);if(index>=0)rows.splice(index,1);}else{const index=rows.findIndex(row=>row.collection===collection&&row.id===id),record={...clone(operation.data),collection,id};if(index>=0)rows[index]=record;else rows.push(record);}records.set(token,rows);}
+      }};
+    },
+  };
+  const api=runInNewContext(`${rotationSource}; ({ rotateLink });`,context);
+  return {...api,state,records,parents,notifications,sourceReads,batches:()=>batches,finished:()=>finished};
+}
+
+test('private-link rotation disables first, moves a late submission, and chunks large workspaces',async()=>{
+  const h=rotationHarness();
+  await h.rotateLink();
+  assert.equal(h.state.clients.client.accessToken,'new-token');
+  assert.equal(h.state.clients.client.accessRotation,undefined);
+  assert.equal(h.parents.has('old-token'),false);
+  assert.equal(h.parents.get('new-token').enabled,true);
+  assert.equal(h.sourceReads[0].enabled,false);
+  assert.equal(h.records.get('old-token').length,0);
+  assert.equal(h.records.get('new-token').length,216);
+  assert.ok(h.records.get('new-token').some(record=>record.id==='arrived-during-rotation'));
+  assert.ok(h.batches()>2,'large workspaces are transferred in multiple safe batches');
+  assert.equal(h.finished(),1);
+});
+
+test('interrupted private-link rotation keeps its protected source and resumes without a second link',async()=>{
+  const h=rotationHarness({recordCount:1,failFirstTransfer:true});
+  await assert.rejects(h.rotateLink(),/simulated transfer interruption/);
+  assert.equal(h.state.clients.client.accessToken,'new-token');
+  assert.equal(h.state.clients.client.accessRotation.from,'old-token');
+  assert.equal(h.parents.get('old-token').enabled,false);
+  assert.equal(h.records.get('old-token').length,2);
+  await h.rotateLink();
+  assert.equal(h.state.clients.client.accessRotation,undefined);
+  assert.equal(h.parents.has('old-token'),false);
+  assert.equal(h.records.get('new-token').length,2);
+  assert.ok(h.records.get('new-token').some(record=>record.id==='arrived-during-rotation'));
+});
+
+function purgeHarness({recordCount=401,failSecondBatch=false}={}) {
+  const c=normalizeClient({_deleted:true,accessToken:'old-token',projects:{}},'client');
+  const records=Array.from({length:recordCount},(_,index)=>({collection:'feedback',id:`record-${index}`}));
+  const state={clients:{client:c}};let artifactBatches=0,failed=false,clientDeleted=false,parentDeleted=false,saves=0;
+  const context={
+    state,clone,db:{},now:()=> '2026-09-27T00:00:00.000Z',allRecords:async()=>clone(records),notify:()=>{},
+    saveClient:async(next,_notice,_operations,options)=>{assert.equal(options?.allowRecovery,true);saves++;state.clients[next.slug]=clone(next);return clone(next);},
+    deleteAllClientArchives:async()=>{},
+    writeBatch:()=>{const operations=[];return {delete:path=>operations.push(path),commit:async()=>{
+      const artifactOperations=operations.filter(path=>path.length===4);
+      if(artifactOperations.length){artifactBatches++;if(failSecondBatch&&!failed&&artifactBatches===2){failed=true;throw new Error('simulated purge interruption');}for(const [,token,collection,id] of artifactOperations){const index=records.findIndex(record=>record.collection===collection&&record.id===id);if(index>=0)records.splice(index,1);}}
+      for(const path of operations.filter(path=>path.length===2)){if(path[0]==='portal_public')parentDeleted=true;if(path[0]==='portal_clients')clientDeleted=true;}
+    }};},
+    doc:(_db,...path)=>path,
+  };
+  const api=runInNewContext(`${purgeSource}; ({ purgeClient });`,context);
+  return {...api,state,records,saves:()=>saves,status:()=>({artifactBatches,clientDeleted,parentDeleted})};
+}
+
+test('permanent client deletion claims first and safely resumes after a partial cleanup',async()=>{
+  const h=purgeHarness({failSecondBatch:true});
+  await assert.rejects(h.purgeClient('client'),/simulated purge interruption/);
+  assert.equal(h.saves(),1);
+  assert.equal(h.state.clients.client.purgeState.status,'purging');
+  assert.equal(h.records.length,1);
+  await h.purgeClient('client');
+  assert.equal(h.saves(),1,'retry resumes the existing purge claim');
+  assert.equal(h.records.length,0);
+  assert.equal(h.state.clients.client,undefined);
+  assert.deepEqual(h.status(),{artifactBatches:3,clientDeleted:true,parentDeleted:true});
+});
+
+function purgeTrashHarness({restoreState=false,archiveState=false}={}) {
+  const c=normalizeClient({accessToken:'private-token',projects:{p:project('Primary')},trash:{'trash-one':{kind:'feedback',label:'Client request',projectKey:'p',value:{id:'feedback-one',collection:'feedback'},archiveKey:'trash-one',archivedRecordCount:1,restoreState:restoreState?{status:'restoring'}:undefined}},archiveState:archiveState?{kind:'large-archive',trashId:'trash-one',previousAccessEnabled:true}:undefined},'client');
+  if(!restoreState)delete c.trash['trash-one'].restoreState;if(!archiveState)delete c.archiveState;
+  const state={clients:{client:c}},records=[{collection:'feedback',id:'feedback-one',projectKey:'p',message:'restored before interruption'}],archive=new Map([['trash-one',clone(records)]]),saves=[];
+  const context={state,clone,requireAdmin:()=>{},confirmAction:async()=>true,client:()=>state.clients.client,now:()=> '2026-09-27T00:00:00.000Z',archivedTrashRecords:async(_key,entry)=>clone(archive.get(entry.archiveKey)||entry.records||[]),deletePublicRecords:async(_token,stored)=>{for(const record of stored){const index=records.findIndex(row=>row.collection===record.collection&&row.id===record.id);if(index>=0)records.splice(index,1);}},deleteArchivedTrashRecords:async(_key,entry)=>{archive.delete(entry.archiveKey);},saveClient:async(next,_message,_ops,_options)=>{saves.push(clone(next));state.clients[next.slug]=clone(next);return clone(next);},render:()=>{}};
+  const api=runInNewContext(`${purgeTrashSource}; ({ purgeTrash });`,context);
+  return {...api,state,records,archive,saves:()=>saves};
+}
+
+test('partial restore blocks a racing permanent delete until recovery is finished',async()=>{
+  const h=purgeTrashHarness({restoreState:true});
+  await assert.rejects(h.purgeTrash('client','trash-one'),/Restore is in progress/);
+  assert.equal(h.records.length,1,'a pending restore is never raced by permanent deletion');
+  assert.ok(h.state.clients.client.trash['trash-one']);
+  assert.equal(h.saves.length,0);
+});
+
+test('an active protected archive cannot be restored or permanently deleted from its bin entry',async()=>{
+  const h=purgeTrashHarness({archiveState:true});
+  await assert.rejects(h.purgeTrash('client','trash-one'),/protected archive is still in progress/);
+  const recovery=recoveryHarness();
+  await recovery.archive('project',{dataset:{}});
+  const [id]=recovery.entry();
+  recovery.state.clients.client.archiveState={kind:'large-archive',trashId:id,previousAccessEnabled:true};
+  await assert.rejects(recovery.restoreTrash('client',id),/protected archive is still in progress/);
 });
 
 function confirmationHarness() {
@@ -224,7 +411,7 @@ test('custom confirmation Cancel and Escape resolve false and restore focus',asy
 function transactionHarness(current,{repeat=false}={}) {
   let server = current, writes = 0;
   const state = {clients:{}}, context = {
-    state, normalizeClient,publicSnapshot, requireAdmin:()=>{}, now:()=> '2026-09-24T00:00:00.000Z',
+    state, normalizeClient,publicSnapshot, requireAdmin:()=>{},recoveryPending:c=>Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||Object.values(c?.trash||{}).some(entry=>entry?.restoreState||entry?.purgeState)), now:()=> '2026-09-24T00:00:00.000Z',MAX_SAVE_OPERATIONS:498,
     uid:()=> 'save-unique',newToken:()=> 'new-token',db:{},notify:()=>{},
     doc:(_db,...path)=>path.join('/'),
     runTransaction:async(_db,callback)=>{
@@ -250,6 +437,12 @@ test('save rejects stale revisions and oversized operations before any write',as
   const c=normalizeClient({accessToken:'token'},'client'),h=transactionHarness({...c,_revision:2});
   await assert.rejects(h.saveClient(c),/changed in another tab/);
   assert.equal(h.writes(),0);
-  await assert.rejects(h.saveClient(c,'Saved',Array.from({length:431},()=>({}))),/too large/);
+  await assert.rejects(h.saveClient(c,'Saved',Array.from({length:499},()=>({}))),/too large/);
   assert.equal(h.writes(),0);
+  const claimed=transactionHarness({...c,purgeState:{status:'purging'}});
+  await assert.rejects(claimed.saveClient(c),/Permanent deletion is already in progress/);
+  assert.equal(claimed.writes(),0);
+  const rotating=transactionHarness({...c,accessRotation:{from:'old-token'}});
+  await assert.rejects(rotating.saveClient(c),/protected recovery task is in progress/);
+  assert.equal(rotating.writes(),0);
 });

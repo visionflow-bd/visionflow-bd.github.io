@@ -168,6 +168,17 @@ test('private notification settings are administrator-only', async () => {
   await assertFails(setDoc(doc(visitor,'portal_settings/notifications'),{enabled:true,clientWebhookUrl:'https://attacker.invalid'}));
 });
 
+test('recycle-bin archive payloads are visible only to the administrator', async () => {
+  const path='portal_archives/client-one/entries/trash-one/records/record-one';
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(),path),{recordCollection:'sigs',recordId:'signature-one',payload:{name:'Private signer'}});
+  });
+  await assertFails(getDoc(doc(visitor,path)));
+  await assertFails(getDocs(collection(visitor,'portal_archives/client-one/entries/trash-one/records')));
+  await assertSucceeds(getDoc(doc(admin,path)));
+  await assertSucceeds(deleteDoc(doc(admin,path)));
+});
+
 test('legacy schema data remains readable and legacy feedback remains manageable', async () => {
   await assertSucceeds(getDoc(doc(visitor, `${portalPath}/sigs/legacy-signature`)));
   const legacyFeedback = feedback();

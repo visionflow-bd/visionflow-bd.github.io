@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeClient,publicSnapshot,metrics,resizeItems,itemsOf,agreementTerms,signatureOutdated,validateAmount,safeUrl,esc,newToken} from '../portal/data.js';
+import {normalizeClient,publicSnapshot,metrics,resizeItems,itemsOf,agreementTerms,signatureOutdated,validateAmount,safeUrl,esc,newToken,asValidDate} from '../portal/data.js';
 import {buildProjectReport} from '../portal/report.js';
 
 const fixture=()=>normalizeClient({name:'Test client',email:'private@example.invalid',accessToken:'secret',internalNotes:'NEVER PUBLIC',projects:{p:{name:'Test project',rate:400,budget:800,status:'active',items:[{n:1,b:'Beagle',t:'First',s:'delivered',no:'PRIVATE NOTE',clientNote:'PUBLIC NOTE',dl:'https://example.invalid/video'},{n:2,b:'Poodle',s:'pending',deleted:true}],payments:[{amount:1000,date:'2026-09-23',type:'Advance',proofUrl:'https://example.invalid/proof.png'}],approvals:[{title:'Review',desc:'Details'}]}}},'test');
@@ -12,4 +12,13 @@ test('metrics handle archived rows, zero values and overpayment without inventin
 test('resizing archives safely and new rows never reuse archived numbers',()=>{const p=fixture().projects.p;resizeItems(p,0);assert.equal(itemsOf(p).length,0);assert.equal(p.items.length,2);resizeItems(p,2);assert.deepEqual(itemsOf(p).map(i=>i.n),[3,4]);assert.throws(()=>resizeItems(p,1001));assert.throws(()=>resizeItems(p,1.2));});
 test('terms comparison is order independent and detects actual changes',()=>{const p=fixture().projects.p;const sig={termsSnapshot:Object.fromEntries(Object.entries(agreementTerms(p)).reverse())};assert.equal(signatureOutdated(sig,p),false);p.budget=900;assert.equal(signatureOutdated(sig,p),true);assert.equal(signatureOutdated({},p),true);assert.equal(signatureOutdated({termsSnapshot:{...agreementTerms(p),agreementVersion:'legacy'}},p),true);});
 test('URLs and HTML are escaped, tokens are cryptographically long and unique',()=>{assert.equal(safeUrl('javascript:alert(1)'),'');assert.equal(safeUrl('file:///secret'),'');assert.equal(esc('<script>"&'),'&lt;script&gt;&quot;&amp;');const tokens=Array.from({length:100},newToken);assert.equal(new Set(tokens).size,100);assert.ok(tokens.every(t=>/^[a-f0-9]{48}$/.test(t)));});
+test('only canonical dates are formatted, preserving malformed legacy values for review',()=>{
+  assert.equal(asValidDate('2026-09-23')?.toISOString().slice(0,10),'2026-09-23');
+  assert.equal(asValidDate('2026-02-29'),null);
+  assert.equal(asValidDate('10-52-52'),null);
+  const c=fixture(),p=c.projects.p;p.payments[0].date='10-52-52';
+  const html=buildProjectReport({client:c,project:p});
+  assert.ok(html.includes('10-52-52'));
+  assert.ok(!html.includes('2052'));
+});
 test('report contains every record class and no private notes or unsafe markup',()=>{const c=fixture(),p=c.projects.p;p.name='<script>danger</script>';const html=buildProjectReport({client:c,project:p,approvals:[{title:'APPROVAL',desc:'Please confirm',confirmation:{kind:'rejection-pending',rejectReason:'APPROVAL REASON',confirmedAt:'2026-09-23T00:00:00.000Z'}}],feedback:[{message:'FEEDBACK',response:'REPLY'}],signature:{name:'SIGNER',signedAt:'2026-09-23T00:00:00.000Z',termsSnapshot:agreementTerms(p)},logoUrl:'https://example.invalid/logo.png'});for(const expected of ['APPROVAL','APPROVAL REASON','Rejection submitted','FEEDBACK','REPLY','SIGNER','Payment record','Production &amp; delivery','PUBLIC NOTE','proof.png'])assert.ok(html.includes(expected)||expected==='Production &amp; delivery'&&html.includes('Production & delivery'));assert.ok(!html.includes('PRIVATE NOTE'));assert.ok(!html.includes('<script>danger'));assert.ok(html.includes('&lt;script&gt;danger'));assert.ok(html.includes('window.print()'));assert.ok(html.includes('</script>'));});

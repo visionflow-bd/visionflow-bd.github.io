@@ -1,8 +1,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, runTransaction, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { ADMIN_UID, STATUS, LABEL, clone, esc, text, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns } from './data.js?v=20260927-r7';
-import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260927-r6';
+import { ADMIN_UID, STATUS, LABEL, clone, esc, text, asValidDate, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns } from './data.js?v=20260927-r8';
+import { buildProjectReport, buildProjectAgreement } from './report.js?v=20260927-r7';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
 const firebaseConfig = { apiKey:'AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM', authDomain:'visionflow-bd.firebaseapp.com', projectId:'visionflow-bd', storageBucket:'visionflow-bd.firebasestorage.app', messagingSenderId:'233587493754', appId:'1:233587493754:web:a9d064de81f356ab81e4c3' };
@@ -55,12 +55,22 @@ const auth = getAuth(firebaseApp), db = getFirestore(firebaseApp);
 const $ = id => document.getElementById(id);
 const state = { mode:'loading', loaded:false, clients:{}, publicClient:null, clientKey:null, projectKey:null, tab:'overview', page:'workspace', token:null, user:null, busy:false, filter:'', status:'', batch:'', artifacts:{}, founder:{...DEFAULT_FOUNDER}, error:'' };
 let rootStop, brandingStop, artifactStops = {}, modalReturnFocus, pad, previewObjectUrl, founderPreparedBlob, toastTimer;
+const MAX_SAVE_OPERATIONS=498;
+const hasPendingTrashRestore = c => Object.values(c?.trash||{}).some(entry=>entry?.restoreState?.status==='restoring');
+const hasPendingTrashPurge = c => Object.values(c?.trash||{}).some(entry=>entry?.purgeState?.status==='purging');
+const recoveryPending = c => Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||hasPendingTrashRestore(c)||hasPendingTrashPurge(c));
+const activeArchiveEntry = (c,id) => Boolean(id&&c?.archiveState?.trashId===id);
+function assertLifecycleIdle(c=client()){
+  if(c?.accessRotation)throw new Error('A private-link replacement is still moving protected records. Resume it from Link settings before making other changes.');
+  if(c?.archiveState)throw new Error('A protected archive is still in progress. Resume it from Link settings before making other changes.');
+  if(c?.purgeState)throw new Error('Permanent deletion is already in progress for this recycled client. Resume or finish it before making other changes.');
+  if(hasPendingTrashRestore(c)||hasPendingTrashPurge(c))throw new Error('A recycle-bin recovery task is in progress. Resume or finish it before making other changes.');
+}
 const now = () => new Date().toISOString();
 const localDay = () => new Date().toLocaleDateString('sv-SE');
-const asDate = value => value?.toDate instanceof Function ? value.toDate() : value?.seconds!==undefined ? new Date(Number(value.seconds)*1000) : new Date(value);
-const dateText = value => { const d = asDate(value); return Number.isNaN(d.valueOf()) ? text(value) : d.toLocaleString('en-GB'); };
-const fmtDate = value => { const d = asDate(value); return Number.isNaN(d.valueOf()) ? text(value) : d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); };
-const dateValue = value => { const d=asDate(value); return Number.isNaN(d.valueOf())?0:d.valueOf(); };
+const dateText = value => { const d = asValidDate(value); return d ? d.toLocaleString('en-GB') : text(value)||'—'; };
+const fmtDate = value => { const d = asValidDate(value); return d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : text(value)||'—'; };
+const dateValue = value => asValidDate(value)?.valueOf()||0;
 
 // A browser clock cannot safely verify a payment, delivery, or contract. The
 // portal therefore records only an explicit client action; no timer may turn a
@@ -245,10 +255,10 @@ function startClient(access){
   clearSubscriptions();watchBranding();state.mode='client';state.token=access;const q=new URLSearchParams(location.search);state.projectKey=q.get('p');state.tab=q.get('tab')==='log'?'log':'overview';
   rootStop=onSnapshot(doc(db,'portal_public',access),snap=>{if(!snap.exists()||snap.data().enabled===false){state.mode='error';state.error='This private link is no longer active. It may have been replaced or disabled by the administrator. Please contact Vision Flow for a current link.';render();return;}state.publicClient=normalizeClient(snap.data(),snap.data().clientSlug);state.clientKey=state.publicClient.clientSlug;watchArtifacts(state.clientKey,{accessToken:access});render();},error=>{state.mode='error';state.error=error.code?.includes('permission-denied')?'This private link is unavailable or has been disabled. Ask Vision Flow for a current link.':errorMessage(error);render();});
 }
-async function saveClient(draft,notice='Saved',operations=[]){
+async function saveClient(draft,notice='Saved',operations=[],{allowRecovery=false}={}){
   requireAdmin();const next=normalizeClient(draft,draft.slug);const expected=Number(draft._revision)||0;next.lastUpdated=now();next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
-  if(operations.length>430)throw new Error('This operation is too large for one save. Export a backup and process records in smaller groups.');
-  await runTransaction(db,async tx=>{const ref=doc(db,'portal_clients',next.slug);const current=await tx.get(ref);if(current.data()?._lastMutationId===next._lastMutationId)return;if(current.exists()&&(Number(current.data()._revision)||0)!==expected)throw new Error('This client changed in another tab. Close this form, review the latest details, then retry.');if(!current.exists()&&expected>0)throw new Error('This client has been removed. Refresh the workspace.');tx.set(ref,next);tx.set(doc(db,'portal_public',next.accessToken),publicSnapshot(next,next.slug));for(const op of operations){const ref=doc(db,'portal_public',op.token||next.accessToken,...op.path);op.delete?tx.delete(ref):tx.set(ref,op.data);}});
+  if(operations.length>MAX_SAVE_OPERATIONS)throw new Error('This operation is too large for one save. Export a backup and process records in smaller groups.');
+  await runTransaction(db,async tx=>{const ref=doc(db,'portal_clients',next.slug);const current=await tx.get(ref),persisted=current.data();if(persisted?._lastMutationId===next._lastMutationId)return;if(persisted?.purgeState&&!allowRecovery)throw new Error('Permanent deletion is already in progress for this recycled client. Resume or finish it before making other changes.');if(recoveryPending(persisted)&&!allowRecovery)throw new Error('A protected recovery task is in progress. Resume or finish it from Link settings or the recycle bin before making other changes.');if(current.exists()&&(Number(persisted._revision)||0)!==expected)throw new Error('This client changed in another tab. Close this form, review the latest details, then retry.');if(!current.exists()&&expected>0)throw new Error('This client has been removed. Refresh the workspace.');tx.set(ref,next);tx.set(doc(db,'portal_public',next.accessToken),publicSnapshot(next,next.slug));for(const op of operations){const ref=doc(db,'portal_public',op.token||next.accessToken,...op.path);op.delete?tx.delete(ref):tx.set(ref,op.data);}});
   state.clients[next.slug]=next;notify(notice);return next;
 }
 function modal(title,subtitle,body,submit,label='Save'){
@@ -323,21 +333,71 @@ function openSignature(){const terms=agreementTerms(project());modal('Review and
 function initPad(){const canvas=$('signatureCanvas');const rect=canvas.getBoundingClientRect(),ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=rect.width*ratio;canvas.height=180*ratio;const ctx=canvas.getContext('2d');ctx.scale(ratio,ratio);ctx.strokeStyle='#167aa6';ctx.lineWidth=2.4;ctx.lineCap='round';pad={canvas,ctx,drawn:false};let drawing=false;const pt=e=>{const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top};};canvas.onpointerdown=e=>{drawing=true;canvas.setPointerCapture(e.pointerId);const p=pt(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};canvas.onpointermove=e=>{if(!drawing)return;const p=pt(e);ctx.lineTo(p.x,p.y);ctx.stroke();pad.drawn=true;};canvas.onpointerup=canvas.onpointercancel=()=>drawing=false;}
 function openSignatureReview(id){requireAdmin();const draft=clone(client()),s=projectSigs().find(s=>s.id===id);if(!s)return;const r=sigReview(s);modal('Manage signature',`Signed ${dateText(s.signedAt)}`,`${field('Signer display name','displayName',r.displayName||s.name,'text','required maxlength="200"')}${select('Review state','state',[['pending','Awaiting verification'],['verified','Verified'],['void','Void / request replacement']],r.state||'pending')}${area('Note visible to client','message',r.message||'','maxlength="2000"')}${button('Move signature to bin','archive-signature',`data-id="${esc(id)}"`,'danger')}`,async data=>{const c=clone(draft);c.signatureReviews[id]={state:text(data.get('state')),displayName:text(data.get('displayName')),message:text(data.get('message')),updatedAt:now()};await saveClient(c,'Signature updated');finishModal();});}
 
-function trashEntry(c,kind,label,value,projectKey=state.projectKey,extra={}){const id=uid('trash');c.trash[id]={kind,label,value:clone(value),projectKey:projectKey||'',deletedAt:now(),...extra};return id;}
-async function reconcileArchivedRecords(saved,trashId,match){
-  // A client submission can race with an archive click. The public snapshot is
-  // withdrawn atomically by saveClient; this follow-up retains any submission
-  // that reached Firestore just before that withdrawal, instead of leaving an
-  // orphaned record or silently discarding it on restore.
-  const late=(await allRecords(saved.accessToken)).filter(match);
-  if(!late.length)return;
-  const latest=clone(state.clients[saved.slug]||saved),entry=latest.trash?.[trashId];
-  if(!entry)return;
-  const retained=clone(entry.records||[]),positions=new Map(retained.map((record,index)=>[`${record.collection}/${record.id}`,index]));
-  for(const record of late){const key=`${record.collection}/${record.id}`,index=positions.get(key);if(index===undefined){positions.set(key,retained.length);retained.push(clone(record));}else retained[index]=clone(record);}
-  entry.records=retained;
-  await saveClient(latest,'Concurrent submission retained in recycle bin',late.map(record=>({path:[record.collection,record.id],delete:true})));
+// Archived client submissions live in their own admin-only documents. Keeping
+// a captured PNG or a long feedback history out of portal_clients prevents a
+// recycle-bin action from exceeding Firestore's per-document size limit.
+const ARCHIVE_RECORD_BATCH_SIZE=8;
+const archiveRecordCollection=(clientKey,archiveKey)=>collection(db,'portal_archives',clientKey,'entries',archiveKey,'records');
+const archiveEntryCollection=clientKey=>collection(db,'portal_archives',clientKey,'entries');
+async function stageTrashRecords(clientKey,trashId,entry){
+  const records=entry.records||[];if(!records.length)return;
+  const archiveKey=entry.archiveKey||trashId;
+  entry.archiveKey=archiveKey;
+  const index=writeBatch(db);index.set(doc(db,'portal_archives',clientKey,'entries',archiveKey),{archiveKey,recordCount:0,updatedAt:now()});await index.commit();
+  for(let offset=0;offset<records.length;offset+=ARCHIVE_RECORD_BATCH_SIZE){
+    const batch=writeBatch(db);
+    for(const [index,record] of records.slice(offset,offset+ARCHIVE_RECORD_BATCH_SIZE).entries()){
+      const {id,collection:recordCollection,...payload}=record,archiveId=`record-${offset+index}`;
+      batch.set(doc(db,'portal_archives',clientKey,'entries',archiveKey,'records',archiveId),{recordCollection,recordId:id,payload});
+    }
+    await batch.commit();
+  }
+  const complete=writeBatch(db);complete.set(doc(db,'portal_archives',clientKey,'entries',archiveKey),{archiveKey,recordCount:records.length,updatedAt:now()});await complete.commit();entry.archivedRecordCount=records.length;entry.records=[];
 }
+async function archivedTrashRecords(clientKey,entry){
+  if(!entry.archiveKey)return clone(entry.records||[]);
+  const snap=await getDocs(archiveRecordCollection(clientKey,entry.archiveKey));
+  return snap.docs.map(document=>{const stored=document.data();return {...clone(stored.payload||{}),id:stored.recordId,collection:stored.recordCollection};});
+}
+async function restorePublicRecords(accessToken,records){
+  for(let offset=0;offset<records.length;offset+=ARCHIVE_RECORD_BATCH_SIZE){
+    const batch=writeBatch(db);for(const record of records.slice(offset,offset+ARCHIVE_RECORD_BATCH_SIZE)){const {id,collection:recordCollection,...payload}=record;batch.set(doc(db,'portal_public',accessToken,recordCollection,id),payload);}await batch.commit();
+  }
+}
+async function deleteArchivedTrashRecords(clientKey,entry){
+  if(!entry.archiveKey)return;
+  const snap=await getDocs(archiveRecordCollection(clientKey,entry.archiveKey));
+  for(let offset=0;offset<snap.docs.length;offset+=400){const batch=writeBatch(db);for(const record of snap.docs.slice(offset,offset+400))batch.delete(record.ref);await batch.commit();}
+  const batch=writeBatch(db);batch.delete(doc(db,'portal_archives',clientKey,'entries',entry.archiveKey));await batch.commit();
+}
+async function deleteAllClientArchives(clientKey,entries=[]){
+  const known=new Set(entries.map(entry=>entry?.archiveKey).filter(Boolean));
+  for(const entry of entries)await deleteArchivedTrashRecords(clientKey,entry);
+  const snap=await getDocs(archiveEntryCollection(clientKey));
+  for(const document of snap.docs)if(!known.has(document.id))await deleteArchivedTrashRecords(clientKey,{archiveKey:document.id});
+}
+async function deletePublicRecords(accessToken,records){
+  for(let offset=0;offset<records.length;offset+=400){const batch=writeBatch(db);for(const record of records.slice(offset,offset+400))batch.delete(doc(db,'portal_public',accessToken,record.collection,record.id));await batch.commit();}
+}
+function matchesArchivedEntry(entry,record){
+  if(entry.kind==='project'){const approvals=new Set((entry.value?.approvals||[]).map(approval=>approval.id));return record.projectKey===entry.projectKey||(record.collection==='sigs'&&record.id===entry.projectKey)||(record.collection==='confirms'&&approvals.has(record.id));}
+  if(entry.kind==='approval')return record.collection==='confirms'&&record.id===entry.value?.id;
+  if(['record','signature','feedback'].includes(entry.kind))return record.collection===entry.value?.collection&&record.id===entry.value?.id;
+  return false;
+}
+async function retainLateArchivedRecords(c,entry){
+  const late=(await allRecords(c.accessToken)).filter(record=>matchesArchivedEntry(entry,record));if(!late.length)return 0;
+  const retained=await archivedTrashRecords(c.slug,entry),positions=new Map(retained.map((record,index)=>[`${record.collection}/${record.id}`,index]));
+  for(const record of late){const key=`${record.collection}/${record.id}`,index=positions.get(key);if(index===undefined){positions.set(key,retained.length);retained.push(clone(record));}else retained[index]=clone(record);}
+  entry.records=retained;await stageTrashRecords(c.slug,entry.archiveKey||entry.id||uid('trash'),entry);await deletePublicRecords(c.accessToken,late);return late.length;
+}
+async function resumeLargeArchive(c=clone(client())){
+  requireAdmin();const job=c.archiveState;if(!['large-archive','reconcile'].includes(job?.kind))return false;const entry=c.trash?.[job.trashId];if(!entry)throw new Error('The protected archive entry is missing. Refresh and review the recycle bin before retrying.');
+  if(job.kind==='large-archive')await deletePublicRecords(c.accessToken,await archivedTrashRecords(c.slug,entry));const late=await retainLateArchivedRecords(c,entry);if(late)await saveClient(c,'Late client submissions retained in the protected archive',[],{allowRecovery:true});
+  const latest=clone(state.clients[c.slug]||c);if(latest.archiveState?.trashId!==job.trashId)return false;if(job.previousAccessEnabled===undefined)delete latest.accessEnabled;else latest.accessEnabled=job.previousAccessEnabled;delete latest.archiveState;await saveClient(latest,'Protected archive completed and private sharing restored',[],{allowRecovery:true});return true;
+}
+const archivePreview = record => {const {image,...preview}=record||{};return preview;};
+function trashEntry(c,kind,label,value,projectKey=state.projectKey,extra={}){const id=uid('trash');c.trash[id]={kind,label,value:clone(value),projectKey:projectKey||'',deletedAt:now(),...extra};return id;}
 async function archive(kind,source){
   requireAdmin();const c=clone(client()),p=c.projects[state.projectKey],ops=[];let trashId='',lateRecordMatch=null;
   if(kind==='record'){
@@ -345,42 +405,124 @@ async function archive(kind,source){
     if(!record)throw new Error('Record no longer exists.');
     const reviews={signatureReviews:{},feedbackReviews:{}};
     for(const map of Object.keys(reviews)){if(c[map][record.id]){reviews[map][record.id]=c[map][record.id];delete c[map][record.id];}}
-    trashEntry(c,'record',record.collection+' · '+(record.name||record.id),record,record.projectKey||'',{records:[record],reviews});
+    trashId=trashEntry(c,'record',record.collection+' · '+(record.name||record.id),archivePreview(record),record.projectKey||'',{records:[record],reviews});
     ops.push({path:[record.collection,record.id],delete:true});
   }
   if(kind==='client'){c._deleted=true;await saveClient(c,'Client moved to recycle bin');state.clientKey=null;state.projectKey=null;return;}
   if(kind==='project'){const approvalIds=new Set(p.approvals.map(a=>a.id)),match=r=>r.projectKey===state.projectKey||(r.collection==='sigs'&&r.id===state.projectKey)||(r.collection==='confirms'&&approvalIds.has(r.id)),records=(await allRecords(c.accessToken)).filter(match),reviews={signatureReviews:{},feedbackReviews:{}};for(const r of records){const map=r.collection==='sigs'?'signatureReviews':'feedbackReviews';if(c[map][r.id]){reviews[map][r.id]=c[map][r.id];delete c[map][r.id];}}trashId=trashEntry(c,kind,p.name,p,state.projectKey,{records,reviews});lateRecordMatch=match;for(const r of records)ops.push({path:[r.collection,r.id],delete:true});delete c.projects[state.projectKey];}
   if(kind==='payment'||kind==='approval'){const list=kind==='payment'?p.payments:p.approvals;const index=list.findIndex(x=>x.id===source.dataset.id);if(index<0)throw new Error('Record not found.');const value=list[index];let conf=null;if(kind==='approval'){const snap=await getDoc(doc(db,'portal_public',c.accessToken,'confirms',value.id));conf=snap.exists()?{...snap.data(),id:snap.id,collection:'confirms'}:null;lateRecordMatch=record=>record.collection==='confirms'&&record.id===value.id;}trashId=trashEntry(c,kind,kind==='payment'?`${money(value.amount)} payment`:value.title,value,state.projectKey,conf?{records:[conf]}:{});if(conf)ops.push({path:['confirms',conf.id],delete:true});list.splice(index,1);}
   if(kind==='item'){const item=p.items.find(i=>Number(i.n)===Number(source.dataset.number));item.deleted=true;item.deletedAt=now();p.totalItems=itemsOf(p).length;}
-  if(kind==='signature'||kind==='feedback'){const record=kind==='signature'?projectSigs().find(s=>s.id===source.dataset.id):requests().find(r=>r.id===source.dataset.id&&r.collection===source.dataset.collection);if(!record)throw new Error('Record not found.');const reviews=kind==='signature'?c.signatureReviews:c.feedbackReviews;trashEntry(c,kind,kind==='signature'?record.name:record.message,record,state.projectKey,{review:reviews[record.id]||{}});ops.push({path:[record.collection,record.id],delete:true});delete reviews[record.id];}
-  const saved=await saveClient(c,'Moved to recycle bin',ops);if(lateRecordMatch)await reconcileArchivedRecords(saved,trashId,lateRecordMatch);if(kind==='project')state.projectKey=null;if(!$('modalLayer').hidden)finishModal();
+  if(kind==='signature'||kind==='feedback'){const record=kind==='signature'?projectSigs().find(s=>s.id===source.dataset.id):requests().find(r=>r.id===source.dataset.id&&r.collection===source.dataset.collection);if(!record)throw new Error('Record not found.');const reviews=kind==='signature'?c.signatureReviews:c.feedbackReviews;trashId=trashEntry(c,kind,kind==='signature'?record.name:record.message,archivePreview(record),state.projectKey,{review:reviews[record.id]||{},records:[record]});ops.push({path:[record.collection,record.id],delete:true});delete reviews[record.id];}
+  const entry=trashId?c.trash[trashId]:null;if(entry?.records?.length)try{await stageTrashRecords(c.slug,trashId,entry);}catch(error){if(entry.archiveKey)await deleteArchivedTrashRecords(c.slug,entry).catch(()=>{});throw error;}
+  const needsProtectedSweep=Boolean(lateRecordMatch),largeArchive=ops.length>MAX_SAVE_OPERATIONS;
+  if(largeArchive||needsProtectedSweep){
+    c.archiveState={kind:largeArchive?'large-archive':'reconcile',trashId,previousAccessEnabled:c.accessEnabled,startedAt:now()};c.accessEnabled=false;
+    let saved;try{saved=await saveClient(c,largeArchive?'Private sharing paused while a large protected archive is completed.':'Private sharing paused while the archive is being verified.',largeArchive?[]:ops);}catch(error){if(entry?.archiveKey)await deleteArchivedTrashRecords(c.slug,entry).catch(()=>{});throw error;}
+    if(kind==='project')state.projectKey=null;
+    try{await resumeLargeArchive(saved);}catch(error){notify('Private sharing stays paused and the protected archive can be resumed from Link settings.',true);throw error;}
+  }else{try{await saveClient(c,'Moved to recycle bin',ops);}catch(error){if(entry?.archiveKey)await deleteArchivedTrashRecords(c.slug,entry).catch(()=>{});throw error;}}
+  if(kind==='project')state.projectKey=null;if(!$('modalLayer').hidden)finishModal();
 }
 function renderTrash(){
-  const entries=[];for(const [key,c] of Object.entries(state.clients)){if(c._deleted)entries.push(`<div class="list-row"><strong>${esc(c.name)} · Client workspace</strong><p>Private link disabled while in recycle bin.</p><div class="actions">${button('View details','preview-client-trash',`data-client="${esc(key)}"`)}${button('Restore client','restore-client',`data-client="${esc(key)}"`)}${button('Permanently delete','purge-client',`data-client="${esc(key)}"`,'danger')}</div></div>`);else for(const [id,t] of Object.entries(c.trash||{}))entries.push(`<div class="list-row"><strong>${esc(c.name)} · ${esc(t.kind)} · ${esc(t.label).slice(0,180)}</strong><p>${esc(dateText(t.deletedAt))} · ${t.records?.length||0} linked submission${(t.records?.length||0)===1?'':'s'} retained for restore</p><div class="actions">${button('View details','preview-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`)}${button('Restore','restore-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`)}${button('Permanently delete','purge-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`,'danger')}</div></div>`);}
+  const entries=[];for(const [key,c] of Object.entries(state.clients)){if(c._deleted){const purging=c.purgeState?.status==='purging';entries.push(`<div class="list-row"><strong>${esc(c.name)} · Client workspace</strong><p>${purging?'Permanent deletion is in progress. The client cannot be restored while protected records are being removed.':'Private link disabled while in recycle bin.'}</p><div class="actions">${button('View details','preview-client-trash',`data-client="${esc(key)}"`)}${purging?button('Resume permanent deletion','purge-client',`data-client="${esc(key)}"`,'danger'):button('Restore client','restore-client',`data-client="${esc(key)}"`)+button('Permanently delete','purge-client',`data-client="${esc(key)}"`,'danger')}</div></div>`);}else for(const [id,t] of Object.entries(c.trash||{})){const count=t.archivedRecordCount??t.records?.length??0,protectedArchive=activeArchiveEntry(c,id),purging=t.purgeState?.status==='purging',restoring=t.restoreState?.status==='restoring',status=protectedArchive?'Protected archive is paused; resume it from Link settings or here.':purging?'Permanent deletion is in progress.':restoring?'Restore is in progress; finish it before choosing another recovery action.':'Ready for review.';const actions=protectedArchive?button('Resume protected archive','resume-archive',`data-client="${esc(key)}"`,'danger'):purging?button('Resume permanent deletion','purge-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`,'danger'):restoring?button('Resume restore','restore-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`):button('Restore','restore-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`)+button('Permanently delete','purge-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`,'danger');entries.push(`<div class="list-row"><strong>${esc(c.name)} · ${esc(t.kind)} · ${esc(t.label).slice(0,180)}</strong><p>${esc(dateText(t.deletedAt))} · ${count} linked submission${count===1?'':'s'} retained for restore · ${status}</p><div class="actions">${button('View details','preview-trash',`data-client="${esc(key)}" data-id="${esc(id)}"`)}${actions}</div></div>`);}}
   $('view').innerHTML=`<section class="hero"><p class="eyebrow">Administrator recovery</p><h1>Recycle bin</h1><p>Restore removed records here. Permanently deleted records cannot be restored.</p>${button('Back to dashboard','dashboard')}</section><section class="panel" style="margin-top:18px">${entries.join('')||'<p class="muted">The recycle bin is empty.</p>'}</section>`;
 }
-function trashDetails(entry){const value=entry.value||{},line=(label,value)=>`<p><strong>${esc(label)}:</strong> <span class="prewrap">${esc(value||'—')}</span></p>`,source=(label,value)=>safeUrl(value)?`<p><strong>${esc(label)}:</strong> ${link(value,'Open link')}</p>`:'';let body=`<div class="agreement"><p class="eyebrow">Recoverable record</p>${line('Type',entry.kind)}${line('Original label',entry.label)}${line('Deleted',dateText(entry.deletedAt))}${entry.projectKey?line('Parent project',entry.projectKey):''}`;
+function trashDetails(entry){const value=entry.value||{},display=value=>{if(value===undefined||value===null||value==='')return '—';if(value&&typeof value.toDate==='function')return dateText(value);if(typeof value==='object'){try{return JSON.stringify(value,null,2);}catch{return String(value);}}return String(value);},line=(label,value)=>`<p><strong>${esc(label)}:</strong> <span class="prewrap">${esc(display(value))}</span></p>`,source=(label,value)=>safeUrl(value)?`<p><strong>${esc(label)}:</strong> ${link(value,'Open link')}</p>`:'',allFields=(record,skip=[])=>Object.entries(record||{}).filter(([key])=>!skip.includes(key)&&key!=='image').map(([key,fieldValue])=>line(key.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()),fieldValue)).join('');let body=`<div class="agreement"><p class="eyebrow">Recoverable record</p>${line('Type',entry.kind)}${line('Original label',entry.label)}${line('Deleted',dateText(entry.deletedAt))}${entry.projectKey?line('Parent project',entry.projectKey):''}`;
   if(entry.kind==='project'){body+=line('Project name',value.name)+line('Deliverables',itemsOf(value).length)+line('Scope / description',value.scope)+line('Payment & delivery terms',value.terms)+line('Next milestone',value.milestoneText);}
   else if(entry.kind==='item'){body+=line('Deliverable number',value.n)+line('Item / subject',value.b)+line('Title',value.t)+line('Status',LABEL[value.s]||value.s)+line('Started date',value.sd)+line('Delivered date',value.dd)+line('Duration',value.dur)+source('Final delivery',value.dl)+source('Script',value.scriptUrl)+source('Character / avatar',value.avatarUrl)+source('Reference',value.referenceUrl)+line('Client-visible note',value.clientNote)+line('Internal admin note',value.no);}
   else if(entry.kind==='payment'){body+=line('Date',value.date)+line('Amount',money(value.amount))+line('Type',value.type)+line('Note',value.note)+source('Payment proof',value.proofUrl);}
   else if(entry.kind==='approval'){body+=line('Approval title',value.title)+line('Request details',value.desc);}
   else if(entry.kind==='signature'){body+=line('Signer',value.name)+line('Signed',dateText(value.signedAt))+line('Project',value.projectKey)+(signatureImage(value.image)?`<p><strong>Captured signature:</strong><br><img class="signature-image" src="${signatureImage(value.image)}" alt="Archived client signature"></p>`:'');}
   else if(entry.kind==='feedback'){body+=line('Request type',value.requestType)+line('Message',value.message)+line('Submitted',dateText(value.submittedAt));}
-  else if(entry.kind==='record'){body+=line('Collection',value.collection)+line('Record ID',value.id)+line('Project',value.projectKey)+line('Name / message',value.name||value.message);}
-  const records=[...(entry.records||[])];if(records.length)body+=`<h3>Linked submissions retained for restore</h3>${records.map(record=>`<div class="record"><strong>${esc(record.collection||'record')} · ${esc(record.id||'')}</strong><p class="prewrap">${esc(record.name||record.title||record.message||record.projectKey||'Submission record')}</p></div>`).join('')}`;
-  if(entry.review)body+=`<h3>Administrator review retained</h3>${line('State / status',entry.review.state||entry.review.status)}${line('Client-visible response',entry.review.response||entry.review.message)}`;
+  else if(entry.kind==='record'){body+=line('Collection',value.collection)+line('Record ID',value.id)+allFields(value,['collection','id']);if(signatureImage(value.image))body+=`<p><strong>Captured signature:</strong><br><img class="signature-image" src="${signatureImage(value.image)}" alt="Archived client signature"></p>`;}
+  const records=[...(entry.records||[])];if(records.length)body+=`<h3>Linked submissions retained for restore</h3>${records.map(record=>`<details class="record"><summary><strong>${esc(record.collection||'record')} · ${esc(record.id||'')}</strong> — ${esc(record.name||record.title||record.message||record.projectKey||'Submission record')}</summary>${allFields(record,['collection','id'])}${signatureImage(record.image)?`<p><strong>Captured signature:</strong><br><img class="signature-image" src="${signatureImage(record.image)}" alt="Archived client signature"></p>`:''}</details>`).join('')}`;
+  if(entry.review)body+=`<h3>Administrator review retained</h3>${allFields(entry.review)}`;
   return body+'</div>';}
-function openTrashPreview(key,id){requireAdmin();const entry=state.clients[key]?.trash?.[id];if(!entry)throw new Error('This recycled record is no longer available.');modal('Recycle-bin details','Review the original fields before you restore or permanently delete this record.',trashDetails(entry),null);}
-function openClientTrashPreview(key){requireAdmin();const c=state.clients[key];if(!c?._deleted)throw new Error('This client is no longer in the recycle bin.');const projects=Object.entries(c.projects||{}).map(([slug,p])=>`<div class="record"><strong>${esc(p.name||slug)}</strong><p>${itemsOf(p).length} deliverables · ${money(p.budget)}</p></div>`).join('')||'<p>No projects recorded.</p>';modal('Recycled client details','Its private link is disabled. Restore it to reactivate the client workspace.',`<div class="agreement"><p class="eyebrow">Client workspace</p><h3>${esc(c.name)}</h3>${line('URL label',key)}${line('Projects',Object.keys(c.projects||{}).length)}${projects}</div>`,null);function line(label,value){return `<p><strong>${esc(label)}:</strong> ${esc(value||'—')}</p>`;}}
-async function restoreTrash(key,id){const c=clone(state.clients[key]),t=c.trash[id],ops=[];if(!t)throw new Error('This record is no longer in the bin.');if(t.kind==='project'){if(c.projects[t.projectKey])throw new Error('A project already uses this label. Rename/remove it before restoring.');c.projects[t.projectKey]=t.value;}else if(t.kind!=='record'){const p=c.projects[t.projectKey];if(!p)throw new Error('Restore the parent project first.');if(t.kind==='payment'||t.kind==='approval')p[t.kind==='payment'?'payments':'approvals'].push(t.value);if(t.kind==='signature'||t.kind==='feedback'){const {id:recordId,collection:col,...data}=t.value;ops.push({path:[col,recordId],data});c[t.kind==='signature'?'signatureReviews':'feedbackReviews'][recordId]=t.review||{};}}
-  for(const map of ['signatureReviews','feedbackReviews'])Object.assign(c[map],t.reviews?.[map]||{});
-  for(const record of t.records||[]){const {id:recordId,collection:col,...data}=record;ops.push({path:[col,recordId],data});}delete c.trash[id];await saveClient(c,'Record restored',ops);
+async function openTrashPreview(key,id){requireAdmin();const entry=state.clients[key]?.trash?.[id];if(!entry)throw new Error('This recycled record is no longer available.');const preview=clone(entry);preview.records=await archivedTrashRecords(key,entry);modal('Recycle-bin details','Review the original fields before you restore or permanently delete this record.',trashDetails(preview),null);}
+async function openClientTrashPreview(key){requireAdmin();const c=state.clients[key];if(!c?._deleted)throw new Error('This client is no longer in the recycle bin.');const line=(label,value)=>`<p><strong>${esc(label)}:</strong> <span class="prewrap">${esc(value===undefined||value===null||value===''?'—':value)}</span></p>`,projectDetails=Object.entries(c.projects||{}).map(([slug,p])=>`<details class="record"><summary><strong>${esc(p.name||slug)}</strong> — ${itemsOf(p).length} deliverables · ${money(p.budget)}</summary>${line('URL label',slug)}${line('Status',LABEL[p.status]||p.status)}${line('Rate',money(p.rate))}${line('Budget',money(p.budget))}${line('Scope / description',p.scope)}${line('Payment & delivery terms',p.terms)}${line('Next milestone',p.milestoneText)}${line('Source script URL',p.sourceScriptUrl)}${line('Avatar / character URL',p.avatarFolderUrl)}<p><strong>Production rows:</strong> ${itemsOf(p).map(row=>`#${esc(row.n)} ${esc(row.t||row.b||'Untitled')}`).join(', ')||'—'}</p></details>`).join('')||'<p>No projects recorded.</p>';
+  const tokens=[...new Set([c.accessToken,c.accessRotation?.from].filter(Boolean))],records=(await Promise.all(tokens.map(allRecords))).flat(),seen=new Set(),unique=records.filter(record=>{const key=`${record.collection}/${record.id}`;if(seen.has(key))return false;seen.add(key);return true;}),recordDetails=unique.length?`<h3>Protected submitted records</h3>${unique.map(record=>{const fields=Object.entries(record).filter(([field])=>!['collection','id','image'].includes(field)).map(([field,value])=>line(field.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()),typeof value==='object'?JSON.stringify(value):value)).join('');return `<details class="record"><summary><strong>${esc(record.collection)} · ${esc(record.id)}</strong> — ${esc(record.name||record.title||record.message||record.projectKey||'Submitted record')}</summary>${fields}${signatureImage(record.image)?`<p><strong>Captured signature:</strong><br><img class="signature-image" src="${signatureImage(record.image)}" alt="Archived client signature"></p>`:''}</details>`;}).join('')}`:'<p>No public submission records remain on the protected link.</p>';
+  modal('Recycled client details','Review the complete client record and every retained submission before restoring or permanently deleting it. Its private link is disabled.',`<div class="agreement"><p class="eyebrow">Client workspace</p><h3>${esc(c.name)}</h3>${line('URL label',key)}${line('Email',c.email)}${line('Phone',c.phone)}${line('Share state',c.accessEnabled===false?'Paused':'Active before recycling')}${line('Projects',Object.keys(c.projects||{}).length)}${c.purgeState?line('Permanent deletion state',c.purgeState.status):''}${projectDetails}${recordDetails}</div>`,null);
 }
-function openArchivedRows(){requireAdmin();const p=project(),rows=p.items.filter(i=>i.deleted);modal('Archived production rows','Restore individual rows without changing their original number or attached feedback.',rows.map(i=>`<div class="list-row"><strong>Deliverable ${i.n} · ${esc(i.t||i.b||'Untitled')}</strong><div class="actions">${button('Restore row','restore-row',`data-number="${i.n}"`)}${button('Permanently delete','purge-row',`data-number="${i.n}"`,'danger')}</div></div>`).join('')||'<p>No archived rows.</p>',null);}
-function linkSettings(){requireAdmin();const c=client();modal('Private link settings','Anyone with this private link can view this client workspace. Pause sharing or replace a leaked link.',`<p>Sharing is ${c.accessEnabled===false?'paused':'active'}.</p>${button(c.accessEnabled===false?'Enable sharing':'Pause sharing','toggle-sharing')}${button('Replace private link','rotate-link','','danger')}`,null);}
+function assertTrashRestorePossible(c,t){if(t.kind==='project'&&c.projects[t.projectKey])throw new Error('A project already uses this label. Rename/remove it before restoring.');if(!['project','record'].includes(t.kind)&&!c.projects[t.projectKey])throw new Error('Restore the parent project first.');}
+function restoreTrashStructure(c,id,t,records){
+  if(t.kind==='project'){if(c.projects[t.projectKey])throw new Error('A project already uses this label. Rename/remove it before restoring.');c.projects[t.projectKey]=t.value;}
+  else if(t.kind!=='record'){const p=c.projects[t.projectKey];if(!p)throw new Error('Restore the parent project first.');if(t.kind==='payment'||t.kind==='approval')p[t.kind==='payment'?'payments':'approvals'].push(t.value);if(t.kind==='signature'||t.kind==='feedback'){const record=records[0]||t.value;if(record?.id)c[t.kind==='signature'?'signatureReviews':'feedbackReviews'][record.id]=t.review||{};}}
+  for(const map of ['signatureReviews','feedbackReviews'])Object.assign(c[map],t.reviews?.[map]||{});
+  delete c.trash[id];
+}
+async function restoreTrash(key,id){
+  const c=clone(state.clients[key]),t=c.trash[id];if(!t)throw new Error('This record is no longer in the bin.');assertTrashRestorePossible(c,t);
+  if(c.archiveState?.trashId===id)throw new Error('This protected archive is still in progress. Resume it before restoring this record.');
+  if(t.purgeState?.status==='purging')throw new Error('Permanent deletion is in progress. Resume or finish it before restoring this record.');
+  const records=await archivedTrashRecords(key,t);if(!records.length&&['record','signature','feedback'].includes(t.kind)&&t.value?.id&&t.value?.collection)records.push(clone(t.value));
+  if(!t.restoreState){t.restoreState={status:'restoring',startedAt:now()};await saveClient(c,'Restoring protected records…');}
+  try{await restorePublicRecords(c.accessToken,records);}catch(error){notify('Restore is paused safely. Use Restore again to resume it.',true);throw error;}
+  const latest=clone(state.clients[key]),current=latest.trash?.[id];if(!current)throw new Error('This recycled record changed in another tab. Refresh and review it before retrying.');if(current.purgeState?.status==='purging')throw new Error('Permanent deletion claimed this record in another tab.');restoreTrashStructure(latest,id,current,records);await saveClient(latest,'Record restored',[],{allowRecovery:true});
+  await deleteArchivedTrashRecords(key,current).catch(()=>notify('Record restored. A private archive cleanup retry may be needed later.',true));
+}
+async function purgeTrash(key,id){
+  requireAdmin();const initial=clone(state.clients[key]),entry=initial?.trash?.[id];if(!entry)throw new Error('Recycled record not found.');
+  if(initial.archiveState?.trashId===id)throw new Error('This protected archive is still in progress. Resume it before permanent deletion.');
+  if(!entry.purgeState){if(!await confirmAction('Permanently delete this recycled record? It cannot be restored.'))return;const claimed=clone(state.clients[key]),current=claimed.trash?.[id];if(!current)throw new Error('Recycled record changed in another tab. Refresh and retry.');if(current.restoreState?.status==='restoring')throw new Error('Restore is in progress. Resume it before permanent deletion.');current.purgeState={status:'purging',startedAt:now()};await saveClient(claimed,'Permanent deletion started for this recycled record.',[],{allowRecovery:true});}
+  const c=clone(state.clients[key]),current=c.trash?.[id];if(!current)throw new Error('Recycled record changed in another tab. Refresh and retry.');if(c.archiveState?.trashId===id)throw new Error('This protected archive is still in progress. Resume it before permanent deletion.');
+  const records=await archivedTrashRecords(key,current);await deletePublicRecords(c.accessToken,records);await deleteArchivedTrashRecords(key,current);
+  const latest=clone(state.clients[key]),finalEntry=latest.trash?.[id];if(!finalEntry)throw new Error('Recycled record changed in another tab. Refresh and review the recycle bin.');delete latest.trash[id];await saveClient(latest,'Recycled record permanently deleted',[],{allowRecovery:true});render();
+}
+function openArchivedRows(){requireAdmin();const p=project(),rows=p.items.filter(i=>i.deleted);modal('Archived production rows','Review exact row fields before restoring or permanently deleting them.',rows.map(i=>`<div class="list-row"><strong>Deliverable ${i.n} · ${esc(i.t||i.b||'Untitled')}</strong><div class="actions">${button('View details','preview-archived-row',`data-number="${i.n}"`)}${button('Restore row','restore-row',`data-number="${i.n}"`)}${button('Permanently delete','purge-row',`data-number="${i.n}"`,'danger')}</div></div>`).join('')||'<p>No archived rows.</p>',null);}
+function openArchivedRowPreview(number){requireAdmin();const item=project()?.items.find(row=>Number(row.n)===Number(number));if(!item?.deleted)throw new Error('Archived production row not found.');modal('Archived production-row details','Review every stored field before restoring or permanently deleting this row.',trashDetails({kind:'item',label:`Deliverable ${item.n}`,value:item,projectKey:state.projectKey,deletedAt:item.deletedAt}),null);}
+function linkSettings(){requireAdmin();const c=client(),pending=c.accessRotation?.from,archiving=Boolean(c.archiveState);modal('Private link settings','Anyone with this private link can view this client workspace. Pause sharing or replace a leaked link.',`<p>Sharing is ${c.accessEnabled===false?'paused':'active'}.</p>${archiving?'<p class="notice">A protected archive is in progress. Sharing remains paused until every submitted record is safely moved.</p>':pending?'<p class="notice">A previous replacement safely disabled the old link. Resume the protected record transfer to finish it.</p>':''}${archiving?button('Resume protected archive','resume-archive','','danger'):button(c.accessEnabled===false?'Enable sharing':'Pause sharing','toggle-sharing')+button(pending?'Resume protected record transfer':'Replace private link','rotate-link','','danger')}`,null);}
 async function allRecords(accessToken){const groups=await Promise.all(['sigs','confirms','feedback'].map(async name=>(await getDocs(collection(db,'portal_public',accessToken,name))).docs.map(d=>({...d.data(),id:d.id,collection:name}))));return groups.flat();}
-async function rotateLink(){const c=clone(client()),old=c.accessToken,records=await allRecords(old);const nextToken=newToken();const ops=records.flatMap(({id,collection:col,...data})=>[{token:nextToken,path:[col,id],data},{token:old,path:[col,id],delete:true}]);ops.push({token:old,path:[],delete:true});c.accessToken=nextToken;await saveClient(c,'Private link replaced. Copy and share the new link.',ops);finishModal();}
-async function purgeClient(key){const c=state.clients[key];if(!c?._deleted)throw new Error('Move the client to the recycle bin first.');const records=await allRecords(c.accessToken);for(let offset=0;offset<records.length;offset+=400){const batch=writeBatch(db);for(const r of records.slice(offset,offset+400))batch.delete(doc(db,'portal_public',c.accessToken,r.collection,r.id));await batch.commit();}const batch=writeBatch(db);batch.delete(doc(db,'portal_public',c.accessToken));batch.delete(doc(db,'portal_clients',key));await batch.commit();delete state.clients[key];notify('Client permanently deleted');}
+// A Firestore batch has both a write-count and a payload-size ceiling. Eight
+// records is deliberately conservative because one captured PNG signature can
+// be large; it keeps a link rotation resumable instead of failing mid-transfer.
+const ROTATION_BATCH_SIZE=8;
+async function migrateRotatedRecords(c,from,to){
+  const records=await allRecords(from);
+  for(let offset=0;offset<records.length;offset+=ROTATION_BATCH_SIZE){
+    const batch=writeBatch(db);
+    for(const record of records.slice(offset,offset+ROTATION_BATCH_SIZE)){
+      const {id,collection:col,...data}=record;
+      batch.set(doc(db,'portal_public',to,col,id),data);
+      batch.delete(doc(db,'portal_public',from,col,id));
+    }
+    await batch.commit();
+  }
+  // The old parent remains disabled until every child record is copied. A
+  // client therefore cannot add another submission after the scan above, and
+  // a failed transfer can simply be resumed without losing its source data.
+  const finish=writeBatch(db);finish.delete(doc(db,'portal_public',from));await finish.commit();
+  const latest=clone(state.clients[c.slug]||c);
+  if(latest.accessToken===to&&latest.accessRotation?.from===from){
+    delete latest.accessRotation;
+    await saveClient(latest,`Private link replaced. ${records.length} saved record${records.length===1?'':'s'} transferred.`,[],{allowRecovery:true});
+  }
+  return records.length;
+}
+async function rotateLink(){
+  requireAdmin();const c=clone(client());if(c.archiveState)throw new Error('Resume the protected archive before replacing this private link.');if(c.purgeState)throw new Error('Permanent deletion is in progress. Resume or finish it before replacing this private link.');
+  if(c.accessRotation?.from){await migrateRotatedRecords(c,c.accessRotation.from,c.accessToken);finishModal();return;}
+  const old=c.accessToken,nextToken=newToken();c.accessToken=nextToken;c.accessRotation={from:old,startedAt:now()};
+  // First atomically publish the new link and withdraw the old one. This is
+  // intentionally a tiny transaction; records are copied afterwards in safe,
+  // resumable batches so large workspaces do not exceed Firestore limits.
+  const retired=clone(c);retired.accessToken=old;retired.accessEnabled=false;
+  await saveClient(c,'Old private link disabled. Moving saved records…',[{token:old,path:[],data:publicSnapshot(retired,retired.slug)}]);
+  try{await migrateRotatedRecords(c,old,nextToken);finishModal();}
+  catch(error){notify('Old link is disabled. The protected record transfer can be resumed from Link settings.',true);throw error;}
+}
+async function claimClientPurge(key){
+  const c=clone(state.clients[key]);if(!c?._deleted)throw new Error('Move the client to the recycle bin first.');
+  if(!c.purgeState){c.purgeState={status:'purging',startedAt:now(),tokens:[...new Set([c.accessToken,c.accessRotation?.from].filter(Boolean))]};await saveClient(c,'Permanent deletion started. Removing protected records…',[],{allowRecovery:true});}
+  return clone(state.clients[key]||c);
+}
+async function purgeClient(key){
+  const c=await claimClientPurge(key),tokens=[...new Set((c.purgeState?.tokens||[c.accessToken,c.accessRotation?.from]).filter(Boolean))];
+  // Each committed delete batch is safe to retry. The persisted purge claim
+  // prevents a restore or ordinary edit from racing a partial permanent delete.
+  for(const token of tokens){const records=await allRecords(token);for(let offset=0;offset<records.length;offset+=400){const batch=writeBatch(db);for(const r of records.slice(offset,offset+400))batch.delete(doc(db,'portal_public',token,r.collection,r.id));await batch.commit();}}
+  await deleteAllClientArchives(key,Object.values(c.trash||{}));
+  const batch=writeBatch(db);for(const token of tokens)batch.delete(doc(db,'portal_public',token));batch.delete(doc(db,'portal_clients',key));await batch.commit();delete state.clients[key];notify('Client permanently deleted');
+}
 function download(name,content,type){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
 function exportCsv(){const p=project(),columns=deliveryColumns(p,{includeInternal:admin()}),headers=['Number',...columns.map(column=>column.label),'Status'],keys=['n',...columns.map(column=>column.key),'s'];const safe=v=>{let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};download(`${state.projectKey}-deliveries.csv`,'\uFEFF'+[headers,...itemsOf(p).map(i=>keys.map(k=>i[k]))].map(row=>row.map(safe).join(',')).join('\r\n'),'text/csv;charset=utf-8');notify('Delivery CSV downloaded');}
 async function loadProjectArtifacts({includeHistoricalSignature=false}={}){const freshRecords=await allRecords(state.mode==='client'?state.token:client().accessToken);state.artifacts[state.clientKey]=Object.fromEntries(['sigs','confirms','feedback'].map(col=>[col,freshRecords.filter(r=>r.collection===col)]));const current=activeSignature(),historical=projectSigs().sort((a,b)=>dateValue(b.signedAt)-dateValue(a.signedAt))[0],s=current||(includeHistoricalSignature?historical:null),r=s?sigReview(s):{};return s?{...s,review:r,displayName:r.displayName||s.name,outdated:signatureOutdated(s,project())}:null;}
@@ -400,6 +542,7 @@ async function action(name,source){
   if(name==='trash'){requireAdmin();state.page='trash';return render();}
   if(name==='preview-trash')return openTrashPreview(source.dataset.client,source.dataset.id);
   if(name==='preview-client-trash')return openClientTrashPreview(source.dataset.client);
+  if(name==='preview-archived-row')return openArchivedRowPreview(source.dataset.number);
   if(name==='refresh')return location.reload();
   if(name==='logout'){clearSubscriptions();state.clients={};state.user=null;await signOut(auth);state.mode='login';return render();}
   if(name==='open-client'){state.clientKey=source.dataset.client||state.clientKey;state.projectKey=null;state.tab='overview';state.page='workspace';return render();}
@@ -425,15 +568,16 @@ async function action(name,source){
   if(name==='report')return report();
   if(name==='agreement')return agreement();
   if(name==='export-csv')return exportCsv();
-  if(name==='export-all'){requireAdmin();const fresh={};const records={};for(const d of (await getDocs(collection(db,'portal_clients'))).docs){fresh[d.id]=normalizeClient(d.data(),d.id);records[d.id]=await allRecords(fresh[d.id].accessToken);}download(`vision-flow-backup-${localDay()}.json`,JSON.stringify({exportedAt:now(),version:4,clients:fresh,artifacts:records},null,2),'application/json');return notify('Private backup downloaded, including recycled clients. Keep it secure.');}
+  if(name==='export-all'){requireAdmin();const fresh={},records={},archives={};for(const d of (await getDocs(collection(db,'portal_clients'))).docs){const current=fresh[d.id]=normalizeClient(d.data(),d.id);records[d.id]=await allRecords(current.accessToken);archives[d.id]={};for(const [trashId,entry] of Object.entries(current.trash||{})){const archived=await archivedTrashRecords(d.id,entry);if(archived.length)archives[d.id][trashId]=archived;}}download(`vision-flow-backup-${localDay()}.json`,JSON.stringify({exportedAt:now(),version:5,clients:fresh,artifacts:records,archives},null,2),'application/json');return notify('Private backup downloaded, including recycled records. Keep it secure.');}
   requireAdmin();
   if(name.startsWith('archive-')){if(!await confirmAction('Move this record to the recycle bin? You can restore it later.'))return;await archive(name.slice(8),source);return render();}
-  if(name==='restore-client'){const c=clone(state.clients[source.dataset.client]);c._deleted=false;await saveClient(c,'Client restored');return render();}
+  if(name==='restore-client'){const c=clone(state.clients[source.dataset.client]);if(c.purgeState)throw new Error('Permanent deletion is in progress. Resume or finish it before restoring this client.');c._deleted=false;await saveClient(c,'Client restored');return render();}
   if(name==='restore-trash'){await restoreTrash(source.dataset.client,source.dataset.id);return render();}
-  if(name==='purge-trash'){if(!await confirmAction('Permanently delete this recycled record? It cannot be restored.'))return;const c=clone(state.clients[source.dataset.client]),entry=c.trash[source.dataset.id];if(!entry)throw new Error('Recycled record not found.');const ops=entry.kind==='approval'?[{path:['confirms',entry.value?.id],delete:true}]:[];delete c.trash[source.dataset.id];await saveClient(c,'Recycled record permanently deleted',ops);return render();}
+  if(name==='purge-trash'){await purgeTrash(source.dataset.client,source.dataset.id);return;}
   if(name==='purge-client'){if(await confirmAction('Permanently delete this client and every project, signature, request and payment? This cannot be undone.'))await purgeClient(source.dataset.client);return render();}
   if(name==='restore-row'||name==='purge-row'){const c=clone(client()),p=c.projects[state.projectKey],number=Number(source.dataset.number),i=p.items.find(i=>Number(i.n)===number),ops=[];if(!i?.deleted)throw new Error('Archived row not found.');if(name==='purge-row'){if(!await confirmAction('Permanently delete this archived production row and its linked feedback?'))return;const linked=(await allRecords(c.accessToken)).filter(record=>record.projectKey===state.projectKey&&Number(record.itemNumber)===number&&(record.collection==='feedback'||record.kind==='feedback'));for(const record of linked){ops.push({path:[record.collection,record.id],delete:true});delete c.feedbackReviews[record.id];}p.items=p.items.filter(x=>x!==i);}else{delete i.deleted;delete i.deletedAt;}p.totalItems=itemsOf(p).length;await saveClient(c,name==='restore-row'?'Row restored':'Row permanently deleted',ops);finishModal();return;}
   if(name==='reset-approval'){const id=source.dataset.id;const c=client();let wasRejPending=false;try{const tk=c.accessToken||state.token;if(tk){const snap=await getDoc(doc(db,'portal_public',tk,'confirms',id));wasRejPending=snap.exists()&&snap.data()?.kind==='rejection-pending';}}catch(e){}if(wasRejPending){modal('Dismiss Client Rejection','The client will see the restored update in their portal. If private email is configured, a handoff request can also be made.','<div class="form-grid"><label>Quick Reason</label><select name="preset" onchange="this.form.querySelector(\'[name=reason]\').value=this.value"><option value="">Select a reason...</option><option value="The update was necessary for project compliance.">Project compliance requirement</option><option value="This change was agreed upon in our earlier discussion.">Previously agreed change</option><option value="The terms have been updated to reflect current project scope.">Updated project scope</option><option value="Your feedback has been noted. However, this update is required to proceed.">Required to proceed</option></select>'+area('Custom Reason','reason','','required minlength="10" maxlength="2000" placeholder="Or write your own reason..."')+'</div>',async data=>{const reason=data.get('reason');if(!reason||!reason.trim())throw new Error('Please provide a reason.');const tk=c.accessToken||state.token;await deleteDoc(doc(db,'portal_public',tk,'confirms',id));await sendNotification({warnIfUnavailable:true,type:'general',to:c.email,clientName:c.name,subject:'Update Review - '+(project()?.name||'Project'),message:'Your recent rejection was reviewed by the Vision Flow team.\n\nOur response: '+reason.trim()+'\n\nThe update request has been restored for your review. Please check your portal for details.',portalUrl:clientUrl(c,state.projectKey)+'#approvals'});finishModal();render();},'Dismiss & notify');}else{if(!await confirmAction('Reset this confirmation? The client will need to re-confirm.'))return;const tk=c.accessToken||state.token;if(tk)await deleteDoc(doc(db,'portal_public',tk,'confirms',id));render();}return;}    if(name==='toggle-sharing'){const c=clone(client());c.accessEnabled=c.accessEnabled===false;await saveClient(c,c.accessEnabled?'Sharing enabled':'Sharing paused');return finishModal();}
+  if(name==='resume-archive'){const key=source.dataset.client||state.clientKey;if(!key)throw new Error('Select the affected client first.');state.clientKey=key;state.projectKey=null;await resumeLargeArchive(clone(state.clients[key]));finishModal();return render();}
   if(name==='rotate-link'){if(await confirmAction('Replace the private link? The old link will stop working.'))await rotateLink();return;}
   throw new Error(`Unsupported portal action: ${name}`);
 }

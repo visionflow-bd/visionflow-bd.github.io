@@ -18,6 +18,25 @@ export const clone = value => {
 };
 export const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const text = value => String(value ?? '').trim();
+const validCalendarDate = raw => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+  const parsed = new Date(`${raw}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0,10) === raw;
+};
+// Browsers will coerce malformed legacy strings such as 10-52-52 into a
+// different calendar date. Preserve noncanonical values for human review.
+export const asValidDate = value => {
+  let date;
+  if (value?.toDate instanceof Function) date = value.toDate();
+  else if (value instanceof Date) date = value;
+  else if (value && typeof value === 'object' && Number.isFinite(Number(value.seconds))) date = new Date(Number(value.seconds) * 1000);
+  else if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}(?:\:\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/);
+    if (!match || !validCalendarDate(match[1])) return null;
+    date = new Date(value);
+  } else return null;
+  return Number.isNaN(date?.valueOf()) ? null : date;
+};
 export const money = value => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 2 }).format(Number(value) || 0);
 export const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
 export const signatureImage = value => /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(String(value)) ? value : '';
@@ -87,6 +106,10 @@ export function publicSnapshot(client, slug) {
     projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt']));
     for (const approval of p.approvals || []) { approvalIds.push(approval.id); approvalProjects[approval.id] = key; }
   }
+  // Archived payloads live in the admin-only archive collection. The parent
+  // document only needs the directly archived id (when present) plus legacy
+  // inline records; never mirror an unbounded id list into the public/client
+  // document.
   const hiddenIds = new Set(Object.values(client.trash || {}).flatMap(entry => [entry.value?.id, ...(entry.records || []).map(r=>r.id)]).filter(Boolean));
   const visibleReviews = reviews => Object.fromEntries(Object.entries(reviews || {}).filter(([id])=>!hiddenIds.has(id)).map(([id,value])=>[id,clone(value)]));
   return { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false, projects,
