@@ -119,7 +119,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 @media(prefers-color-scheme:light){.notif-text{color:#475569}}
 
 /* Terms Detail Panel — overlay inside card */
-.terms-detail-panel{margin:16px -36px -40px;padding:24px 36px 32px;background:var(--surface-alt,#162233);border-top:2px solid var(--brand,#5cc8b0);border-radius:0 0 20px 20px;animation:termsSlide .3s ease both;text-align:left;max-height:300px;overflow-y:auto}
+.terms-detail-panel{margin:16px 0 0;padding:20px 24px;background:rgba(22,34,51,.7);border:1px solid var(--brand,#5cc8b0);border-radius:12px;animation:termsSlide .3s ease both;text-align:left;max-height:250px;overflow-y:auto;backdrop-filter:blur(8px)}
 .terms-detail-panel h3{font-size:13px;color:var(--brand,#5cc8b0);margin:0 0 12px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
 .terms-detail-panel p{font-size:13px;color:var(--text-muted,#94a3b8);line-height:1.6;margin:0 0 8px}
 .terms-detail-panel ul{padding-left:20px;margin:8px 0}
