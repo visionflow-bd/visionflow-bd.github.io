@@ -127,7 +127,6 @@ function hashScroll(){if(location.hash){const el=document.querySelector(location
 
 
 
-document.addEventListener('click',function(e){var t=e.target.closest('[data-term]');if(!t)return;e.preventDefault();e.stopPropagation();var act=t.dataset.term,old=document.querySelector('.terms-detail-panel');if(old){old.remove();if(old.dataset.src===act)return;}var p=document.createElement('div');p.className='terms-detail-panel';p.dataset.src=act;if(act==='privacy'){p.innerHTML='<h3>Privacy \u0026 Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';}else{p.innerHTML='<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';}var c2=document.querySelector('.terms-card');var btn=document.querySelector('.terms-accept');if(c2&&btn)c2.insertBefore(p,btn);else if(c2)c2.appendChild(p);},true);
 function render() {
   if (!$('modalLayer').hidden || state.busy) return;
   $('topActions').innerHTML = state.mode==='admin' ? `${badge('active','Admin')}${button('Dashboard','dashboard')}${button('Recycle bin','trash')}${button('Sign out','logout')}` : state.mode==='client' ? badge('completed','Private client view') : '';
@@ -149,8 +148,13 @@ function render() {
 // First-time terms acceptance popup
 const termsKey = () => 'vf-terms-' + (state.token||'admin');
 const hasAcceptedTerms = () => localStorage.getItem(termsKey()) === 'accepted';
+function termsDetail(kind){
+  if(kind==='privacy')return '<h3>Privacy & Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';
+  return '<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';
+}
 function showTermsPopup(){
   if(admin() || hasAcceptedTerms()) return false;
+  const acceptedKey=termsKey();
   $('view').innerHTML = '<div class="terms-overlay">' +
     '<div class="terms-card">' +
     '<img class="terms-logo" src="../logo.png" alt="Vision Flow">' +
@@ -167,33 +171,27 @@ function showTermsPopup(){
     '</ul>' +
     '<p class="terms-note">If you have any questions about these terms, please contact Vision Flow before proceeding.</p>' +
     '</div>' +
-    '<button class="button primary terms-accept" data-action="accept-terms">I Understand & Accept</button>' +
+    '<button class="button primary terms-accept" type="button" data-action="accept-terms">I Understand & Accept</button>' +
     '<p class="terms-footer">Vision Flow · Creative Production Agency</p>' +
     '</div></div>';
-  
-  // Directly bind click handlers to terms links (failsafe)
-  setTimeout(function(){
-    document.querySelectorAll('[data-term]').forEach(function(link){
-      link.onclick = function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        var act = this.dataset.term;
-        var old = document.querySelector('.terms-detail-panel');
-        if(old){old.remove();if(old.dataset.src===act)return;}
-        var panel = document.createElement('div');
-        panel.className = 'terms-detail-panel';
-        panel.dataset.src = act;
-        if(act==='privacy'){
-          panel.innerHTML='<h3>Privacy \u0026 Confidentiality Policy</h3><p>This project workspace is a <strong>private, confidential</strong> space created exclusively for you by Vision Flow.</p><ul><li><strong>Access control:</strong> Your unique private URL is personal and must not be shared with anyone.</li><li><strong>Data privacy:</strong> All project files and creative assets are protected intellectual property.</li><li><strong>Communication records:</strong> All approvals, feedback, and payment records are time-stamped securely.</li><li><strong>Right to revoke:</strong> Vision Flow reserves the right to disable access if terms are violated.</li></ul><p>Contact Vision Flow with any questions.</p>';
-        }else{
-          panel.innerHTML='<h3>Strict Confidentiality Agreement</h3><p>All information in this workspace is classified as <strong>strictly confidential</strong>:</p><ul><li>Payment amounts, methods, and schedules</li><li>Video files, scripts, and creative assets</li><li>Rates, pricing, and budget agreements</li><li>Feedback, revisions, and approval records</li></ul><p>Unauthorized disclosure may result in immediate termination of services and legal action.</p>';
-        }
-        var card = document.querySelector('.terms-card');
-        var btn2 = document.querySelector('.terms-accept');
-        if(card&&btn2) card.insertBefore(panel,btn2); else if(card) card.appendChild(panel);
-      };
-    });
-  }, 100);
+  const overlay=$('view').querySelector('.terms-overlay');
+  overlay.addEventListener('click',event=>{
+    const term=event.target.closest('[data-term]');
+    if(term){
+      event.preventDefault();event.stopPropagation();
+      const kind=term.dataset.term,old=overlay.querySelector('.terms-detail-panel');
+      if(old){old.remove();if(old.dataset.src===kind)return;}
+      const panel=document.createElement('div');panel.className='terms-detail-panel';panel.dataset.src=kind;panel.innerHTML=termsDetail(kind);
+      overlay.querySelector('.terms-card').insertBefore(panel,overlay.querySelector('.terms-accept'));
+      return;
+    }
+    if(!event.target.closest('[data-action="accept-terms"]'))return;
+    event.preventDefault();event.stopPropagation();
+    localStorage.setItem(acceptedKey,'accepted');
+    overlay.remove();
+    notify('Welcome to your private project workspace.');
+    render();
+  });
 return true;
 }
 
@@ -585,7 +583,7 @@ async function action(name,source){
 document.addEventListener('click',event=>{const source=event.target.closest('[data-action]');if(!source||state.busy)return;const name=source.dataset.action;
   if(name==='request-signature'){const url=clientUrl(client(),state.projectKey)+'#agreement';modal('Invite client to sign','Share this private project link with the client. The portal records their time-stamped signature and current terms.',field('Private agreement link','url',url,'text','readonly'),null);return;}
   if(name==='confirm-rejection'){const id=source.dataset.id;const tk=client().accessToken||state.token;if(!tk){notify('Error: client token not found',true);return;}source.disabled=true;source.textContent='Confirming...';setDoc(doc(db,'portal_public',tk,'confirms',id),{projectKey:state.projectKey,confirmedAt:serverTimestamp(),kind:'rejected',rejectReason:source.closest('.rejection-card')?.querySelector('.rejection-reason p')?.textContent||'',userAgent:'admin-confirmed'}).then(()=>{notify('Rejection confirmed');render();}).catch(fail).finally(()=>{source.disabled=false;source.textContent='Confirm rejection';});return;}
-  if(name==='accept-terms'){localStorage.setItem(termsKey(),'accepted');const to=document.querySelector('.terms-overlay');if(to)to.remove();notify('Welcome to your private project workspace.');render();return;}
+  if(name==='accept-terms')return;
   if(name==='confirm-approval'){source.disabled=true;source.textContent='Confirming…';setDoc(doc(db,'portal_public',state.token,'confirms',source.dataset.id),{projectKey:state.projectKey,confirmedAt:serverTimestamp(),userAgent:navigator.userAgent}).then(()=>{notify('Update confirmed');}).catch(fail).finally(()=>{source.disabled=false;source.textContent='Confirm update';});return;}
   if(name==='reject-approval'){const id=source.dataset.id;modal('Reject this update','Explain why you are rejecting. Your reason will be shared with the project team.','<div class="form-grid">'+area('Rejection reason','reason','','required minlength="10" maxlength="2000" placeholder="Describe why..."')+'</div>',async data=>{const reason=data.get('reason');if(!reason||!reason.trim())throw new Error('Reason required.');await setDoc(doc(db,'portal_public',state.token,'confirms',id),{projectKey:state.projectKey,confirmedAt:serverTimestamp(),userAgent:navigator.userAgent,kind:'rejection-pending',rejectReason:reason.trim()});notify('Rejection submitted for administrator review.');finishModal();render();},'Submit rejection');return;}
   const old=source.textContent;let result;try{result=action(name,source);}catch(error){fail(error);return;}if(result?.then){source.disabled=true;source.textContent='Working…';result.catch(fail).finally(()=>{source.disabled=false;source.textContent=old;render();});}
