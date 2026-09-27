@@ -67,22 +67,27 @@ export function publicSnapshot(client, slug) {
   for (const [key,p] of projectsOf(client)) {
     projects[key] = pick(p,['slug','name','rate','budget','status','createdAt','lastUpdated','scope','terms','deadline','weeklyTarget','milestoneText','sourceScriptUrl','avatarFolderUrl','itemLabel','titleLabel','showItemField']);
     projects[key].items = itemsOf(p).map(item => pick(item,['n','b','t','s','sd','dd','dur','dl','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']));
+    projects[key].itemNumbers = projects[key].items.map(item => Number(item.n)).filter(Number.isInteger);
     projects[key].totalItems = projects[key].items.length;
-    projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt','verifyDeadline']));
-    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt','verifyDeadline']));
+    projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt']));
+    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt']));
     for (const approval of p.approvals || []) { approvalIds.push(approval.id); approvalProjects[approval.id] = key; }
   }
   const hiddenIds = new Set(Object.values(client.trash || {}).flatMap(entry => [entry.value?.id, ...(entry.records || []).map(r=>r.id)]).filter(Boolean));
   const visibleReviews = reviews => Object.fromEntries(Object.entries(reviews || {}).filter(([id])=>!hiddenIds.has(id)).map(([id,value])=>[id,clone(value)]));
   return { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false, projects,
     feedbackReviews:visibleReviews(client.feedbackReviews), signatureReviews:visibleReviews(client.signatureReviews),
-    approvalIds, approvalProjects, lastUpdated:client.lastUpdated || new Date().toISOString(), portalVersion:4 };
+    approvalIds, approvalProjects, lastUpdated:client.lastUpdated || new Date().toISOString(), portalVersion:5 };
 }
 export function agreementTerms(project) {
   return { projectName:project.name || project.slug, totalItems:itemsOf(project).length, rate:Number(project.rate)||0, budget:Number(project.budget)||0,
     scope:project.scope || '', terms:project.terms || '', deadline:project.deadline || '', weeklyTarget:Number(project.weeklyTarget)||0, milestoneText:project.milestoneText || '', agreementVersion:AGREEMENT_VERSION };
 }
-export function signatureOutdated(signature, project) { const signed=signature?.termsSnapshot; return Boolean(signed && Object.entries(agreementTerms(project)).some(([key,value])=>signed[key]!==value)); }
+export function signatureOutdated(signature, project) {
+  const signed=signature?.termsSnapshot;
+  if(!signed || signed.agreementVersion!==AGREEMENT_VERSION) return true;
+  return Object.entries(agreementTerms(project)).some(([key,value])=>signed[key]!==value);
+}
 export function validateAmount(value, label = 'Amount') { const n=Number(value); if (!Number.isFinite(n) || n < 0) throw new Error(`${label} must be zero or greater.`); return n; }
 export function resizeItems(project, count) {
   if (!Number.isInteger(count) || count < 0 || count > 1000) throw new Error('Enter between 0 and 1,000 deliverables.');

@@ -38,9 +38,11 @@ function recoveryHarness() {
     { collection:'sigs', id:'main', image:'Legacy unlinked image' },
   ];
   const state = { clientKey:'client', projectKey:'p', clients:{ client:c } };
-  let saves = 0, sequence = 0;
+  let saves = 0, sequence = 0, lastOperations = [];
   const context = {
     state, clone, itemsOf, money, requireAdmin:()=>{},
+    db:{}, doc:(_db,...path)=>path,
+    getDoc:async path=>{const record=records.find(row=>row.collection===path.at(-2)&&row.id===path.at(-1));return {exists:()=>Boolean(record),data:()=>clone(record),id:record?.id};},
     client:()=>state.clients.client,
     uid:prefix=>`${prefix}-${++sequence}`, now:()=> '2026-09-24T00:00:00.000Z',
     $:()=>({ hidden:true }), finishModal:()=>{},
@@ -50,6 +52,7 @@ function recoveryHarness() {
     confirmation:a=>records.find(r=>r.collection==='confirms' && r.id===a.id),
     saveClient:async(next,_message,ops=[])=>{
       saves++;
+      lastOperations = clone(ops);
       for(const op of ops) {
         const index = records.findIndex(r=>r.collection===op.path[0] && r.id===op.path[1]);
         if(index>=0)records.splice(index,1);
@@ -59,7 +62,7 @@ function recoveryHarness() {
     },
   };
   const api = runInNewContext(`${recoverySource}; ({ archive, restoreTrash });`, context);
-  return { ...api, state, records, saves:()=>saves, entry:()=>Object.entries(state.clients.client.trash)[0] };
+  return { ...api, state, records, saves:()=>saves, lastOperations:()=>clone(lastOperations), entry:()=>Object.entries(state.clients.client.trash)[0] };
 }
 
 test('project archive/restore round-trips linked and legacy records and their reviews', async()=>{
@@ -122,6 +125,7 @@ test('approval archive/restore includes the existing confirmation',async()=>{
   await h.restoreTrash('client',id);
   assert.equal(h.state.clients.client.projects.p.approvals[0].id,'approval');
   assert.equal(h.records.find(r=>r.id==='approval').confirmedAt,'2026-09-24T00:00:00.000Z');
+  assert.equal(h.lastOperations().filter(op=>op.path[0]==='confirms'&&op.path[1]==='approval').length,1);
 });
 
 test('recovery refuses project collisions and missing parents without writing',async()=>{

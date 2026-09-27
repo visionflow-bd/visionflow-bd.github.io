@@ -1,7 +1,7 @@
 const { before, after, beforeEach, test } = require('node:test');
 const { readFileSync } = require('node:fs');
 const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@firebase/rules-unit-testing');
-const { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, setLogLevel } = require('firebase/firestore');
+const { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, setLogLevel, serverTimestamp } = require('firebase/firestore');
 
 const ADMIN_UID = 'm1PGSw7ViEb1xOJoj8INQllra3p1';
 const TOKEN = '0123456789abcdef0123456789abcdef0123456789abcdef';
@@ -34,9 +34,9 @@ beforeEach(async () => {
       setDoc(doc(db, 'portal_clients/client-one'), { name: 'Private client', internalNotes: 'Admin only' }),
       setDoc(doc(db, portalPath), {
         enabled: true,
-        portalVersion: 4,
+        portalVersion: 5,
         name: 'Client portal',
-        projects: { 'project-one': { name: 'Project', totalItems:1, rate:400, budget:400, items: [{ n: 1 }], approvals: [{ id: 'approval-one' }] }, 'project-two': { name: 'Other project' } },
+        projects: { 'project-one': { name: 'Project', totalItems:1, rate:400, budget:400, items: [{ n: 1 }], itemNumbers:[1], approvals: [{ id: 'approval-one' }] }, 'project-two': { name: 'Other project' } },
         approvalIds: ['approval-one'],
         approvalProjects: { 'approval-one': 'project-one' },
       }),
@@ -45,14 +45,17 @@ beforeEach(async () => {
   });
 });
 
+function termsSnapshot() {
+  return {projectName:'Project',totalItems:1,rate:400,budget:400,scope:'',terms:'',deadline:'',weeklyTarget:0,milestoneText:'',agreementVersion:'VF-2026-09'};
+}
 function signature(id = 'signature-one', patch = {}) {
-  return { id, projectKey: 'project-one', name: 'Test Client', image: 'data:image/png;base64,aGVsbG8gd29ybGQ=', signedAt: instant, userAgent: 'rules-tests', ...patch };
+  return { id, projectKey: 'project-one', name: 'Test Client', image: 'data:image/png;base64,aGVsbG8gd29ybGQ=', signedAt: serverTimestamp(), userAgent: 'rules-tests', termsSnapshot:termsSnapshot(), ...patch };
 }
 function feedback(patch = {}) {
-  return { kind: 'feedback', requestType: 'revision', projectKey: 'project-one', itemNumber: 1, message: 'Please revise this scene.', submittedAt: instant, userAgent: 'rules-tests', ...patch };
+  return { kind: 'feedback', requestType: 'revision', projectKey: 'project-one', itemNumber: 1, message: 'Please revise this scene.', submittedAt: serverTimestamp(), userAgent: 'rules-tests', ...patch };
 }
 function confirmation(patch = {}) {
-  return { projectKey: 'project-one', confirmedAt: instant, userAgent: 'rules-tests', ...patch };
+  return { projectKey: 'project-one', confirmedAt: serverTimestamp(), userAgent: 'rules-tests', ...patch };
 }
 
 test('UID-pinned owner can manage all data despite unverified email', async () => {
@@ -105,10 +108,12 @@ test('reject malformed signatures, unknown projects and injected admin fields', 
 
 test('captured terms must match the project; new schema needs no redundant ID', async () => {
   const termsSnapshot={projectName:'Project',totalItems:1,rate:400,budget:400,scope:'',terms:'',deadline:'',weeklyTarget:0,milestoneText:'',agreementVersion:'VF-2026-09'};
-  const data=signature('captured',{termsSnapshot,termsDigest:'a'.repeat(64)});delete data.id;
+  const data=signature('captured',{termsSnapshot});delete data.id;
   await assertSucceeds(setDoc(doc(visitor,`${portalPath}/sigs/captured`),data));
   await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/forged`),{...data,termsSnapshot:{...termsSnapshot,budget:0}}));
-  await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/invalid-digest`),{...data,termsDigest:'wrong'}));
+  await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/unexpected-hash`),{...data,termsDigest:'a'.repeat(64)}));
+  const legacy=signature('legacy-new');delete legacy.termsSnapshot;
+  await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/legacy-new`),legacy));
 });
 
 test('project and item feedback can be created, and only admin can edit/delete', async () => {
@@ -121,7 +126,7 @@ test('project and item feedback can be created, and only admin can edit/delete',
 });
 
 test('feedback schema rejects invalid target, empty/oversized text and admin review injection', async () => {
-  const cases = [{ projectKey: 'unknown' }, { message: '' }, { message: 'x'.repeat(4001) }, { itemNumber: -1 }, { itemNumber: 1.5 }, { requestType: 'admin' }, { status: 'resolved' }, { response: 'spoofed' }, { submittedAt: 'invalid' }];
+  const cases = [{ projectKey: 'unknown' }, { message: '' }, { message: 'x'.repeat(4001) }, { itemNumber: -1 }, { itemNumber: 1.5 }, { itemNumber: 2 }, { requestType: 'admin' }, { status: 'resolved' }, { response: 'spoofed' }, { submittedAt: 'invalid' }];
   for (let index = 0; index < cases.length; index++) {
     await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/bad-feedback-${index}`), feedback(cases[index])));
   }
@@ -141,6 +146,25 @@ test('approval confirmation rejects arbitrary IDs, wrong projects and invalid pa
   await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ projectKey: 'project-two' })));
   await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ confirmedAt: '' })));
   await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ approvedByAdmin: true })));
+});
+
+test('a client can submit a reasoned rejection but cannot auto-verify or finalise a rejection', async () => {
+  await assertSucceeds(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ kind: 'rejection-pending', rejectReason: 'The date and scope need to be corrected before I can approve.' })));
+  await environment.clearFirestore();
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), portalPath), { enabled:true, portalVersion:5, projects:{'project-one':{name:'Project',totalItems:1,rate:400,budget:400,itemNumbers:[1]}}, approvalIds:['approval-one'], approvalProjects:{'approval-one':'project-one'} });
+  });
+  await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ kind: 'auto' })));
+  await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ kind: 'rejected', rejectReason: 'I am trying to finalise this.' })));
+  await assertFails(setDoc(doc(visitor, `${portalPath}/confirms/approval-one`), confirmation({ kind: 'rejection-pending', rejectReason: 'short' })));
+});
+
+test('private notification settings are administrator-only', async () => {
+  const settings=doc(admin,'portal_settings/notifications');
+  await assertSucceeds(setDoc(settings,{enabled:false,clientWebhookUrl:'',updatedAt:instant}));
+  await assertSucceeds(getDoc(settings));
+  await assertFails(getDoc(doc(visitor,'portal_settings/notifications')));
+  await assertFails(setDoc(doc(visitor,'portal_settings/notifications'),{enabled:true,clientWebhookUrl:'https://attacker.invalid'}));
 });
 
 test('legacy schema data remains readable and legacy feedback remains manageable', async () => {

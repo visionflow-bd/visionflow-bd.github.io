@@ -2433,6 +2433,10 @@ function _stripLargeBase64(obj, maxB = 55000){
 function _buildSiteCloudPayload(data){
   const clean = JSON.parse(JSON.stringify(_stripLargeBase64(data)));
   delete clean.leads;
+  // Sender endpoints and other notification relay settings belong exclusively
+  // in the administrator-only portal_settings collection, never site/main.
+  delete clean.notifications;
+  if(clean.site && typeof clean.site === 'object') delete clean.site.notifications;
   return clean;
 }
 function _syncLeadBadge(){
@@ -2889,7 +2893,7 @@ function renderTeam(){
     return;
   }
   const agency=STATE.data.site?.agency||{};
-  $('#team-grid').innerHTML = members.map((t,i)=>{const isFounder=false;return `
+  $('#team-grid').innerHTML = members.map((t,i)=>{const normalizedName=value=>String(value||'').trim().replace(/\s+/g,' ').toLowerCase(),isFounder=agency.founderName ? normalizedName(t.name)===normalizedName(agency.founderName) : /^founder(?:\s|&|$)/i.test(String(t.role||'').trim());return `
     <div class="glass-card team-card" data-scroll data-scroll-delay="${Math.min(i,3)*80}">
       <div class="team-avatar"><img src="${esc(t.img||'')}" alt="${esc(t.name)}" loading="lazy" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${esc(encodeURIComponent(t.name))}&background=0f172a&color=06b6d4&size=256&bold=true&format=png'"/></div>
       <h4>${esc(t.name)}</h4>
@@ -4011,106 +4015,15 @@ async function _inlineVideoUpload(e, targetName){
 
 /* ── Notifications Admin Panel ── */
 function renderAdminNotify(sec){
-  const n = STATE.data.notifications || {emailWebhookUrl:'',autoVerifyHours:72,enableEmail:false,enableWhatsApp:true,adminEmail:'',senders:[]};
-  const senders = n.senders || [];
-  const senderRows = senders.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;padding:8px;border:1px solid var(--border-light);border-radius:8px;background:var(--bg-deep)"><input class="admin-input sender-name" value="${esc(s.name||'')}" placeholder="Gmail Name" data-idx="${i}"><input class="admin-input sender-url" value="${esc(s.webhookUrl||'')}" placeholder="Apps Script Webhook URL" data-idx="${i}"><select class="admin-input sender-role" data-idx="${i}" style="width:100px"><option value="client" ${s.role==='client'?'selected':''}>Client</option><option value="admin" ${s.role==='admin'?'selected':''}>Admin</option><option value="both" ${s.role==='both'?'selected':''}>Both</option></select><button onclick="removeSender(${i})" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:16px" title="Remove">✕</button></div>`).join('');
   sec.innerHTML = `
-  <h3 style="color:var(--text-primary);margin-bottom:20px"><i class="fas fa-bell" style="margin-right:8px;color:var(--accent)"></i>Notification Settings</h3>
-  <div style="display:grid;gap:16px;max-width:700px">
-    <div class="admin-field">
-      <label style="color:var(--text-primary);font-weight:600">Default Email Webhook URL (Legacy)</label>
-      <input class="admin-input" id="notify-webhook" type="url" value="${esc(n.emailWebhookUrl||'')}" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%">
-      <small style="color:var(--text-muted)">Fallback webhook URL. Use Email Senders below for multi-account setup.</small>
-    </div>
-    <div class="admin-field">
-      <label style="color:var(--text-primary);font-weight:600">Admin Alert Email (CEO)</label>
-      <input class="admin-input" id="notify-admin-email" type="email" value="${esc(n.adminEmail||'')}" placeholder="shihabjessore7@gmail.com" style="width:100%">
-      <small style="color:var(--text-muted)">Client activities (confirm, reject, sign) will be sent to this email</small>
-    </div>
-    <div class="admin-field">
-      <label style="color:var(--text-primary);font-weight:600"><i class="fas fa-envelope" style="margin-right:6px"></i>Email Senders</label>
-      <small style="color:var(--text-muted);margin-bottom:8px;display:block">Add multiple Gmail accounts. Each needs its own Apps Script Web App deployment. Set role: <b>Client</b> = emails to clients, <b>Admin</b> = alerts to you, <b>Both</b> = used for all.</small>
-      <div id="sender-list" style="display:grid;gap:8px">${senderRows||'<div style="color:var(--text-muted);padding:12px;text-align:center;border:1px dashed var(--border-light);border-radius:8px">No email senders configured. Click Add Sender below.</div>'}</div>
-      <button onclick="addSender()" class="btn-admin" style="margin-top:8px;width:fit-content;background:var(--bg-card);color:var(--accent);border:1px solid var(--accent)">
-        <i class="fas fa-plus"></i> Add Sender
-      </button>
-    </div>
-    <div class="admin-field">
-      <label style="color:var(--text-primary);font-weight:600">Auto-Verify Timer (hours)</label>
-      <input class="admin-input" id="notify-timer" type="number" min="1" max="720" value="${n.autoVerifyHours||72}" style="width:120px">
-      <small style="color:var(--text-muted)">Payments and deliveries auto-verify after this many hours if client doesn't respond</small>
-    </div>
-    <div style="display:flex;gap:24px;align-items:center">
-      <label style="color:var(--text-primary);display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="notify-email" ${n.enableEmail?'checked':''}>
-        <span>Enable Email Notifications</span>
-      </label>
-      <label style="color:var(--text-primary);display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="notify-whatsapp" ${n.enableWhatsApp!==false?'checked':''}>
-        <span>Enable WhatsApp Buttons</span>
-      </label>
-    </div>
-    <button class="btn-admin" onclick="saveNotifySettings()" style="width:fit-content">
-      <i class="fas fa-save"></i> Save Notification Settings
-    </button>
-    <button class="btn-admin" onclick="testNotifyEmail()" style="width:fit-content;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-light)">
-      <i class="fas fa-paper-plane"></i> Send Test Email
-    </button>
-  </div>`;
+    <h3 style="color:var(--text-primary);margin-bottom:12px"><i class="fas fa-shield-halved" style="margin-right:8px;color:var(--accent)"></i>Private notification settings</h3>
+    <div style="max-width:700px;padding:20px;border:1px solid var(--border-light);border-radius:12px;background:var(--bg-card);line-height:1.65">
+      <p style="margin-top:0;color:var(--text-primary);font-weight:600">Email sender URLs are no longer stored in this public website record.</p>
+      <p style="color:var(--text-muted)">Open the client portal while signed in as administrator, then choose <strong>Email settings</strong>. That screen stores sender endpoints in an administrator-only Firebase document and never tells a client that an opaque browser request was delivered.</p>
+      <a class="btn-admin" href="./portal/" style="display:inline-flex;width:fit-content;text-decoration:none"><i class="fas fa-arrow-up-right-from-square"></i> Open secure portal settings</a>
+    </div>`;
+  return;
 }
-function collectSenders(){
-  const names=document.querySelectorAll('.sender-name');
-  const urls=document.querySelectorAll('.sender-url');
-  const roles=document.querySelectorAll('.sender-role');
-  const senders=[];
-  names.forEach((el,i)=>{
-    const name=el.value.trim();const url=urls[i]?.value.trim();const role=roles[i]?.value||'client';
-    if(name||url)senders.push({name,webhookUrl:url,role});
-  });
-  return senders;
-}
-function addSender(){
-  const n=STATE.data.notifications||{};
-  n.senders=collectSenders();
-  n.senders.push({name:'',webhookUrl:'',role:'client'});
-  STATE.data.notifications=n;
-  renderAdminNotify(document.querySelector('.admin-section-content'));
-}
-function removeSender(idx){
-  const n=STATE.data.notifications||{};
-  n.senders=collectSenders();
-  n.senders.splice(idx,1);
-  STATE.data.notifications=n;
-  renderAdminNotify(document.querySelector('.admin-section-content'));
-}
-async function saveNotifySettings(){
-  STATE.data.notifications = {
-    ...STATE.data.notifications,
-    emailWebhookUrl: $('#notify-webhook').value.trim(),
-    adminEmail: $('#notify-admin-email')?.value.trim()||'',
-    autoVerifyHours: parseInt($('#notify-timer').value)||72,
-    enableEmail: $('#notify-email').checked,
-    enableWhatsApp: $('#notify-whatsapp').checked,
-    senders: collectSenders()
-  };
-  await saveData(); showToast('Notification settings saved');
-}
-async function testNotifyEmail(){
-  const url = ($('#notify-webhook')?.value||STATE.data.notifications?.emailWebhookUrl||'').trim();
-  if(!url){showToast('Set the Email Webhook URL first','error');return;}
-  showToast('Sending test email...');
-  try{
-    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      type:'general',to:'jashory7@gmail.com',clientName:'Test User',subject:'Test - Vision Flow Notifications',
-      message:'This is a test notification from your Vision Flow admin panel. If you received this, your email system is working correctly!',
-      portalUrl:'https://visionflow-bd.github.io/portal/'
-    })});
-    const j = await r.json();
-    if(j.ok)showToast('Test email sent successfully!');
-    else showToast('Error: '+(j.error||'Unknown'),'error');
-  }catch(e){showToast('Failed: '+e.message,'error');}
-}
-
 /* ── Cloud Storage Admin Panel ── */
 function renderAdminCloud(sec){
   const cs = STATE.data.cloudStorage || {imageAccounts:[], videoAccounts:[]};
