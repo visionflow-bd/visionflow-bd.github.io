@@ -1,7 +1,21 @@
 export const ADMIN_UID = 'm1PGSw7ViEb1xOJoj8INQllra3p1';
 export const STATUS = ['pending', 'progress', 'completed', 'delivered', 'revision'];
 export const LABEL = { pending: 'Pending', progress: 'In progress', completed: 'Completed', delivered: 'Delivered', revision: 'Revision', active: 'Active', paused: 'Paused' };
-export const clone = value => structuredClone(value);
+// Firestore Timestamp instances are immutable but structuredClone turns them
+// into plain { seconds, nanoseconds } objects. Keep them intact so a record
+// moved through the recycle bin can be restored with its original Firestore
+// timestamp type (and not silently change schema on the way back).
+const isFirestoreTimestamp = value => Boolean(value) && typeof value === 'object'
+  && typeof value.toDate === 'function' && typeof value.toMillis === 'function'
+  && Number.isInteger(value.seconds) && Number.isInteger(value.nanoseconds);
+export const clone = value => {
+  if (value === null || typeof value !== 'object' || isFirestoreTimestamp(value)) return value;
+  if (value instanceof Date) return new Date(value.getTime());
+  if (Array.isArray(value)) return value.map(clone);
+  if (value instanceof Map) return new Map([...value].map(([key, entry]) => [clone(key), clone(entry)]));
+  if (value instanceof Set) return new Set([...value].map(clone));
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, clone(entry)]));
+};
 export const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const text = value => String(value ?? '').trim();
 export const money = value => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 2 }).format(Number(value) || 0);

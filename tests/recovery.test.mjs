@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
+import { Timestamp } from 'firebase/firestore';
 import { normalizeClient, publicSnapshot, clone, itemsOf, money } from '../portal/data.js';
 
 // Exercise the actual application functions, with Firestore and the DOM replaced
@@ -135,6 +136,19 @@ test('approval archive/restore includes the existing confirmation',async()=>{
   assert.equal(h.state.clients.client.projects.p.approvals[0].id,'approval');
   assert.equal(h.records.find(r=>r.id==='approval').confirmedAt,'2026-09-24T00:00:00.000Z');
   assert.equal(h.lastOperations().filter(op=>op.path[0]==='confirms'&&op.path[1]==='approval').length,1);
+});
+
+test('archive and restore retain Firestore Timestamp instances',async()=>{
+  const h = recoveryHarness();
+  const submittedAt = Timestamp.fromMillis(Date.UTC(2026,8,24,12,30));
+  h.records.find(record=>record.collection==='confirms'&&record.id==='approval').submittedAt=submittedAt;
+  await h.archive('approval',{ dataset:{ id:'approval' } });
+  const [id,entry] = h.entry();
+  assert.equal(entry.records[0].submittedAt,submittedAt);
+  await h.restoreTrash('client',id);
+  const restored=h.records.find(record=>record.collection==='confirms'&&record.id==='approval');
+  assert.equal(restored.submittedAt,submittedAt);
+  assert.equal(typeof restored.submittedAt.toDate,'function');
 });
 
 test('approval archive retains a confirmation that arrives during archival',async()=>{
