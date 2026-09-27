@@ -37,7 +37,10 @@ service cloud.firestore {
 
     function validSignature(token, sigId, data) {
       return data.keys().hasAll(['projectKey', 'name', 'image', 'signedAt', 'termsSnapshot'])
-        && data.keys().hasOnly(['id', 'projectKey', 'name', 'image', 'signedAt', 'userAgent', 'termsSnapshot'])
+        // Accept a bounded legacy client hash during the cache rollout, but
+        // never use it as evidence: the full captured terms map is the
+        // authoritative, rule-checked contract record.
+        && data.keys().hasOnly(['id', 'projectKey', 'name', 'image', 'signedAt', 'userAgent', 'termsSnapshot', 'termsDigest'])
         && data.get('id', sigId) == sigId
         && knownProject(token, data.projectKey)
         && boundedString(data.name, 1, 200)
@@ -45,6 +48,7 @@ service cloud.firestore {
         && data.image.matches('^data:image/png;base64,[A-Za-z0-9+/=]+$')
         && serverTime(data.signedAt)
         && optionalUserAgent(data)
+        && (!('termsDigest' in data) || (data.termsDigest is string && data.termsDigest.matches('^[a-f0-9]{64}$')))
         && validTerms(token, data);
     }
 

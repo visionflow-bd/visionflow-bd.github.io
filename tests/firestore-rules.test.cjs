@@ -111,7 +111,8 @@ test('captured terms must match the project; new schema needs no redundant ID', 
   const data=signature('captured',{termsSnapshot});delete data.id;
   await assertSucceeds(setDoc(doc(visitor,`${portalPath}/sigs/captured`),data));
   await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/forged`),{...data,termsSnapshot:{...termsSnapshot,budget:0}}));
-  await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/unexpected-hash`),{...data,termsDigest:'a'.repeat(64)}));
+  await assertSucceeds(setDoc(doc(visitor,`${portalPath}/sigs/cached-legacy-hash`),{...data,termsDigest:'a'.repeat(64)}));
+  await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/malformed-legacy-hash`),{...data,termsDigest:'wrong'}));
   const legacy=signature('legacy-new');delete legacy.termsSnapshot;
   await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/legacy-new`),legacy));
 });

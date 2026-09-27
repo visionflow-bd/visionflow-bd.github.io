@@ -22,7 +22,7 @@ test('private client links use an auth-isolated Firebase app',()=>{
   assert.match(source,/if\(initialAccess\)startClient\(initialAccess\);else onAuthStateChanged/);
 });
 
-function recoveryHarness() {
+function recoveryHarness({afterFirstSave} = {}) {
   const c = normalizeClient({ name:'Recovery test', accessToken:'private-token', projects:{ p:project('Primary'), other:project('Other') } }, 'client');
   c.projects.p.payments.push({ id:'payment', amount:100, date:'2026-09-24' });
   c.projects.p.approvals.push({ id:'approval', title:'Confirm' });
@@ -59,6 +59,8 @@ function recoveryHarness() {
         if(!op.delete)records.push({ ...clone(op.data), collection:op.path[0], id:op.path[1] });
       }
       state.clients[next.slug] = clone(next);
+      if(saves===1)afterFirstSave?.(records);
+      return clone(next);
     },
   };
   const api = runInNewContext(`${recoverySource}; ({ archive, restoreTrash });`, context);
@@ -126,6 +128,16 @@ test('approval archive/restore includes the existing confirmation',async()=>{
   assert.equal(h.state.clients.client.projects.p.approvals[0].id,'approval');
   assert.equal(h.records.find(r=>r.id==='approval').confirmedAt,'2026-09-24T00:00:00.000Z');
   assert.equal(h.lastOperations().filter(op=>op.path[0]==='confirms'&&op.path[1]==='approval').length,1);
+});
+
+test('approval archive retains a confirmation that arrives during archival',async()=>{
+  const h = recoveryHarness({afterFirstSave:records=>records.push({collection:'confirms',id:'approval',projectKey:'p',confirmedAt:'2026-09-24T00:00:01.000Z'})});
+  await h.archive('approval',{ dataset:{ id:'approval' } });
+  const [id,entry] = h.entry();
+  assert.equal(entry.records.filter(record=>record.collection==='confirms'&&record.id==='approval').length,1);
+  assert.equal(h.records.some(record=>record.collection==='confirms'&&record.id==='approval'),false);
+  await h.restoreTrash('client',id);
+  assert.equal(h.records.find(record=>record.collection==='confirms'&&record.id==='approval').confirmedAt,'2026-09-24T00:00:01.000Z');
 });
 
 test('recovery refuses project collisions and missing parents without writing',async()=>{
