@@ -1,0 +1,4 @@
+// User-approved on 2026-09-28: all reviews have a 72-hour window.
+// The browser may display this policy; only the trusted backend may settle it.
+export const REVIEW_POLICY = Object.freeze({version:'VF-REVIEW-72H-v1',hours:72,outcome:'deemed-accepted'});
+export const REVIEW_POLICY_TEXT = 'Each new review request gives you 72 hours from its server-recorded publication time. The workspace shows the deadline and provides confirmation, rejection and feedback actions. If no objection is recorded within that period, the trusted server may record the request as “deemed accepted”. This is distinct from your explicit confirmation and is never a signature, proof of payment, or permission to download. Unresolved objections stop automatic acceptance. Existing records are not accepted retroactively.';

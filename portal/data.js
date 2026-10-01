@@ -1,3 +1,4 @@
+import {REVIEW_POLICY,REVIEW_POLICY_TEXT} from './review-policy.js?v=20260928-r1';
 export const ADMIN_UID = 'm1PGSw7ViEb1xOJoj8INQllra3p1';
 export const STATUS = ['pending', 'progress', 'completed', 'delivered', 'revision'];
 export const LABEL = { pending: 'Pending', progress: 'In progress', completed: 'Completed', delivered: 'Delivered', revision: 'Revision', active: 'Active', paused: 'Paused' };
@@ -46,12 +47,22 @@ export const itemsOf = project => (project?.items || []).filter(i => !i.deleted)
 export const projectsOf = client => Object.entries(client?.projects || {}).filter(([,p]) => !p.deleted);
 export const isDone = item => ['completed','delivered'].includes(item.s);
 export const AGREEMENT_VERSION = 'VF-2026-09';
+export const PORTAL_VERSION = 7;
+export const TERMS_VERSION = 'VF-PORTAL-2026-09-v3';
+export const PORTAL_TERMS = {
+  version: TERMS_VERSION,
+  sections: [
+    ['Terms of access', 'This private project workspace is provided by Vision Flow for your projects, deliverables, payments and communications. Review the applicable agreement and project particulars before signing. Deliverables will be reviewed and confirmed through this portal as stated in the project agreement. Contact Vision Flow with questions before accepting.'],
+    ['Privacy and confidentiality', 'Your unique private URL is personal and must not be shared with unauthorized parties. Project files, scripts, creative assets, pricing, payment records and communications in this workspace are confidential. Each party will use non-public project information only for this engagement and take reasonable care not to disclose it except where required for production, law or a written agreement.'],
+    ['Records', 'The workspace retains your consent, signatures, approvals and feedback with their recorded dates. These records are available to you and the Vision Flow administrator as the shared record of the engagement. Contact Vision Flow about access, corrections or questions concerning these records.'],
+  ].map(([title,body])=>({title,body})),
+};
 export const STANDARD_AGREEMENT_CLAUSES = [
   ['1. Project scope', 'Vision Flow will provide the project deliverables described in this agreement and the project particulars. Any work outside that scope requires written confirmation before work begins.'],
   ['2. Client inputs and approvals', 'The client will provide the materials, access, decisions and approvals reasonably needed for production. A delivery date may move when required inputs or approvals are delayed.'],
   ['3. Review and revisions', 'The client should review each submitted deliverable promptly and send consolidated, actionable feedback through the project workspace. Revisions that are outside the agreed scope may require a revised timeline or fee.'],
   ['4. Fees and payment', 'The agreed rate, budget and any project-specific payment arrangement are shown in the project particulars. Unless a project-specific term says otherwise, completed work and final deliverables remain subject to the agreed payment schedule.'],
-  ['5. Delivery and acceptance', 'Vision Flow will provide delivery links or files through the project workspace. A deliverable is treated as accepted when the client confirms it, requests no further revision within the agreed review period, or uses it publicly.'],
+  ['5. Delivery and acceptance', REVIEW_POLICY_TEXT],
   ['6. Intellectual property and third-party materials', 'Client-supplied materials remain the client’s responsibility. Ownership or usage rights for final work transfer only as stated in the project-specific terms and after the applicable fees are paid in full. Third-party licences, platform rules and source-material rights remain subject to their own terms.'],
   ['7. Confidentiality', 'Each party will use non-public project information only for this engagement and will take reasonable care not to disclose it except where required for production, law or a written agreement.'],
   ['8. Changes, suspension and cancellation', 'Either party should communicate a material change, pause or cancellation in writing. Work already completed, approved or committed to production remains payable according to the project record and any agreed changes.'],
@@ -65,7 +76,7 @@ export function metrics(project) {
 }
 export function deliveryColumns(project,{includeInternal=false}={}) {
   const items=itemsOf(project),itemLabel=text(project?.itemLabel)||'Item / subject',titleLabel=text(project?.titleLabel)||'Deliverable title',showItem=project?.showItemField!==false;
-  const populated=key=>items.some(item=>key==='dl'||key==='scriptUrl'||key==='avatarUrl'||key==='referenceUrl'?Boolean(safeUrl(item[key])):Boolean(text(item[key])));
+  const populated=key=>items.some(item=>key==='dl'?Boolean(safeUrl(item[key]))||Boolean(item.hasDelivery):key==='scriptUrl'||key==='avatarUrl'||key==='referenceUrl'?Boolean(safeUrl(item[key])):Boolean(text(item[key])));
   return [
     { key:'b', label:itemLabel, type:'text', show:showItem&&populated('b') },
     { key:'t', label:titleLabel, type:'text', show:populated('t') },
@@ -99,7 +110,10 @@ export function publicSnapshot(client, slug) {
   const projects = {}; const approvalIds = []; const approvalProjects = {};
   for (const [key,p] of projectsOf(client)) {
     projects[key] = pick(p,['slug','name','rate','budget','status','createdAt','lastUpdated','scope','terms','deadline','weeklyTarget','milestoneText','sourceScriptUrl','avatarFolderUrl','itemLabel','titleLabel','showItemField']);
-    projects[key].items = itemsOf(p).map(item => pick(item,['n','b','t','s','sd','dd','dur','dl','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']));
+    projects[key].items = itemsOf(p).map(item => { const pub = pick(item,['n','b','t','s','sd','dd','dur','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']); if (safeUrl(item.dl)) pub.hasDelivery = true; return pub; });
+    projects[key].deliveryVersion = Number(p.deliveryVersion)||0;
+    projects[key].notificationRevision = Number(p.notificationRevision)||0;
+    projects[key].ackId = `${key}-${Number(p.agreementRevision)||1}-${Number(client.masterRevision)||1}`;
     projects[key].itemNumbers = projects[key].items.map(item => Number(item.n)).filter(Number.isInteger);
     projects[key].totalItems = projects[key].items.length;
     projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt']));
@@ -112,9 +126,13 @@ export function publicSnapshot(client, slug) {
   // document.
   const hiddenIds = new Set(Object.values(client.trash || {}).flatMap(entry => [entry.value?.id, ...(entry.records || []).map(r=>r.id)]).filter(Boolean));
   const visibleReviews = reviews => Object.fromEntries(Object.entries(reviews || {}).filter(([id])=>!hiddenIds.has(id)).map(([id,value])=>[id,clone(value)]));
-  return { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false, projects,
+  const snapshot = { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false, projects,
     feedbackReviews:visibleReviews(client.feedbackReviews), signatureReviews:visibleReviews(client.signatureReviews),
-    approvalIds, approvalProjects, lastUpdated:client.lastUpdated || new Date().toISOString(), portalVersion:5 };
+    approvalIds, approvalProjects, lastUpdated:client.lastUpdated || new Date().toISOString(), portalVersion:PORTAL_VERSION,
+    consentTerms:clone(PORTAL_TERMS), masterAgreement:masterAgreementTerms(client), eventQueueVersion:1, reviewEpoch:Number(client.reviewEpoch)||0 };
+  const clean = redactDeliverySecrets(snapshot,client);
+  clean.projectTerms=Object.fromEntries(Object.entries(clean.projects).map(([key,p])=>[key,agreementTerms(p)]));
+  return clean;
 }
 export function agreementTerms(project) {
   return { projectName:project.name || project.slug, totalItems:itemsOf(project).length, rate:Number(project.rate)||0, budget:Number(project.budget)||0,
@@ -132,4 +150,79 @@ export function resizeItems(project, count) {
   let number = Math.max(0,...project.items.map(i => Number(i.n)||0));
   while (itemsOf(project).length < count) project.items.push({ n:++number,b:'',t:'',s:'pending',sd:'',dd:'',dur:'',dl:'',no:'' });
   project.totalItems = count;
+}
+
+export function deliveryManifest(project, projectKey) {
+  return itemsOf(project)
+    .filter(item => Boolean(safeUrl(item.dl)))
+    .map(item => ({
+      id: projectKey + '-' + String(item.n),
+      projectKey,
+      itemNumber: Number(item.n),
+      dl: item.dl,
+      updatedAt: new Date().toISOString()
+    }));
+}
+
+export function masterAgreementTerms(client) {
+  return { version:`VF-MASTER-2026-09-r2-${Number(client.masterRevision)||1}`, clientName:client.name||client.slug||'',
+    termsVersion:TERMS_VERSION,
+    reviewPolicy:clone(REVIEW_POLICY),
+    application:'This master agreement applies to the service relationship between this client and Vision Flow across projects in this workspace. Project scope, price, schedule and payment terms are recorded separately. New or materially changed project particulars require a separate acknowledgement; they do not require another drawing of the master signature.',
+    clauses:STANDARD_AGREEMENT_CLAUSES.map(([title,body])=>({title,body})) };
+}
+export function sameRecord(a,b) {
+  if(a===b)return true;
+  if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;
+  const keys=Object.keys(a);return keys.length===Object.keys(b).length&&keys.every(key=>Object.hasOwn(b,key)&&sameRecord(a[key],b[key]));
+}
+function driveFileId(value) {
+  try {const u=new URL(value);if(!['drive.google.com','docs.google.com','drive.usercontent.google.com'].includes(u.hostname))return '';return u.pathname.match(/\/d\/([^/]+)/)?.[1]||u.searchParams.get('id')||'';}catch{return '';}
+}
+// Include archived items: a historical approval must not republish its old final URL.
+function deliverySecretUrls(client) {
+  const urls=new Set((client?.deliverySecretUrls||[]).filter(value=>safeUrl(value)));
+  const collect=x=>{if(!x||typeof x!=='object')return;if(safeUrl(x.dl)){urls.add(x.dl);urls.add(safeUrl(x.dl));}Object.values(x).forEach(collect);};collect(client);
+  return [...urls];
+}
+export function redactDeliverySecrets(value,client) {
+  const urls=new Set(deliverySecretUrls(client)),ids=new Set([...urls].map(driveFileId).filter(Boolean));
+  const scrub=x=>{
+    if(typeof x==='string'){
+      let clean=x.replace(/https?:\/\/[^\s<>"']+/g,u=>(urls.has(u)||ids.has(driveFileId(u)))?'[Final delivery available through the workspace Download action]':u);
+      for(const u of urls)clean=clean.split(u).join('[Final delivery available through the workspace Download action]');return clean;
+    }
+    if(Array.isArray(x))return x.map(scrub);
+    if(x&&typeof x==='object'&&!isFirestoreTimestamp(x)&&!(x instanceof Date))return Object.fromEntries(Object.entries(x).map(([k,v])=>[k,scrub(v)]));
+    return x;
+  };return scrub(value);
+}
+export const deliveryLinks = project => Object.fromEntries(itemsOf(project).filter(i=>safeUrl(i.dl)).map(i=>[String(i.n),safeUrl(i.dl)]));
+// One manifest per project supports 1,000 deliverables without 1,000 writes.
+// Private client, public summary and changed manifests commit atomically.
+export function prepareSecureSave(next,previous={}) {
+  // Private redaction-only denylist: replacing/removing a final link must not
+  // reveal its old copies in descriptions or reports. It is never published
+  // and never grants access; final file bytes are not retained here.
+  next.deliverySecretUrls=[...new Set([...deliverySecretUrls(previous),...deliverySecretUrls(next)])];
+  const writes=[],oldPublic=publicSnapshot(previous,previous.slug||next.slug);
+  if(previous.name&&previous.name!==next.name)next.masterRevision=Math.max(Number(next.masterRevision)||1,(Number(previous.masterRevision)||1)+1);
+  const proposed=publicSnapshot(next,next.slug);
+  for(const [key,p] of projectsOf(next)) {
+    const old=previous.projects?.[key];
+    const termsChanged=!sameRecord(proposed.projectTerms[key],oldPublic.projectTerms[key]);
+    p.agreementRevision=old?(Number(old.agreementRevision)||1)+(termsChanged?1:0):(Number(p.agreementRevision)||1);
+    const links=deliveryLinks(p),changed=!old?.deliveryVersion||!sameRecord(links,deliveryLinks(old))||previous.accessToken!==next.accessToken;
+    p.deliveryVersion=changed?(Number(old?.deliveryVersion)||Number(p.deliveryVersion)||0)+1:Number(old.deliveryVersion);
+    if(changed)writes.push({path:['deliveries',key],data:{projectKey:key,version:p.deliveryVersion,links}});
+  }
+  for(const [key] of projectsOf(previous))if(!next.projects?.[key]||next.projects[key].deleted)writes.push({path:['deliveries',key],delete:true});
+  return writes;
+}
+export function currentMaster(portal,records=[]) {
+  return records.find(r=>r.id===portal?.masterAgreement?.version&&!r.revoked&&sameRecord(r.termsSnapshot,portal.masterAgreement));
+}
+export function projectAcknowledged(portal,key,master,records=[]) {
+  const terms=portal?.projectTerms?.[key];if(!terms||!master)return false;
+  return sameRecord(master.projectTerms?.[key],terms)||records.some(r=>r.id===portal.projects[key].ackId&&r.masterVersion===portal.masterAgreement.version&&sameRecord(r.termsSnapshot,terms));
 }

@@ -1,0 +1,7 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {"collectionGroup": "attachments", "fieldPath": "content", "indexes": []},
+    {"collectionGroup": "records", "fieldPath": "payload.content", "indexes": []}
+  ]
+}

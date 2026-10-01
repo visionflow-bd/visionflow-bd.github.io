@@ -8,7 +8,12 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null
         && request.auth.uid == 'm1PGSw7ViEb1xOJoj8INQllra3p1'
-        && request.auth.token.email == 'shihabjessore7@gmail.com';
+        && request.auth.token.email == 'shihabjessore7@gmail.com'
+        && (request.method in ['get','list'] || !recoveryLocked());
+    }
+    function recoveryLocked() {
+      let lock = /databases/$(database)/documents/portal_settings/recovery;
+      return exists(lock) && get(lock).data.get('active',false) == true;
     }
 
     function boundedString(value, minimum, maximum) {
@@ -26,7 +31,8 @@ service cloud.firestore {
     }
 
     function portalActive(token) {
-      return exists(/databases/$(database)/documents/portal_public/$(token))
+      return !recoveryLocked() && exists(/databases/$(database)/documents/portal_public/$(token))
+        && get(/databases/$(database)/documents/portal_public/$(token)).data.portalVersion == 7
         && get(/databases/$(database)/documents/portal_public/$(token)).data.get('enabled', true) == true;
     }
 
@@ -66,10 +72,83 @@ service cloud.firestore {
         && t.agreementVersion == 'VF-2026-09';
     }
 
-    function validFeedback(token, data) {
+
+    function consentComplete(token) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let path = /databases/$(database)/documents/portal_public/$(token)/consent/$(p.consentTerms.version);
+      return exists(path) && get(path).data.termsSnapshot == p.consentTerms;
+    }
+    function validConsent(token, id, data) {
+      let terms = get(/databases/$(database)/documents/portal_public/$(token)).data.consentTerms;
+      return id == terms.version
+        && data.keys().hasAll(['type','agreedAt','termsVersion','termsSnapshot','userAgent'])
+        && data.keys().hasOnly(['type','agreedAt','termsVersion','termsSnapshot','userAgent'])
+        && data.type == 'terms-acceptance' && data.termsVersion == terms.version
+        && data.termsSnapshot == terms && serverTime(data.agreedAt) && optionalUserAgent(data);
+    }
+    function masterComplete(token) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let path = /databases/$(database)/documents/portal_public/$(token)/agreements/$(p.masterAgreement.version);
+      return consentComplete(token) && exists(path)
+        && get(path).data.get('revoked', false) == false
+        && get(path).data.termsSnapshot == p.masterAgreement;
+    }
+    function validMaster(token, id, data) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      return id == p.masterAgreement.version && consentComplete(token)
+        && data.keys().hasAll(['name','image','signedAt','userAgent','termsSnapshot','projectTerms'])
+        && data.keys().hasOnly(['name','image','signedAt','userAgent','termsSnapshot','projectTerms'])
+        && boundedString(data.name, 1, 200) && boundedString(data.image, 30, 500000)
+        && data.image.matches('^data:image/png;base64,[A-Za-z0-9+/=]+$')
+        && serverTime(data.signedAt) && optionalUserAgent(data)
+        && data.termsSnapshot == p.masterAgreement && data.projectTerms == p.projectTerms;
+    }
+    function validAcknowledgement(token, id, data) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      return data.keys().hasAll(['projectKey','masterVersion','termsSnapshot','acknowledgedAt','userAgent'])
+        && data.keys().hasOnly(['projectKey','masterVersion','termsSnapshot','acknowledgedAt','userAgent'])
+        && knownProject(token,data.projectKey) && masterComplete(token)
+        && id == p.projects[data.projectKey].ackId
+        && data.masterVersion == p.masterAgreement.version
+        && data.termsSnapshot == p.projectTerms[data.projectKey]
+        && serverTime(data.acknowledgedAt) && optionalUserAgent(data);
+    }
+    function acknowledgedProject(token,key) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let master = get(/databases/$(database)/documents/portal_public/$(token)/agreements/$(p.masterAgreement.version)).data;
+      let ackPath = /databases/$(database)/documents/portal_public/$(token)/acknowledgements/$(p.projects[key].ackId);
+      return master.projectTerms.get(key,{}) == p.projectTerms[key]
+        || (exists(ackPath) && get(ackPath).data.masterVersion == p.masterAgreement.version
+          && get(ackPath).data.termsSnapshot == p.projectTerms[key]);
+    }
+    // Once a trusted review is published, every client response touches the
+    // same project guard read by the timer transaction. A query over feedback
+    // alone is not sufficient protection against a concurrently inserted row.
+    function submissionGuard(token, projectKey, kind, id) {
+      let path = /databases/$(database)/documents/portal_public/$(token)/review_guards/$(projectKey);
+      return !exists(path) || (
+        getAfter(path).data.revision == get(path).data.revision + 1
+        && getAfter(path).data.updatedAt == request.time
+        && getAfter(path).data.lastSubmissionCollection == kind
+        && getAfter(path).data.lastSubmissionId == id);
+    }
+    function validGuardUpdate(token, projectKey, data) {
+      let kind = data.lastSubmissionCollection;
+      let id = data.lastSubmissionId;
+      let evidence = /databases/$(database)/documents/portal_public/$(token)/$(kind)/$(id);
+      return data.keys().hasOnly(['revision','lastSubmissionId','lastSubmissionCollection','updatedAt'])
+        && kind in ['confirms','feedback'] && boundedString(id,1,200)
+        && data.revision is int && data.revision == resource.data.revision + 1
+        && serverTime(data.updatedAt) && knownProject(token,projectKey)
+        && !exists(evidence)
+        && getAfter(evidence).data.projectKey == projectKey
+        && (getAfter(evidence).data.get('submittedAt',null) == request.time
+          || getAfter(evidence).data.get('confirmedAt',null) == request.time);
+    }
+    function validFeedback(token, data, kind, id) {
       let project = get(/databases/$(database)/documents/portal_public/$(token)).data.projects[data.projectKey];
       return data.keys().hasAll(['projectKey', 'itemNumber', 'message', 'submittedAt'])
-        && data.keys().hasOnly(['kind', 'requestType', 'projectKey', 'itemNumber', 'message', 'submittedAt', 'userAgent'])
+        && data.keys().hasOnly(['kind', 'requestType', 'projectKey', 'itemNumber', 'message', 'submittedAt', 'userAgent', 'attachments'])
         && data.get('kind', 'feedback') == 'feedback'
         && data.get('requestType', 'feedback') in ['feedback', 'revision', 'question']
         && knownProject(token, data.projectKey)
@@ -77,7 +156,59 @@ service cloud.firestore {
         && (data.itemNumber == 0 || project.get('itemNumbers', []).hasAny([data.itemNumber]) || (!('itemNumbers' in project) && data.itemNumber <= project.get('totalItems', 0)))
         && boundedString(data.message, 1, 4000)
         && serverTime(data.submittedAt)
-        && optionalUserAgent(data);
+        && optionalUserAgent(data) && validFeedbackAttachments(token,data,kind,id);
+    }
+
+    function validAttachmentMeta(meta) {
+      return meta is map && meta.keys().hasAll(['id','name','mime','size','sha256'])
+        && meta.keys().hasOnly(['id','name','mime','size','sha256'])
+        && boundedString(meta.id,1,200) && meta.id.matches('^[A-Za-z0-9_-]+$')
+        && boundedString(meta.name,1,160)
+        && meta.mime in ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain','image/png','image/jpeg']
+        && meta.size is int && meta.size > 0 && meta.size <= 524288
+        && meta.sha256 is string && meta.sha256.matches('^[a-f0-9]{64}$');
+    }
+    function attachmentMeta(data) {
+      return {'id':data.id,'name':data.name,'mime':data.mime,'size':data.size,'sha256':data.sha256};
+    }
+    function attachmentExistsAfter(token,meta,data,kind,id) {
+      let stored = getAfter(/databases/$(database)/documents/portal_public/$(token)/attachments/$(meta.id)).data;
+      // The newly-created file's own rule validates metadata once. Repeating
+      // it here for every file exceeds Firestore's expression budget.
+      return attachmentMeta(stored) == meta
+        && stored.feedbackCollection == kind && stored.feedbackId == id
+        && stored.projectKey == data.projectKey && stored.itemNumber == data.itemNumber
+        && stored.uploadedAt == request.time;
+    }
+    function validFeedbackAttachments(token,data,kind,id) {
+      let files = data.get('attachments',[]);
+      return files is list && files.size() <= 3
+        && (files.size() < 1 || attachmentExistsAfter(token,files[0],data,kind,id))
+        && (files.size() < 2 || (files[0].id != files[1].id && attachmentExistsAfter(token,files[1],data,kind,id)))
+        && (files.size() < 3 || (files[0].id != files[2].id && files[1].id != files[2].id && attachmentExistsAfter(token,files[2],data,kind,id)));
+    }
+    function validAttachment(token,id,data) {
+      let source = /databases/$(database)/documents/portal_public/$(token)/$(data.feedbackCollection)/$(data.feedbackId);
+      let feedback = getAfter(source).data;
+      return data.keys().hasAll(['id','name','mime','size','sha256','content','feedbackId','feedbackCollection','projectKey','itemNumber','uploadedAt'])
+        && data.keys().hasOnly(['id','name','mime','size','sha256','content','feedbackId','feedbackCollection','projectKey','itemNumber','uploadedAt'])
+        && validAttachmentMeta(attachmentMeta(data)) && data.id == id
+        && data.feedbackCollection in ['confirms','feedback'] && boundedString(data.feedbackId,1,190)
+        && data.feedbackId.matches('^[A-Za-z0-9_-]+$')
+        && id in [data.feedbackId + '-a1',data.feedbackId + '-a2',data.feedbackId + '-a3']
+        && knownProject(token,data.projectKey) && data.itemNumber is int
+        && boundedString(data.content,4,699052) && data.content.matches('^[A-Za-z0-9+/]+={0,2}$')
+        && data.content.size() % 4 == 0
+        && data.size * 4 <= data.content.size() * 3 && data.content.size() * 3 < (data.size + 3) * 4
+        && serverTime(data.uploadedAt) && !exists(source)
+        && feedback.get('kind','feedback') == 'feedback' && feedback.submittedAt == request.time
+        && feedback.projectKey == data.projectKey && feedback.itemNumber == data.itemNumber
+        && attachmentMeta(data) in feedback.attachments;
+    }
+    function readableAttachment(token,data) {
+      let source = /databases/$(database)/documents/portal_public/$(token)/$(data.feedbackCollection)/$(data.feedbackId);
+      return portalActive(token) && knownProject(token,data.projectKey)
+        && exists(source) && attachmentMeta(data) in get(source).data.get('attachments',[]);
     }
 
     function validConfirmation(token, confId, data) {
@@ -98,6 +229,69 @@ service cloud.firestore {
         && optionalUserAgent(data);
     }
 
+    function queuedClientEvidence(token, kind, id) {
+      let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let eventId = 'client:' + token + ':' + kind + ':' + id;
+      let event = /databases/$(database)/documents/portal_outbox/$(eventId);
+      return portal.get('eventQueueVersion',0) != 1
+        || (getAfter(event).data.sourceId == id && getAfter(event).data.createdAt == request.time);
+    }
+    function validReviewConfirmation(token, id, data) {
+      let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let path = /databases/$(database)/documents/portal_public/$(token)/reviews/$(id);
+      let review = get(path).data;
+      return data.keys().hasAll(['projectKey','requestId','sourceVersion','confirmedAt'])
+        && data.keys().hasOnly(['projectKey','requestId','sourceVersion','confirmedAt','userAgent','kind','rejectReason'])
+        && data.requestId == id && knownProject(token,data.projectKey)
+        && review.requestId == id && review.projectKey == data.projectKey && review.sourceVersion == data.sourceVersion
+        && review.status in ['awaiting-notification','awaiting-review-notification','pending','blocked']
+        && review.reviewEpoch == portal.reviewEpoch && review.projectRevision == portal.projects[data.projectKey].notificationRevision
+        && portal.projects[data.projectKey].get('status','active') != 'paused'
+        && data.get('kind','') in ['', 'rejection-pending']
+        && boundedString(data.get('rejectReason',''),0,2000)
+        && (data.get('kind','') != 'rejection-pending' || boundedString(data.rejectReason,10,2000))
+        && serverTime(data.confirmedAt) && optionalUserAgent(data)
+        && exists(/databases/$(database)/documents/portal_public/$(token)/review_guards/$(data.projectKey))
+        && getAfter(path).data.revision == review.revision + 1
+        && getAfter(path).data.status == (data.get('kind','') == 'rejection-pending' ? 'objected' : 'client-confirmed')
+        && getAfter(path).data.decidedAt == request.time;
+    }
+    function validClientReviewUpdate(token, id, data) {
+      let evidence = /databases/$(database)/documents/portal_public/$(token)/confirms/$(id);
+      let response = getAfter(evidence).data;
+      return !exists(evidence) && response.requestId == id
+        && response.projectKey == resource.data.projectKey && response.sourceVersion == resource.data.sourceVersion
+        && response.confirmedAt == request.time
+        && data.diff(resource.data).affectedKeys().hasOnly(['status','decidedAt','actor','revision'])
+        && data.status == (response.get('kind','') == 'rejection-pending' ? 'objected' : 'client-confirmed')
+        && data.actor == 'client' && data.decidedAt == request.time && data.revision == resource.data.revision + 1;
+    }
+    function validClientEvent(eventId, data) {
+      let token = data.portalToken;
+      let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let root = 'portal_public/' + token + '/';
+      let kind = data.sourceCollection == root + 'consent' ? 'consent'
+        : data.sourceCollection == root + 'agreements' ? 'agreements'
+        : data.sourceCollection == root + 'acknowledgements' ? 'acknowledgements'
+        : data.sourceCollection == root + 'confirms' ? 'confirms' : 'feedback';
+      let source = /databases/$(database)/documents/portal_public/$(token)/$(kind)/$(data.sourceId);
+      let record = getAfter(source).data;
+      let eventType = kind == 'consent' ? 'consent-complete' : kind == 'agreements' ? 'master-signed'
+        : kind == 'acknowledgements' ? 'project-acknowledged'
+        : kind == 'feedback' || record.get('kind','') in ['feedback','rejected','rejection-pending'] ? 'objection-received' : 'confirmation-received';
+      return data.keys().hasOnly(['id','eventType','clientSlug','portalToken','reviewEpoch','projectKey','sourceCollection','sourceId','sourceVersion','status','createdAt','retryCount'])
+        && portalActive(token) && portal.get('eventQueueVersion',0) == 1
+        && data.id == eventId && eventId == 'client:' + token + ':' + kind + ':' + data.sourceId
+        && boundedString(data.sourceId,1,200) && data.sourceVersion == data.sourceId
+        && data.sourceCollection == root + kind && data.eventType == eventType
+        && data.clientSlug == portal.clientSlug && data.reviewEpoch == portal.reviewEpoch
+        && data.projectKey == record.get('projectKey',null)
+        && data.status == 'queued' && data.retryCount == 0 && serverTime(data.createdAt)
+        && !exists(source)
+        && (record.get('agreedAt',null) == request.time || record.get('signedAt',null) == request.time
+          || record.get('acknowledgedAt',null) == request.time || record.get('submittedAt',null) == request.time || record.get('confirmedAt',null) == request.time);
+    }
+
     // Existing public website and contact form remain supported.
     match /site/{docId} {
       allow read: if true;
@@ -106,7 +300,7 @@ service cloud.firestore {
 
     match /leads/{docId} {
       allow create: if isAdmin() || (
-        request.resource.data.keys().hasAll(['id', 'name', 'email', 'phone', 'interest', 'message', 'source', 'createdAt', 'status'])
+        !recoveryLocked() && request.resource.data.keys().hasAll(['id', 'name', 'email', 'phone', 'interest', 'message', 'source', 'createdAt', 'status'])
         && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'phone', 'interest', 'message', 'source', 'createdAt', 'status'])
         && boundedString(request.resource.data.id, 1, 200)
         && boundedString(request.resource.data.name, 1, 100)
@@ -138,16 +332,33 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /portal_outbox/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isAdmin() || validClientEvent(id,request.resource.data);
+    }
+    match /portal_reviews/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /portal_backend_events/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /portal_backend_state/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Possession of the long random link grants access to ONE public snapshot.
     // Listing this collection would disclose all client links, so it is admin-only.
     match /portal_public/{token} {
-      allow get: if isAdmin() || resource.data.get('enabled', true) == true;
+      allow get: if isAdmin() || (!recoveryLocked() && resource.data.portalVersion == 7 && resource.data.get('enabled', true) == true);
       allow list, delete: if isAdmin();
       // Retired browser tabs must not republish the old, unfiltered snapshot.
       allow create, update: if isAdmin()
-        && request.resource.data.portalVersion == 5
+        && request.resource.data.portalVersion == 7
         && request.resource.data.enabled is bool
-        && request.resource.data.keys().hasOnly(['clientSlug', 'name', 'enabled', 'projects', 'feedbackReviews', 'signatureReviews', 'approvalIds', 'approvalProjects', 'lastUpdated', 'portalVersion']);
+        && (request.resource.data.get('eventQueueVersion',0) != 1
+          || (request.resource.data.reviewEpoch is int && request.resource.data.reviewEpoch >= 0))
+        && (resource == null || resource.data.get('eventQueueVersion',0) != 1 || request.resource.data.get('eventQueueVersion',0) == 1)
+        && request.resource.data.keys().hasOnly(['clientSlug', 'name', 'enabled', 'projects', 'feedbackReviews', 'signatureReviews', 'approvalIds', 'approvalProjects', 'lastUpdated', 'portalVersion', 'consentTerms', 'masterAgreement', 'projectTerms', 'eventQueueVersion', 'reviewEpoch']);
 
       match /sigs/{sigId} {
         allow read: if isAdmin() || portalActive(token);
@@ -158,16 +369,72 @@ service cloud.firestore {
       match /confirms/{confId} {
         allow read: if isAdmin() || portalActive(token);
         allow create: if isAdmin() || (portalActive(token) && (
-          (request.resource.data.get('kind', '') == 'feedback' && validFeedback(token, request.resource.data))
+          (request.resource.data.get('kind', '') == 'feedback' && validFeedback(token, request.resource.data,'confirms',confId))
           || validConfirmation(token, confId, request.resource.data)
-        ));
+          || validReviewConfirmation(token,confId,request.resource.data)
+        ) && submissionGuard(token,request.resource.data.get('projectKey',get(/databases/$(database)/documents/portal_public/$(token)).data.get('approvalProjects',{}).get(confId,'')),'confirms',confId)
+          && queuedClientEvidence(token,'confirms',confId));
         allow update, delete: if isAdmin();
       }
 
-      // Read legacy feedback; all new versions may still safely use this schema.
+      match /agreements/{id} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && validMaster(token,id,request.resource.data) && queuedClientEvidence(token,'agreements',id));
+        allow update, delete: if isAdmin();
+      }
+      match /acknowledgements/{id} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && validAcknowledgement(token,id,request.resource.data) && queuedClientEvidence(token,'acknowledgements',id));
+        allow update, delete: if isAdmin();
+      }
+      // Fetch only the requested project's current manifest after signing.
+      match /deliveries/{deliveryId} {
+        allow get: if isAdmin() || (portalActive(token) && knownProject(token,deliveryId)
+          && resource.data.projectKey == deliveryId
+          && resource.data.version == get(/databases/$(database)/documents/portal_public/$(token)).data.projects[deliveryId].deliveryVersion
+          && masterComplete(token) && acknowledgedProject(token,deliveryId));
+        allow list: if isAdmin();
+        allow write: if isAdmin();
+      }
+
+      match /review_guards/{projectKey} {
+        allow get: if isAdmin() || (portalActive(token) && knownProject(token,projectKey));
+        allow list, create, delete: if isAdmin();
+        allow update: if isAdmin() || (portalActive(token) && validGuardUpdate(token,projectKey,request.resource.data));
+      }
+      match /attachments/{attachmentId} {
+        allow get: if isAdmin() || readableAttachment(token,resource.data);
+        allow list: if isAdmin();
+        allow create: if isAdmin() || (portalActive(token) && validAttachment(token,attachmentId,request.resource.data));
+        allow update, delete: if isAdmin();
+      }
+      // Published notices/outcomes are server/admin-owned. A client response
+      // remains immutable evidence in confirms/feedback, never a forged timer.
+      match /reviews/{id} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin() || (portalActive(token) && validClientReviewUpdate(token,id,request.resource.data));
+      }
+      match /notices/{id} {
+        allow read: if isAdmin() || portalActive(token);
+        allow write: if isAdmin();
+      }
+
+      // Client consent records (terms acceptance, privacy policy acknowledgement).
+      match /consent/{consentId} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (
+          portalActive(token)
+          && validConsent(token, consentId, request.resource.data) && queuedClientEvidence(token,'consent',consentId)
+        );
+        allow update, delete: if isAdmin();
+      }
+
+            // Read legacy feedback; all new versions may still safely use this schema.
       match /feedback/{feedbackId} {
         allow read: if isAdmin() || portalActive(token);
-        allow create: if isAdmin() || (portalActive(token) && validFeedback(token, request.resource.data));
+        allow create: if isAdmin() || (portalActive(token) && validFeedback(token, request.resource.data,'feedback',feedbackId)
+          && submissionGuard(token,request.resource.data.projectKey,'feedback',feedbackId) && queuedClientEvidence(token,'feedback',feedbackId));
         allow update, delete: if isAdmin();
       }
     }

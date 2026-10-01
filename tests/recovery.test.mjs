@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { runInNewContext as vmRun } from 'node:vm';
+import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from '../portal/review-lifecycle.js';
+import { prepareNotificationSave } from '../portal/notification-publication.js';
+const runInNewContext=(code,context)=>vmRun(code,{nextReviewEpoch,retainedReviewRecord,belongsToReviewProject,now:()=> '2026-09-28T00:00:00Z',...context});
 import { Timestamp } from 'firebase/firestore';
-import { normalizeClient, publicSnapshot, clone, itemsOf, money } from '../portal/data.js';
+import { normalizeClient, publicSnapshot, prepareSecureSave, sameRecord, clone, itemsOf, money } from '../portal/data.js';
 
 // Exercise the actual application functions, with Firestore and the DOM replaced
 // by explicit in-memory boundaries. These complement, not replace, browser/rules QA.
@@ -26,6 +29,24 @@ test('private client links use an auth-isolated Firebase app',()=>{
   assert.match(source,/const initialAccess = new URLSearchParams\(location\.search\)\.get\('access'\)/);
   assert.match(source,/initialAccess \? initializeApp\(firebaseConfig,'client-view'\) : initializeApp\(firebaseConfig\)/);
   assert.match(source,/if\(initialAccess\)startClient\(initialAccess\);else onAuthStateChanged/);
+});
+
+test('browser DOMException numeric codes cannot break the error display',()=>{
+  const message=runInNewContext(section('function errorMessage(', 'function fail(')+';errorMessage;',{});
+  assert.equal(message({code:0,message:'The image could not be decoded.'}),'The image could not be decoded.');
+  assert.equal(message({code:18,message:'Access blocked'}),'Access blocked');
+  assert.equal(message(null),'Could not complete this action. Please retry.');
+  assert.match(message({code:'firestore/permission-denied'}),/Access could not be verified/);
+});
+test('render routing preserves a mail deep link, and hostile hashes are not CSS selectors',()=>{
+  const location={pathname:'/portal/',hash:'#notice-specific-update'},calls=[];
+  const ctx={location,state:{mode:'client',token:'test-token',projectKey:'p'},URLSearchParams,history:{replaceState:(_a,_b,url)=>calls.push(url)}};
+  const setRoute=runInNewContext(section('function setRoute(', 'function clientUrl(')+';setRoute;',ctx);
+  setRoute();assert.equal(calls[0],'/portal/?access=test-token&p=p#notice-specific-update');
+  let target;
+  const hashScroll=runInNewContext(section('function hashScroll(', 'function render(')+';hashScroll;',{location,document:{getElementById:id=>{target=id;return null;}},setTimeout:()=>{}});
+  hashScroll();assert.equal(target,'notice-specific-update');
+  location.hash='#%ZZ';assert.doesNotThrow(hashScroll);
 });
 
 test('legacy public relay migration deletes nested fields instead of writing blank copies',()=>{
@@ -136,6 +157,23 @@ test('signature and feedback recovery preserve administrator review edits',async
     assert.equal(h.records.filter(r=>r.id===id && r.collection===col).length,1);
     assert.equal(h.state.clients.client[map][id][field],value);
   }
+});
+
+test('feedback archive preserves exact original evidence and attached bytes without display-derived fields',async()=>{
+  const h=recoveryHarness(),record={collection:'confirms',id:'objection',projectKey:'p',kind:'rejection-pending',requestId:'objection',rejectReason:'Original reason',confirmedAt:Timestamp.fromDate(new Date('2026-09-30T00:00:00Z'))};
+  h.records.push(record);
+  await h.archive('feedback',{dataset:{id:'objection',collection:'confirms'}});
+  const [id,entry]=h.entry();assert.equal(sameRecord(h.archived(entry),[record]),true);
+  assert.equal(Object.hasOwn(h.archived(entry)[0],'message'),false);
+  await h.restoreTrash('client',id);assert.deepEqual(h.records.find(r=>r.id==='objection'),record);
+  const original=clone(h.records.find(r=>r.id==='feedback')),attachment={collection:'attachments',id:'feedback-a1',feedbackCollection:'feedback',feedbackId:'feedback',projectKey:'p',content:'cHJpdmF0ZQ==',name:'notes.txt',size:7};
+  original.attachments=[{id:attachment.id,name:attachment.name,size:7}];Object.assign(h.records.find(r=>r.id==='feedback'),original);h.records.push(attachment);
+  await h.archive('feedback',{dataset:{id:'feedback',collection:'feedback'}});
+  const [id2,entry2]=h.entry();assert.equal(sameRecord(h.archived(entry2),[original,attachment]),true);assert.equal(h.records.some(r=>r.id===attachment.id),false);
+  await h.restoreTrash('client',id2);assert.deepEqual(h.records.find(r=>r.id===attachment.id),attachment);
+});
+test('signature UI archive does not require a collection data attribute',async()=>{
+  const h=recoveryHarness();await h.archive('signature',{dataset:{id:'sig'}});assert.equal(h.records.some(r=>r.id==='sig'),false);
 });
 
 test('approval archive/restore includes the existing confirmation',async()=>{
@@ -300,6 +338,11 @@ test('private-link rotation disables first, moves a late submission, and chunks 
   assert.ok(h.batches()>2,'large workspaces are transferred in multiple safe batches');
   assert.equal(h.finished(),1);
 });
+test('rotation preserves attachment identity and bytes with its parent submission',async()=>{
+  const h=rotationHarness({recordCount:0}),original={collection:'attachments',id:'f-a1',feedbackId:'f',feedbackCollection:'confirms',projectKey:'p',content:'cHJpdmF0ZQ=='};
+  h.records.get('old-token').push(clone(original));await h.rotateLink();
+  assert.deepEqual(h.records.get('new-token').find(r=>r.id===original.id),original);
+});
 
 test('interrupted private-link rotation keeps its protected source and resumes without a second link',async()=>{
   const h=rotationHarness({recordCount:1,failFirstTransfer:true});
@@ -364,6 +407,83 @@ test('partial restore blocks a racing permanent delete until recovery is finishe
   assert.equal(h.saves.length,0);
 });
 
+test('purging an old archive never deletes newer live evidence with the same ID',async()=>{
+  const h=purgeTrashHarness();
+  h.records[0].message='Newly submitted evidence after the original was archived';
+  await h.purgeTrash('client','trash-one');
+  assert.equal(h.records.length,1);
+  assert.equal(h.records[0].message,'Newly submitted evidence after the original was archived');
+  assert.equal(h.archive.size,0);
+  assert.equal(h.state.clients.client.trash['trash-one'],undefined);
+});
+
+test('derived delivery manifests cannot be archived as client submissions',async()=>{
+  const h=recoveryHarness();h.records.push({collection:'deliveries',id:'p',projectKey:'p',version:3,links:{1:'https://example.invalid/final'}});
+  await assert.rejects(h.archive('record',{dataset:{id:'p',collection:'deliveries'}}),/managed by the project/);
+  assert.equal(h.saves(),0);
+  assert.ok(h.records.find(r=>r.collection==='deliveries'));
+});
+
+test('restore uses atomic collision checks, preserves new consent and skips cached manifests',async()=>{
+  const live=new Map(),writes=[];
+  const context={db:{},ARCHIVE_RECORD_BATCH_SIZE:8,sameRecord,doc:(_db,...path)=>path.join('/'),runTransaction:async(_db,callback)=>{
+    const staged=[];
+    await callback({get:async ref=>({exists:()=>live.has(ref),data:()=>live.get(ref)}),set:(ref,data)=>staged.push([ref,data])});
+    for(const [ref,data]of staged){live.set(ref,clone(data));writes.push(ref);}
+  }};
+  const restore=runInNewContext(`${section('async function restorePublicRecords(', 'async function deleteArchivedTrashRecords(')};restorePublicRecords;`,context);
+  const old={collection:'consent',id:'v1',termsSnapshot:{version:'v1'},agreedAt:Timestamp.fromMillis(1234)};
+  const ref='portal_public/token/consent/v1';
+  live.set(ref,{termsSnapshot:{version:'v1'},agreedAt:Timestamp.fromMillis(5678)});
+  await assert.rejects(restore('token',[old]),/newer submission/);
+  assert.equal(live.get(ref).agreedAt.toMillis(),5678);assert.equal(writes.length,0);
+  live.clear();await restore('token',[old,{collection:'deliveries',id:'p',version:1,links:{1:'stale'}}]);
+  assert.equal(writes.length,1);assert.equal(live.size,1);
+  await restore('token',[old]);assert.equal(writes.length,1,'Identical restore is an idempotent retry');
+  const attachment={collection:'attachments',id:'feedback-a1',content:'cHJpdmF0ZQ==',feedbackId:'feedback'};
+  await restore('token',[attachment]);
+  assert.equal(live.get('portal_public/token/attachments/feedback-a1').id,'feedback-a1');
+  assert.equal(live.get('portal_public/token/attachments/feedback-a1').content,attachment.content);
+  const pending={collection:'reviews',id:'r1',projectKey:'p',status:'pending',revision:2,publishedAt:'2026-09-20T00:00:00Z'};
+  await restore('token',[pending],'2026-09-28T00:00:00Z');
+  const restored=live.get('portal_public/token/reviews/r1');
+  assert.equal(restored.status,'cancelled');assert.equal(restored.revision,3);
+  assert.equal(restored.cancellationReason,'archive-restored');
+  await restore('token',[pending],'2026-09-28T00:00:00Z');
+  assert.equal(live.get('portal_public/token/reviews/r1').revision,3,'Resuming a restore is deterministic');
+});
+
+test('review guards are archived with their project and cannot be removed standalone',async()=>{
+  const h=recoveryHarness();
+  h.records.push({collection:'review_guards',id:'p',revision:5},{collection:'reviews',id:'r1',projectKey:'p',status:'objected',revision:2});
+  await assert.rejects(h.archive('record',{dataset:{id:'p',collection:'review_guards'}}),/managed by the project/);
+  await h.archive('project',{dataset:{}});
+  assert.equal(h.records.some(r=>r.collection==='review_guards'&&r.id==='p'),false);
+  assert.ok(h.archived(h.entry()[1]).some(r=>r.collection==='review_guards'&&r.revision===5));
+});
+
+test('link replacement cancels pending timers and retains explicit outcome evidence',async()=>{
+  const h=rotationHarness({recordCount:0});
+  h.records.get('old-token').push({collection:'reviews',id:'pending',status:'pending',revision:1},{collection:'reviews',id:'explicit',status:'client-confirmed',revision:4,decidedAt:'2026-09-25T00:00:00Z'},{collection:'review_guards',id:'p',revision:7});
+  await h.rotateLink();
+  const moved=h.records.get('new-token');
+  assert.equal(moved.find(r=>r.id==='pending').status,'cancelled');
+  assert.equal(moved.find(r=>r.id==='pending').cancellationReason,'private-link-replaced');
+  assert.equal(moved.find(r=>r.id==='explicit').decidedAt,'2026-09-25T00:00:00Z');
+  assert.equal(moved.find(r=>r.id==='explicit').revision,4);
+  assert.equal(moved.find(r=>r.collection==='review_guards').revision,7);
+});
+
+test('private epoch advances once for interruption and never rolls backwards from a draft',async()=>{
+  const original=normalizeClient({name:'Epoch',accessToken:'token',reviewEpoch:3,projects:{}},'client');
+  const h=transactionHarness(original,{repeat:true}),paused=clone(original);paused.accessEnabled=false;paused.reviewEpoch=0;
+  await h.saveClient(paused);assert.equal(h.state.clients.client.reviewEpoch,4);
+  assert.equal(nextReviewEpoch({...h.state.clients.client,accessEnabled:true},h.state.clients.client),4);
+  assert.equal(nextReviewEpoch({...original,_deleted:true},original),4);
+  assert.equal(nextReviewEpoch({...original,accessToken:'replacement',accessRotation:{from:'token'}},original),4);
+  assert.equal(nextReviewEpoch({...original,name:'renamed'},original),3);
+});
+
 test('an active protected archive cannot be restored or permanently deleted from its bin entry',async()=>{
   const h=purgeTrashHarness({archiveState:true});
   await assert.rejects(h.purgeTrash('client','trash-one'),/protected archive is still in progress/);
@@ -411,7 +531,7 @@ test('custom confirmation Cancel and Escape resolve false and restore focus',asy
 function transactionHarness(current,{repeat=false}={}) {
   let server = current, writes = 0;
   const state = {clients:{}}, context = {
-    state, normalizeClient,publicSnapshot, requireAdmin:()=>{},recoveryPending:c=>Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||Object.values(c?.trash||{}).some(entry=>entry?.restoreState||entry?.purgeState)), now:()=> '2026-09-24T00:00:00.000Z',MAX_SAVE_OPERATIONS:498,
+    state, normalizeClient,publicSnapshot,prepareSecureSave,prepareNotificationSave,serverTimestamp:()=>Timestamp.fromDate(new Date('2026-09-24T00:00:00.000Z')), requireAdmin:()=>{},recoveryPending:c=>Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||Object.values(c?.trash||{}).some(entry=>entry?.restoreState||entry?.purgeState)), now:()=> '2026-09-24T00:00:00.000Z',MAX_SAVE_OPERATIONS:498,
     uid:()=> 'save-unique',newToken:()=> 'new-token',db:{},notify:()=>{},
     doc:(_db,...path)=>path.join('/'),
     runTransaction:async(_db,callback)=>{

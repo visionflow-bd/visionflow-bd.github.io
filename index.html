@@ -560,9 +560,21 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 }
 .portfolio-item:hover{transform:translateY(-6px);border-color:var(--accent);box-shadow:var(--shadow-md)}
 .portfolio-media{position:relative;aspect-ratio:16/10;overflow:hidden;background:#0f172a}
-.portfolio-media img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
-.portfolio-item:hover .portfolio-media img{transform:scale(1.08)}
+.portfolio-media img{width:100%;height:100%;object-fit:contain;transition:filter .3s}
+.portfolio-item:hover .portfolio-media img{filter:brightness(1.08)}
 .portfolio-media iframe{width:100%;height:100%;border:0}
+.portfolio-video-launch{position:relative;width:100%;height:100%;border:0;padding:0;cursor:pointer;color:#fff;background:#0f172a}
+.portfolio-video-launch img{position:absolute;inset:0;object-fit:contain}
+.portfolio-video-launch span{position:relative;display:inline-block;padding:12px 18px;background:rgba(0,0,0,.8);border:1px solid #94a3b8;border-radius:30px}
+.portfolio-video-launch:focus-visible{outline:3px solid var(--accent);outline-offset:-4px}
+.media-batch{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:14px;border:1px solid var(--border-light);border-radius:12px}
+.media-batch label{flex:1;min-width:180px;font-size:.85rem}
+.media-batch input{display:block;max-width:100%;margin-top:8px}
+.media-upload-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.media-upload-actions button,.media-upload-actions a,.media-upload-cancel{font:inherit;font-size:.75rem;color:#e2e8f0;background:#172b3b;border:1px solid #64748b;border-radius:6px;padding:6px 8px;cursor:pointer;text-decoration:none}
+.media-upload-cancel{margin-top:10px}
+.media-upload-panel--collapsed>div{display:none}
+.media-upload-toggle{border:1px solid #64748b;border-radius:8px;background:#172b3b;color:#fff;padding:9px 12px;font:inherit;font-size:.85rem;cursor:pointer}
 .portfolio-no-thumb{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:12px;background:linear-gradient(135deg,#0c1018 0%,#161e30 60%,#0b1120 100%)}
 .portfolio-no-thumb i{font-size:2.4rem;color:var(--accent);opacity:.28}
 .portfolio-no-thumb span{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);opacity:.5}
@@ -687,6 +699,9 @@ section{padding:100px 0;scroll-margin-top:80px;position:relative}
 .review-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .review-author h5{font-size:.95rem;color:var(--text-primary);margin-bottom:2px}
 .review-author small{font-size:.78rem;color:var(--text-muted)}
+.review-trust{display:inline-block;margin-bottom:12px;padding:4px 8px;border-radius:999px;font-size:.7rem;line-height:1.2;font-weight:700;letter-spacing:.02em}
+.review-trust-example{color:#fde68a;background:rgba(146,64,14,.28);border:1px solid rgba(251,191,36,.35)}
+.review-trust-verified{color:#bbf7d0;background:rgba(21,128,61,.24);border:1px solid rgba(74,222,128,.35)}
 
 /* CREDENTIALS VAULT */
 .creds-stats{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;margin-bottom:36px}
@@ -2092,11 +2107,14 @@ DEFAULT_DATA.site.favicon = DEFAULT_DATA.site.favicon || '';
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
 <!-- Firebase v10 (modular CDN) -->
+<script src="site/media.js?v=20261001-r1"></script>
+<script src="site/reviews.js?v=20261001-r1"></script>
+<script src="site/store.js?v=20261001-r1"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-  window.__fb = { initializeApp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc };
+  import { getFirestore, doc, getDoc, setDoc, runTransaction, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  window.__fb = { initializeApp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, getFirestore, doc, getDoc, setDoc, runTransaction, onSnapshot, collection, addDoc, serverTimestamp, deleteDoc };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -2127,9 +2145,7 @@ let STATE = {
   fbUnsub: null,
   fbLeadsUnsub: null,
   activePortfolioCat: 'all',
-  activePortfolioSubcat: null,
-  _pendingSync: 0,
-  _ignoreSyncUntil: 0
+  activePortfolioSubcat: null
 };
 
 /* Debounced renderAll — prevents rapid successive re-renders (e.g. Firebase echo) */
@@ -2184,9 +2200,13 @@ function _clearSaveErrorBanner(){
 }
 
 function openModal(id){ $('#'+id).classList.add('open'); document.body.classList.add('no-scroll'); }
-function closeModal(id){
+function closeModal(id,force=false){
+  if(['edit-modal','admin-panel-modal'].includes(id)&&!force&&(_siteSaving||document.querySelector('#edit-form')?.dataset.saving==='true')){
+    showToast('Wait for the current save to finish.','error');return;
+  }
   $('#'+id).classList.remove('open');
   if(!$$('.modal-overlay.open').length) document.body.classList.remove('no-scroll');
+  if(['edit-modal','admin-panel-modal'].includes(id))_siteEndEdit();
 }
 
 function goLiveSites(){
@@ -2422,16 +2442,8 @@ function saveLocal(){
   if(STATE.data.meta.updatedAt == null) STATE.data.meta.updatedAt = 0;
   localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data));
 }
-function _stripLargeBase64(obj, maxB = 55000){
-  // Images are now Cloudinary URLs (short strings) — this guard only fires for legacy base64 data
-  // still present in old Firestore documents (keeps document under 1 MB limit).
-  if(typeof obj === 'string') return (obj.startsWith('data:')&&obj.length>maxB) ? '' : obj;
-  if(Array.isArray(obj)) return obj.map(i=>_stripLargeBase64(i,maxB));
-  if(obj && typeof obj==='object'){ const o={}; for(const[k,v] of Object.entries(obj)) o[k]=_stripLargeBase64(v,maxB); return o; }
-  return obj;
-}
 function _buildSiteCloudPayload(data){
-  const clean = JSON.parse(JSON.stringify(_stripLargeBase64(data)));
+  const clean = JSON.parse(JSON.stringify(data));
   delete clean.leads;
   // Sender endpoints and other notification relay settings belong exclusively
   // in the administrator-only portal_settings collection, never site/main.
@@ -2472,83 +2484,7 @@ function _attachLeadsListener(){
     prevCount = list.length;
   }, err => console.warn('Lead listen error', err));
 }
-/* persist() — Firebase is the source of truth.
-   If Firebase is connected: save to Firestore FIRST, then cache locally on success.
-   If Firestore fails: revert timestamp so the next cloud snapshot stays authoritative.
-   Returns true on success, false on failure. */
-async function persist(){
-  if(STATE.fbConfigured && STATE.fbDb){
-    // Ground truth comes from Firebase itself, never from the cached STATE.isAdmin
-    // flag. If a session silently drops (expired token, a browser/webview that
-    // blocks IndexedDB/localStorage persistence for Firebase Auth, etc.) the cached
-    // flag can still say "true" while Firebase itself no longer has a real user.
-    const currentUser = STATE.fbAuth?.currentUser || null;
-    const realAdmin = !!(currentUser && !currentUser.isAnonymous);
-    const panelWasOpen = $('#admin-panel-modal')?.classList.contains('open');
-    if(STATE.isAdmin !== realAdmin) STATE.isAdmin = realAdmin;
-
-    if(!realAdmin){
-      if(panelWasOpen){
-        // The admin panel is visibly open, so this save was clearly intended as an
-        // admin action — but Firebase says we're not really signed in. NEVER silently
-        // write this to localStorage only and report success; that's exactly the bug
-        // that made changes look saved while never reaching the cloud. Force a loud,
-        // visible re-login instead.
-        try { sessionStorage.removeItem('vf:admin'); } catch {}
-        closeModal('edit-modal');
-        closeModal('admin-panel-modal');
-        showToast('🔒 Your Firebase session was lost — please log in again. (This change was NOT saved to the cloud.)','error');
-        openAdminLogin();
-        return false;
-      }
-      // Genuine public visitor — fine to cache locally only, no cloud write expected.
-      try { saveLocal(); return true; } catch { return false; }
-    }
-
-    _clearSaveErrorBanner();
-    const savedTs = STATE.data.meta?.updatedAt || 0;
-    STATE._pendingSync = 5;
-    STATE._ignoreSyncUntil = Date.now() + 8000;
-    try {
-      STATE.data.meta = STATE.data.meta || {};
-      STATE.data.meta.updatedAt = Date.now();
-      const fbData = _buildSiteCloudPayload(STATE.data);
-      await new Promise(r => setTimeout(r, 50));
-      await window.__fb.setDoc(window.__fb.doc(STATE.fbDb, 'site','main'), fbData);
-      try { localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data)); } catch {}
-      setTimeout(() => { STATE._pendingSync = 0; STATE._ignoreSyncUntil = 0; }, 9000);
-      return true;
-    } catch(e){
-      if(STATE.data.meta) STATE.data.meta.updatedAt = savedTs;
-      STATE._pendingSync = 0;
-      STATE._ignoreSyncUntil = 0;
-      const errCode = e?.code || '';
-      console.error('Firebase save failed', errCode, e?.message);
-      const projectId = STATE.fbApp?.options?.projectId || '';
-      const consoleUrl = projectId ? `https://console.firebase.google.com/project/${projectId}/firestore/rules` : 'https://console.firebase.google.com/';
-      const errMsg = errCode === 'permission-denied'
-        ? '🔒 Cloud sync blocked — sign in with your Firebase admin account and publish the Firestore rules.'
-        : errCode === 'resource-exhausted'
-        ? '📦 Save failed: Document too large — remove uploaded images'
-        : `☁️ Save failed (${errCode||'network'}) — check internet & try again`;
-      showToast(errMsg, 'error');
-      _showSaveErrorBanner(`
-        <strong>⚠️ This did NOT save to the cloud.</strong><br/>
-        Error: <code>${esc(errCode||'network-error')}</code> — ${esc(e?.message||'')}<br/>
-        ${errCode === 'permission-denied'
-          ? `Your Firestore Rules don't allow this account to write. <a href="${consoleUrl}" target="_blank" rel="noopener noreferrer" style="color:#67e8f9">Open Firebase Rules →</a>`
-          : `<a href="${consoleUrl}" target="_blank" rel="noopener noreferrer" style="color:#67e8f9">Open Firebase Console →</a>`}
-      `);
-      return false;
-    }
-  } else {
-    try { saveLocal(); return true; }
-    catch(e){
-      showToast('Storage full — could not save. Free up browser storage.','error');
-      return false;
-    }
-  }
-}
+// Cloud persistence and conflict handling live in site/persistence.js.
 
 /* ============= MODE / BRANDING SWITCH ============= */
 function switchMode(mode){
@@ -2640,6 +2576,8 @@ function applyBranding(){
 
 /* ============= RENDER ============= */
 function renderAll(){
+  // A direct render supersedes a pending cloud echo; do not reset media twice.
+  clearTimeout(_renderAllTimer);
   applyBranding();
   renderHeroStats();
   renderTicker();
@@ -2728,16 +2666,15 @@ function _portfolioCard(p, catLabel, idx){
   // attribute and inject arbitrary HTML/JS for every visitor (stored XSS, persisted for ALL
   // users once synced to Firestore). YouTube IDs are always [A-Za-z0-9_-]{6,20}, so whitelist
   // that character set instead of just blacklisting a few.
-  const _ytRaw = (p.video||'').match(/embed\/([^?/\s]+)/)?.[1] || (p.video||'').match(/[?&]v=([^&\s]+)/)?.[1] || (p.video||'').match(/youtu\.be\/([^?/\s]+)/)?.[1] || '';
-  const ytId = /^[A-Za-z0-9_-]{6,20}$/.test(_ytRaw) ? _ytRaw : '';
-  const imgSrc = p.img || '';
+  const ytId = VFMedia.youtubeId(p.video||'');
+  const imgSrc = safeUrl(p.img||'');
   const noThumb = `<div class="portfolio-no-thumb"><i class="fas fa-photo-video"></i><span>Preview Coming Soon</span></div>`;
-  const isCloudVid = /res\.cloudinary\.com\/.*\/video\//.test(p.video||'');
-  const cloudPoster = isCloudVid ? p.video.replace('/video/upload/', '/video/upload/so_0,w_640,h_400,c_fill,f_jpg,q_auto/').replace(/\.[^.]+$/, '.jpg') : '';
+  const isCloudVid = !!VFMedia.cloudAsset(p.video,'video');
+  const cloudPoster = isCloudVid ? VFMedia.poster(p.video) : '';
   const media = isCloudVid
-    ? `<video src="${esc(p.video)}" poster="${esc(cloudPoster)}" controls playsinline preload="metadata" controlslist="nodownload" style="width:100%;height:100%;object-fit:contain;background:#000;border-radius:inherit" title="${esc(p.title)}"></video>`
+    ? `<video src="${esc(p.video)}" poster="${esc(cloudPoster)}" controls playsinline preload="none" style="width:100%;height:100%;object-fit:contain;background:#000;border-radius:inherit" title="${esc(p.title)}"></video>`
     : ytId
-    ? `<iframe src="https://www.youtube.com/embed/${esc(ytId)}" loading="lazy" allowfullscreen title="${esc(p.title)} video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`
+    ? `<button type="button" class="portfolio-video-launch" data-youtube="${ytId}" aria-label="Play ${esc(p.title||'portfolio video')}"><img src="https://i.ytimg.com/vi/${ytId}/hqdefault.jpg" loading="lazy" alt=""/><span>Play video</span></button>`
     : imgSrc
       ? `<img src="${esc(imgSrc)}" alt="${esc(p.title)}" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'portfolio-no-thumb\\'><i class=\\'fas fa-photo-video\\'></i><span>Preview Coming Soon</span></div>')"/>`
       : noThumb;
@@ -2759,6 +2696,13 @@ function _portfolioCard(p, catLabel, idx){
     </div>
   </div>`;
 }
+document.addEventListener('click',event=>{
+  const button=event.target.closest('.portfolio-video-launch[data-youtube]');if(!button)return;
+  const id=button.dataset.youtube;if(!/^[A-Za-z0-9_-]{11}$/.test(id))return;
+  const iframe=document.createElement('iframe');iframe.src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+  iframe.title=button.getAttribute('aria-label')||'Portfolio video';iframe.allow='autoplay; encrypted-media; picture-in-picture';iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';
+  button.replaceWith(iframe);iframe.focus();
+});
 
 function renderCategories(){
   const cats = STATE.data.categories || [];
@@ -2933,16 +2877,18 @@ function renderCourses(){
 }
 
 function renderReviews(){
-  const reviews = STATE.data.reviews || [];
+  const reviews = VFReviews.filterPublicReviews(STATE.data.reviews || []);
   if(!reviews.length){
-    $('#reviews-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">No reviews yet — add them via the Admin Panel.</div>`;
+    $('#reviews-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Client-consented testimonials will appear here after consent is verified.</div>`;
     return;
   }
   $('#reviews-grid').innerHTML = reviews.map((r,i)=>{
     const stars = '★'.repeat(r.rating||5) + '☆'.repeat(5-(r.rating||5));
     const initial = (r.name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const trust = VFReviews.disclosure(r);
     return `
     <div class="glass-card review-card" data-scroll data-scroll-delay="${(i%4)*70}">
+      <span class="review-trust ${trust.verified?'review-trust-verified':'review-trust-example'}" aria-label="${esc(trust.label)}">${esc(trust.label)}</span>
       <div class="review-rating">${stars}</div>
       <p class="review-text">"${esc(r.text)}"</p>
       <div class="review-author">
@@ -3432,6 +3378,7 @@ async function adminLogin(e){
     clearTimeout(_toId);
     try { localStorage.removeItem('vf:loginAttempts'); } catch {}
     if(btn){ btn.disabled=false; btn.innerHTML=origHTML; }
+    _requireMediaAdmin();
     STATE.isAdmin = true;
     sessionStorage.setItem('vf:admin','1');
     openAdminPanel();
@@ -3473,6 +3420,7 @@ function adminLogout(){
 
 /* ===== Tabs ===== */
 function adminTab(name){
+  if(!_siteBeginEdit())return;
   _adminCurrentTab = name;
   $$('.admin-side button').forEach(b => {
     const m = b.getAttribute('onclick')?.match(/'(.+)'/)?.[1];
@@ -3595,6 +3543,7 @@ function tickerPersonFields(){ return [
 
 /* ===== Generic CRUD list ===== */
 function renderAdminList(sec, key, title, fields){
+  _restoreMediaDrafts();
   const items = STATE.data[key] || [];
   sec.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:12px;flex-wrap:wrap">
@@ -3604,6 +3553,7 @@ function renderAdminList(sec, key, title, fields){
       </div>
       <button class="btn btn-primary btn-sm" onclick="editItem('${key}', null)"><i class="fas fa-plus"></i> Add New</button>
     </div>
+    ${key==='portfolio'?'<div class="media-batch"><label>Upload videos (up to 20)<input type="file" multiple accept="video/mp4,video/quicktime,video/webm" onchange="_batchMediaUpload(event,\'video\')"/></label><label>Upload images (up to 20)<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" onchange="_batchMediaUpload(event,\'image\')"/></label><p class="hint">Two uploads run at a time. Keep this tab open; you can continue other admin work. Uploaded files remain drafts until you review and save a portfolio entry. Only upload media you have permission to publish.</p></div>':''}
     <div class="admin-list">${items.map(it => adminRow(key, it)).join('') || '<div class="hint">Nothing yet — click "Add New".</div>'}</div>
   `;
 }
@@ -3653,8 +3603,8 @@ function renderAdminTicker(sec){
 function adminRow(key, it){
   let img = it.img || it.logo || '';
   // Generate Cloudinary video thumbnail if no image but has Cloudinary video
-  if(!img && it.video && /res\.cloudinary\.com\/.*\/video\/upload\//.test(it.video)){
-    img = it.video.replace('/video/upload/', '/video/upload/so_0,w_100,h_100,c_fill,f_jpg/').replace(/\.[^.]+$/, '.jpg');
+  if(!img && it.video){
+    img = VFMedia.poster(it.video,100);
   }
   const title = it.title || it.name || it.lang || it.heroTitle || '(untitled)';
   const sub = it.role || it.desc || it.level || it.lang || it.url || '';
@@ -3689,6 +3639,9 @@ function getFieldsForKey(key){
 }
 
 function editItem(key, id){
+  try{_requireMediaAdmin();}catch(error){showToast(error.message,'error');return;}
+  if(_cloudSaving||document.querySelector('#edit-form')?.dataset.saving==='true'){showToast('Wait for the current save to finish.','error');return;}
+  if(!_siteBeginEdit())return;
   const fields = getFieldsForKey(key);
   const item = id ? (STATE.data[key]||[]).find(x=>x.id===id) || {} : {};
   $('#edit-title').textContent = (id?'Edit':'Add new') + ' • ' + key;
@@ -3700,49 +3653,12 @@ function editItem(key, id){
       <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> ${id?'Update':'Create'}</button>
     </div>
   </form>`;
+  body.querySelectorAll('.form-row').forEach((row,index)=>{const label=row.querySelector('label'),input=row.querySelector('input:not([type="hidden"]),textarea,select');if(label&&input&&!label.htmlFor){input.id=input.id||`edit-field-${index}`;label.htmlFor=input.id;}});
   // Render dynamic social list (after DOM inserted)
   setTimeout(_renderSocialItems, 0);
-  $('#edit-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const submitBtn = e.target.querySelector('[type="submit"]');
-    if(submitBtn && submitBtn.disabled) return; // prevent double-submit
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
-    const data = {};
-    fields.forEach(f => {
-      if(f.type==='imgupload' || f.type==='videoupload') return; // file input only — already wrote into the target field
-      const el = $(`[name="${f.k}"]`, body);
-      if(!el) return;
-      if(f.type==='checkbox'){ data[f.k] = el.checked; return; }
-      if(f.type==='csv') data[f.k] = el.value.split(',').map(x=>x.trim()).filter(Boolean);
-      else if(f.type==='json'){ try { data[f.k] = JSON.parse(el.value||'[]'); } catch(err){ showToast('Invalid JSON: '+f.k,'error'); throw err; } }
-      else if(f.type==='sociallist'){
-        try {
-          const items = JSON.parse(el.value||'[]');
-          // Strip empty rows + normalise
-          data[f.k] = items.filter(s=>(s.url||'').trim()).map(s=>({
-            url: s.url.trim(),
-            icon: (s.icon||'').trim() || detectSocialIcon(s.url)
-          }));
-        } catch { data[f.k] = []; }
-      }
-      else data[f.k] = el.value;
-    });
-    if(id){
-      const idx = STATE.data[key].findIndex(x=>x.id===id);
-      STATE.data[key][idx] = { ...STATE.data[key][idx], ...data };
-    } else {
-      data.id = uid();
-      STATE.data[key] = STATE.data[key] || [];
-      STATE.data[key].push(data);
-    }
-    const _saved = await persist();
-    if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-save"></i> ${id?'Update':'Create'}`; }
-    if(!_saved) return; // persist() already showed the error toast — keep modal open
-    closeModal('edit-modal');
-    showToast('Saved successfully ✓','success');
-    renderAll();
-    if(_adminCurrentTab) adminTab(_adminCurrentTab);
-  });
+  const recordId=id||uid();
+  $('#edit-form')._siteBase=VFSiteStore.clone(_siteEditorBase);
+  $('#edit-form').addEventListener('submit', e=>_submitSiteEdit(e,{key,id,recordId,fields}));
   openModal('edit-modal');
 }
 function fieldHTML(f, val){
@@ -3790,66 +3706,24 @@ function fieldHTML(f, val){
 /* Helpers for the new field types in the edit modal */
 
 /* -- Cloudinary config (dynamic multi-account pipeline) -- */
-function _getImgAccounts(){ return (STATE.data.cloudStorage?.imageAccounts || [{cloud:'dohlemsrz',preset:'visionflow',label:'Fallback',active:true}]).filter(a=>a.active); }
-function _getVidAccounts(){ return (STATE.data.cloudStorage?.videoAccounts || [{cloud:'ybu8i7ip',preset:'vf-video1',label:'Fallback',active:true}]).filter(a=>a.active); }
-function _imgUploadUrl(acc){ return `https://api.cloudinary.com/v1_1/${acc.cloud}/image/upload`; }
-function _vidUploadUrl(acc){ return `https://api.cloudinary.com/v1_1/${acc.cloud}/video/upload`; }
+function _getImgAccounts(){ return STATE.data.cloudStorage?.imageAccounts || DEFAULT_DATA.cloudStorage.imageAccounts; }
+function _getVidAccounts(){ return STATE.data.cloudStorage?.videoAccounts || DEFAULT_DATA.cloudStorage.videoAccounts; }
 
 async function _inlineImgUpload(e, targetName){
-  const file = e.target.files[0]; if(!file) return;
-  if(file.size > 20*1024*1024){ showToast('Image must be under 20MB','error'); return; }
-
-  const inp       = document.querySelector(`[name="${targetName}"]`);
-  const fileInput = e.target;
-  const origPlaceholder = inp ? inp.placeholder : '';
-
-  /* Disable input + show progress */
-  const imgAccounts = _getImgAccounts();
-  if(!imgAccounts.length){ showToast('No image accounts!','error'); return; }
-  const acc = imgAccounts[0]; /* Primary account */
-  fileInput.disabled = true;
-  if(inp){ inp.placeholder = '⏳ Uploading to Cloudinary…'; }
-  showToast('⏳ Uploading image — please wait…','success');
-
-  try {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', acc.preset);
-
-    const res = await fetch(_imgUploadUrl(acc), { method:'POST', body: fd });
-
-    if(!res.ok){
-      const errBody = await res.json().catch(()=>({}));
-      throw new Error(errBody?.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    const secureUrl = data?.secure_url;
-    if(!secureUrl) throw new Error('No secure_url returned by Cloudinary');
-
-    if(inp){
-      inp.value       = secureUrl;
-      inp.placeholder = origPlaceholder;
-    }
-    showToast('✅ Image uploaded — scroll down & click Update to save','success');
-  } catch(err){
-    showToast('❌ Upload failed: ' + (err.message || 'Unknown error'),'error');
-    if(inp) inp.placeholder = origPlaceholder;
-    console.error('[Cloudinary upload error]', err);
-  } finally {
-    fileInput.disabled = false;
-    fileInput.value    = ''; /* allow re-selecting the same file if needed */
-  }
+  return _enqueueInlineMedia(e,targetName,'image');
 }
 /* ── Upload Progress Manager ── */
-const _uploadQueue = [];
 let _uploadPanel = null;
 
 function _getUploadPanel(){
   if(_uploadPanel && document.body.contains(_uploadPanel)) return _uploadPanel;
   _uploadPanel = document.createElement('div');
   _uploadPanel.id = 'upload-progress-panel';
+  _uploadPanel.setAttribute('aria-label','Media upload progress and drafts');
+  _uploadPanel.setAttribute('role','region');
   _uploadPanel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;width:380px;max-width:calc(100vw - 32px)';
+  const toggle=document.createElement('button');toggle.type='button';toggle.className='media-upload-toggle';toggle.textContent='Minimize uploads and drafts';toggle.setAttribute('aria-expanded','true');
+  toggle.onclick=()=>{const collapsed=_uploadPanel.classList.toggle('media-upload-panel--collapsed');toggle.setAttribute('aria-expanded',String(!collapsed));toggle.textContent=collapsed?'Show uploads and drafts':'Minimize uploads and drafts';};_uploadPanel.appendChild(toggle);
   document.body.appendChild(_uploadPanel);
   return _uploadPanel;
 }
@@ -3875,17 +3749,17 @@ function _createUploadCard(fileName, fileSize){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
         <i class="fas fa-cloud-upload-alt" style="color:var(--accent);font-size:1.1rem;flex-shrink:0"></i>
-        <span style="color:#f8fafc;font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${fileName}">${fileName.length>28?fileName.substring(0,25)+'...':fileName}</span>
+        <span style="color:#f8fafc;font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(fileName)}">${esc(fileName.length>28?fileName.substring(0,25)+'...':fileName)}</span>
       </div>
       <span class="up-pct" style="color:var(--accent);font-weight:800;font-size:.9rem;flex-shrink:0;margin-left:8px">0%</span>
     </div>
     <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;margin-bottom:8px">
-      <div class="up-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6);border-radius:6px;transition:width .3s"></div>
+      <div class="up-bar" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width:0%;height:100%;background:linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6);border-radius:6px;transition:width .3s"></div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8">
       <span class="up-detail">${_formatBytes(0)} / ${_formatBytes(fileSize)}</span>
       <span class="up-speed">Preparing...</span>
-      <span class="up-eta">--</span>
+      <span class="up-eta" role="status">--</span>
     </div>
   `;
   panel.appendChild(card);
@@ -3893,28 +3767,29 @@ function _createUploadCard(fileName, fileSize){
 }
 
 function _updateUploadCard(card, loaded, total, startTime){
-  const pct = Math.round((loaded/total)*100);
+  const pct = total>0?Math.max(0,Math.min(100,Math.round((loaded/total)*100))):0;
   const elapsed = (Date.now()-startTime)/1000;
   const speed = elapsed>0 ? loaded/elapsed : 0;
   const remaining = speed>0 ? (total-loaded)/speed : 0;
 
-  card.querySelector('.up-pct').textContent = pct+'%';
+  card.querySelector('.up-pct').textContent = pct===100?'Processing':pct+'%';
   card.querySelector('.up-bar').style.width = pct+'%';
+  card.querySelector('.up-bar').setAttribute('aria-valuenow',String(pct));
   card.querySelector('.up-detail').textContent = _formatBytes(loaded)+' / '+_formatBytes(total);
   card.querySelector('.up-speed').textContent = speed>0 ? _formatBytes(speed)+'/s' : 'Starting...';
-  card.querySelector('.up-eta').textContent = speed>0 ? '~'+_formatTime(remaining)+' left' : '--';
+  card.querySelector('.up-eta').textContent = pct===100?'Waiting for cloud response':speed>0 ? '~'+_formatTime(remaining)+' left (estimate)' : '--';
 }
 
-function _finishUploadCard(card, success, msg){
+function _finishUploadCard(card, success, msg, retain=false){
   const icon = card.querySelector('.fa-cloud-upload-alt');
   const bar = card.querySelector('.up-bar');
   const pctEl = card.querySelector('.up-pct');
   const etaEl = card.querySelector('.up-eta');
   if(success){
     if(icon){icon.className='fas fa-check-circle';icon.style.color='#10b981';}
-    if(bar) bar.style.background='linear-gradient(90deg,#10b981,#06b6d4)';
-    if(pctEl){pctEl.textContent='Done';pctEl.style.color='#10b981';}
-    if(etaEl) etaEl.textContent='Complete';
+    if(bar){bar.style.background='linear-gradient(90deg,#10b981,#06b6d4)';bar.style.width='100%';bar.setAttribute('aria-valuenow','100');}
+    if(pctEl){pctEl.textContent='Uploaded';pctEl.style.color='#10b981';}
+    if(etaEl) etaEl.textContent=msg||'Complete';
     card.style.borderColor='rgba(16,185,129,.4)';
   } else {
     if(icon){icon.className='fas fa-times-circle';icon.style.color='#f43f5e';}
@@ -3923,94 +3798,12 @@ function _finishUploadCard(card, success, msg){
     if(etaEl) etaEl.textContent=msg||'Error';
     card.style.borderColor='rgba(244,63,94,.4)';
   }
-  setTimeout(()=>{if(card.parentNode) card.parentNode.removeChild(card);}, success?5000:10000);
+  if(!retain)setTimeout(()=>{if(card.parentNode) card.parentNode.removeChild(card);}, success?5000:10000);
 }
 
 /* ── Video upload with progress + auto-fallback pipeline ── */
 async function _inlineVideoUpload(e, targetName){
-  const file = e.target.files[0]; if(!file) return;
-  if(file.size > 500*1024*1024){ showToast('Video must be under 500MB','error'); return; }
-  if(!file.type.startsWith('video/')){ showToast('Please select a video file','error'); return; }
-
-  const inp = document.querySelector(`[name="${targetName}"]`);
-  const fileInput = e.target;
-  const origPlaceholder = inp ? inp.placeholder : '';
-
-  fileInput.disabled = true;
-  if(inp) inp.placeholder = 'Uploading video...';
-
-  const card = _createUploadCard(file.name, file.size);
-  const startTime = Date.now();
-
-  const vidAccounts = _getVidAccounts();
-  if(!vidAccounts.length){ showToast('No video accounts!','error'); _finishUploadCard(card,false,'No accounts'); fileInput.disabled=false; return; }
-
-  for(let i=0; i<vidAccounts.length; i++){
-    const acc = vidAccounts[i];
-    try {
-      const url = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', _vidUploadUrl(acc));
-
-        xhr.upload.onprogress = (pe) => {
-          if(pe.lengthComputable) _updateUploadCard(card, pe.loaded, pe.total, startTime);
-        };
-
-        xhr.onload = () => {
-          if(xhr.status >= 200 && xhr.status < 300){
-            try {
-              const data = JSON.parse(xhr.responseText);
-              if(data.secure_url) resolve(data.secure_url);
-              else reject(new Error('No URL returned'));
-            } catch(err){ reject(err); }
-          } else {
-            try {
-              const errBody = JSON.parse(xhr.responseText);
-              const msg = errBody?.error?.message || '';
-              if(msg.includes('limit') || msg.includes('quota') || msg.includes('exceeded') || msg.includes('storage') || xhr.status===420 || xhr.status===429){
-                reject({quota:true, msg:msg});
-              } else {
-                reject(new Error(msg || 'HTTP '+xhr.status));
-              }
-            } catch{ reject(new Error('HTTP '+xhr.status)); }
-          }
-        };
-
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.ontimeout = () => reject(new Error('Upload timed out'));
-        xhr.timeout = 600000; // 10 min timeout
-
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('upload_preset', acc.preset);
-        fd.append('resource_type', 'video');
-        xhr.send(fd);
-      });
-
-      // Success
-      if(inp){ inp.value = url; inp.placeholder = origPlaceholder; }
-      _finishUploadCard(card, true);
-      showToast('Video uploaded — click Update to save','success');
-      fileInput.disabled = false;
-      fileInput.value = '';
-      return;
-
-    } catch(err){
-      if(err && err.quota && i < vidAccounts.length-1){
-        _updateUploadCard(card, 0, file.size, Date.now());
-        card.querySelector('.up-speed').textContent = 'Switching storage...';
-        continue;
-      }
-      if(i === vidAccounts.length - 1){
-        _finishUploadCard(card, false, err.message || 'All accounts failed');
-        showToast('Upload failed: '+(err.message||'Error'),'error');
-        if(inp) inp.placeholder = origPlaceholder;
-        console.error('[Video upload error]', err);
-      }
-    }
-  }
-  fileInput.disabled = false;
-  fileInput.value = '';
+  return _enqueueInlineMedia(e,targetName,'video');
 }
 
 /* ── Notifications Admin Panel ── */
@@ -4044,7 +3837,7 @@ function renderAdminCloud(sec){
 
   sec.innerHTML = `
     <h3 style="color:var(--text-primary);margin-bottom:20px"><i class="fas fa-cloud" style="margin-right:8px;color:var(--accent)"></i>Cloud Storage Accounts</h3>
-    <div class="hint" style="margin-bottom:20px">Add unlimited Cloudinary accounts. Uploads auto-fallback to the next account when one fills up (like water tanks).</div>
+    <div class="hint" style="margin-bottom:20px">Keep image and video accounts separate. Confirmed quota rejections can switch to the next active account; uncertain network outcomes stop for review. Each provider account has its own limits. Unsigned presets are public identifiers, not passwords: restrict formats and file sizes in Cloudinary, and never paste an API secret here.</div>
 
     <h4 style="color:var(--text-primary);margin:16px 0 8px"><i class="fas fa-image" style="margin-right:6px;color:var(--accent)"></i>Image Accounts</h4>
     <div id="cloud-img-list">${accountRows(cs.imageAccounts,'imageAccounts')}</div>
@@ -4082,29 +3875,40 @@ async function _saveCloudAccount(){
   const label = document.getElementById('ca-label').value.trim();
   const cloud = document.getElementById('ca-cloud').value.trim();
   const preset = document.getElementById('ca-preset').value.trim();
-  if(!cloud || !preset){ showToast('Cloud name and preset are required','error'); return; }
-
-  if(!STATE.data.cloudStorage) STATE.data.cloudStorage = {imageAccounts:[], videoAccounts:[]};
-  if(!STATE.data.cloudStorage[type]) STATE.data.cloudStorage[type] = [];
-  STATE.data.cloudStorage[type].push({ cloud, preset, label: label || ('Account ' + (STATE.data.cloudStorage[type].length+1)), active: true });
-
-  await syncToFirestore();
-  showToast('Cloud account added','success');
-  renderAdminCloud(document.getElementById('admin-content'));
+  await _changeCloudAccounts(type,list=>{
+    const next=VFMedia.account({cloud,preset,label:label||('Account '+(list.length+1)),active:true});
+    if(list.some(item=>item.cloud===cloud&&item.preset===preset))throw Error('This cloud/preset is already configured.');
+    list.push(next);
+  },'Cloud account saved');
 }
 
 async function _removeCloudAccount(type, idx){
   if(!confirm('Remove this cloud account?')) return;
-  STATE.data.cloudStorage[type].splice(idx, 1);
-  await syncToFirestore();
-  showToast('Account removed','success');
-  renderAdminCloud(document.getElementById('admin-content'));
+  await _changeCloudAccounts(type,list=>{if(!Number.isInteger(idx)||!list[idx])throw Error('Account no longer exists.');list.splice(idx,1);},'Account removed from routing; cloud files were not deleted');
 }
 
 async function _toggleCloudAccount(type, idx, active){
-  STATE.data.cloudStorage[type][idx].active = active;
-  await syncToFirestore();
-  showToast(active ? 'Account activated' : 'Account deactivated','success');
+  await _changeCloudAccounts(type,list=>{if(!Number.isInteger(idx)||!list[idx])throw Error('Account no longer exists.');list[idx].active=active===true;},active?'Account activated':'Account deactivated');
+}
+
+let _cloudSaving=false;
+async function _changeCloudAccounts(type,change,message){
+  if(_cloudSaving)return;
+  if(!_siteCanMutate())return;
+  if(document.querySelector('#edit-form')?.dataset.saving==='true'){showToast('Wait for the current save to finish.','error');return;}
+  const section=document.querySelector('#admin-main .admin-section');let previous,next;
+  try{
+    _requireMediaAdmin();if(!['imageAccounts','videoAccounts'].includes(type))throw Error('Invalid storage type.');
+    _cloudSaving=true;section?.querySelectorAll('button,input').forEach(el=>el.disabled=true);
+    previous=STATE.data.cloudStorage;next=JSON.parse(JSON.stringify(previous||{imageAccounts:[],videoAccounts:[]}));
+    next[type]=next[type]||[];change(next[type]);next[type].forEach(VFMedia.account);STATE.data.cloudStorage=next;
+    if(!await persist()){if(STATE.data.cloudStorage===next)STATE.data.cloudStorage=previous;return;}
+    showToast(message,'success');
+  }catch(error){if(next&&STATE.data.cloudStorage===next)STATE.data.cloudStorage=previous;showToast(error.message,'error');}
+  finally{
+    _cloudSaving=false;
+    if(section?.isConnected&&_adminCurrentTab==='cloud')renderAdminCloud(section);
+  }
 }
 
 function _readSocialItems(){
@@ -4159,11 +3963,11 @@ function _updSocial(i, key, val){
 }
 
 async function deleteItem(key, id){
+  if(!_siteCanMutate())return;
   if(!confirm('Are you sure you want to delete this item?')) return;
-  const _backup = STATE.data[key];
   STATE.data[key] = (STATE.data[key]||[]).filter(x=>x.id!==id);
   const _saved = await persist();
-  if(!_saved){ STATE.data[key] = _backup; return; } // cloud write failed — restore local state, keep the error visible (don't lie with a "Deleted" toast)
+  if(!_saved)return;
   showToast('Deleted','success');
   renderAll();
   // Refresh the admin panel's current tab so the deleted row disappears immediately
@@ -4191,9 +3995,12 @@ function renderAdminSite(sec){
   `;
   switchBrandTab('agency');
 }
-function switchBrandTab(t){
+function switchBrandTab(t,preserveDraft=false){
+  if(_siteSaving){showToast('Wait for the current save to finish.','error');return;}
+  if(!preserveDraft&&!_siteBeginEdit())return;
   $$('#brand-tabs button').forEach(b=> b.classList.toggle('active', b.textContent.toLowerCase().includes(t)));
   const pane = $('#brand-pane');
+  pane.dataset.brandTab=t;
   const s = STATE.data.site;
   if(t==='contact'){
     renderContactAdmin(pane);
@@ -4223,14 +4030,14 @@ function switchBrandTab(t){
       <div class="form-row"><label>Tagline</label><input id="bt" value="${esc(b.tagline||'')}"/></div>
       <div class="form-row"><label>Logo URL <small style="color:var(--text-muted);font-weight:400">(paste image link OR upload below — leave empty to use "${esc((b.name||'VF').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase())}" letters)</small></label><input id="bl" value="${esc(b.logo||'')}" placeholder="https://example.com/logo.png"/></div>
       <div class="form-row"><label>📤 Upload logo from your device <small style="color:var(--text-muted);font-weight:400">(PNG/JPG/SVG — under 500KB recommended)</small></label><input type="file" accept="image/*" onchange="uploadLogo(event,'${t}')"/></div>
-      ${b.logo ? `<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px"><img src="${esc(b.logo)}" style="width:80px;height:80px;border-radius:12px;border:1px solid var(--border-light);object-fit:contain;background:#0a0e1a;padding:6px"/><button type="button" class="btn btn-ghost btn-sm" onclick="clearLogo('${t}')"><i class="fas fa-trash"></i> Remove Logo</button></div>` : ''}
+      ${b.logo ? `<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px"><img src="${esc(b.logo)}" alt="${esc((b.name||t)+' logo preview')}" style="width:80px;height:80px;border-radius:12px;border:1px solid var(--border-light);object-fit:contain;background:#0a0e1a;padding:6px"/><button type="button" class="btn btn-ghost btn-sm" onclick="clearLogo('${t}')"><i class="fas fa-trash"></i> Remove Logo</button></div>` : ''}
       <div class="form-row"><label>Hero Title</label><input id="bht" value="${esc(b.heroTitle||'')}"/></div>
       <div class="form-row"><label>Hero Subtitle</label><textarea id="bhs">${esc(b.heroSub||'')}</textarea></div>
       ${t==='agency' ? `
       <div class="form-row"><label>🎨 Favicon URL <small style="color:var(--text-muted);font-weight:400">(browser tab icon — defaults to logo if empty)</small></label><input id="bf" value="${esc(s.favicon||'')}" placeholder="https://example.com/favicon.png" oninput="_previewFavicon(this.value)"/></div>
       <div class="form-row"><label>📤 Upload favicon <small style="color:var(--text-muted);font-weight:400">(square PNG/ICO — under 500KB)</small></label><input type="file" accept="image/*" onchange="uploadFavicon(event)"/></div>
       <div id="fav-preview" style="margin-bottom:14px;display:${s.favicon?'flex':'none'};align-items:center;gap:12px">
-        <img id="fav-preview-img" src="${esc(s.favicon||'')}" style="width:48px;height:48px;border-radius:10px;border:1px solid var(--border-light);object-fit:contain;background:#0a0e1a;padding:4px"/>
+        <img id="fav-preview-img" src="${esc(s.favicon||'')}" alt="Favicon preview" style="width:48px;height:48px;border-radius:10px;border:1px solid var(--border-light);object-fit:contain;background:#0a0e1a;padding:4px"/>
         <button type="button" class="btn btn-ghost btn-sm" onclick="clearFavicon()"><i class="fas fa-trash"></i> Remove Favicon</button>
       </div>
       ` : ''}
@@ -4241,7 +4048,8 @@ function switchBrandTab(t){
 
 /* Dynamic Contact Admin UI — form-based, no JSON required */
 function renderContactAdmin(pane){
-  const c = STATE.data.site.contact || {};
+  const c = VFSiteStore.clone(STATE.data.site.contact || {});
+  pane._contactDraft=c;
   c.rows = c.rows || [];
   c.social = c.social || [];
   pane.innerHTML = `
@@ -4286,7 +4094,7 @@ function renderContactAdmin(pane){
 function renderContactRowsAdmin(){
   const list = $('#contact-rows-list');
   if(!list) return;
-  const rows = STATE.data.site.contact.rows || [];
+  const rows = $('#brand-pane')._contactDraft.rows || [];
   if(!rows.length){
     list.innerHTML = '<div class="hint" style="padding:14px;border:1px dashed var(--border-light);border-radius:10px;text-align:center">No extra rows yet — click "Add Row" above.</div>';
     return;
@@ -4308,25 +4116,27 @@ function renderContactRowsAdmin(){
   `).join('');
 }
 function addContactRow(){
-  STATE.data.site.contact.rows = STATE.data.site.contact.rows || [];
-  STATE.data.site.contact.rows.push({type:'custom', label:'', value:''});
+  const contact=$('#brand-pane')._contactDraft;
+  contact.rows = contact.rows || [];
+  contact.rows.push({type:'custom', label:'', value:''});
   renderContactRowsAdmin();
 }
 function removeContactRow(i){
-  STATE.data.site.contact.rows.splice(i,1);
+  $('#brand-pane')._contactDraft.rows.splice(i,1);
   renderContactRowsAdmin();
 }
 function updateContactRow(i, key, val){
-  if(!STATE.data.site.contact.rows[i]) return;
-  STATE.data.site.contact.rows[i][key] = val;
+  const contact=$('#brand-pane')._contactDraft;
+  if(!contact.rows[i]) return;
+  contact.rows[i][key] = val;
   if(key === 'type'){
     // Select changed — safe to re-render (no focus loss on a <select>)
-    const row = STATE.data.site.contact.rows[i];
+    const row = contact.rows[i];
     row.icon = detectContactIcon(row.type, row.value);
     renderContactRowsAdmin();
   } else if(key === 'value'){
     // Text input — update icon in-place; do NOT re-render (would destroy focus)
-    const row = STATE.data.site.contact.rows[i];
+    const row = contact.rows[i];
     row.icon = detectContactIcon(row.type, val);
     const iconEl = document.querySelector(`i[data-ci-row="${i}"]`);
     if(iconEl) iconEl.className = row.icon;
@@ -4337,7 +4147,7 @@ function updateContactRow(i, key, val){
 function renderSocialRowsAdmin(){
   const list = $('#social-rows-list');
   if(!list) return;
-  const rows = STATE.data.site.contact.social || [];
+  const rows = $('#brand-pane')._contactDraft.social || [];
   if(!rows.length){
     list.innerHTML = '<div class="hint" style="padding:14px;border:1px dashed var(--border-light);border-radius:10px;text-align:center">No social links yet — click "Add Social Link" above.</div>';
     return;
@@ -4360,21 +4170,23 @@ function renderSocialRowsAdmin(){
   }).join('');
 }
 function addSocialRow(){
-  STATE.data.site.contact.social = STATE.data.site.contact.social || [];
-  STATE.data.site.contact.social.push({name:'', url:'', icon:''});
+  const contact=$('#brand-pane')._contactDraft;
+  contact.social = contact.social || [];
+  contact.social.push({name:'', url:'', icon:''});
   renderSocialRowsAdmin();
 }
 function removeSocialRow(i){
-  STATE.data.site.contact.social.splice(i,1);
+  $('#brand-pane')._contactDraft.social.splice(i,1);
   renderSocialRowsAdmin();
 }
 function updateSocialRow(i, key, val){
-  if(!STATE.data.site.contact.social[i]) return;
-  STATE.data.site.contact.social[i][key] = val;
+  const contact=$('#brand-pane')._contactDraft;
+  if(!contact.social[i]) return;
+  contact.social[i][key] = val;
   if(key === 'url'){
     // Update icon preview in-place — do NOT call renderSocialRowsAdmin()
     // (that replaces innerHTML and kills the focused input)
-    const row = STATE.data.site.contact.social[i];
+    const row = contact.social[i];
     // Always auto-detect when URL changes; user can override via the custom icon field
     const autoIcon = detectSocialIcon(val) || 'fas fa-link';
     if(!row.icon) row.icon = ''; // keep empty so saveContact re-detects
@@ -4383,17 +4195,20 @@ function updateSocialRow(i, key, val){
   } else if(key === 'icon'){
     // Custom icon override — show it immediately
     const iconEl = document.querySelector(`i[data-si-row="${i}"]`);
-    if(iconEl) iconEl.className = val || detectSocialIcon(STATE.data.site.contact.social[i].url) || 'fas fa-link';
+    if(iconEl) iconEl.className = val || detectSocialIcon(contact.social[i].url) || 'fas fa-link';
   }
   // 'name' key: state updated, no visual refresh needed
 }
 
 function uploadFavicon(e){
+  if(!_siteCanMutate())return;
   const file = e.target.files[0]; if(!file) return;
   if(file.size > 500*1024){ showToast('Favicon should be under 500KB','error'); return; }
+  const input=$('#bf'),original=input?.value;
   const reader = new FileReader();
   reader.onload = ()=>{
-    const inp = $('#bf'); if(inp) inp.value = reader.result;
+    if(!input?.isConnected||$('#bf')!==input||input.value!==original||!_siteCanMutate())return;
+    input.value = reader.result;
     _previewFavicon(reader.result);
     showToast('Favicon loaded — click Save','success');
   };
@@ -4406,16 +4221,19 @@ function _previewFavicon(url){
   else   { img.removeAttribute('src'); box.style.display = 'none'; }
 }
 function clearFavicon(){
+  if(!_siteCanMutate())return;
   STATE.data.site.favicon = '';
   const inp = $('#bf'); if(inp) inp.value = '';
   _previewFavicon('');
   persist().then(saved => { if(!saved) return; applyBranding(); showToast('Favicon removed','success'); });
 }
 function clearLogo(t){
+  if(!_siteCanMutate())return;
   STATE.data.site[t].logo = '';
   persist().then(saved => { if(!saved) return; renderAll(); switchBrandTab(t); showToast('Logo removed','success'); });
 }
 async function saveBranding(t){
+  if(!_siteCanMutate())return;
   STATE.data.site[t] = {
     ...STATE.data.site[t],
     name: $('#bn').value.trim(),
@@ -4435,7 +4253,7 @@ async function saveBranding(t){
   showToast(t==='agency'?'Agency branding saved':'Academy branding saved','success');
 }
 function _collectStatsFromDOM(){
-  return (STATE.data.site.stats||[]).map((_,i)=>({
+  return [...document.querySelectorAll('#stats-rows-wrap > div')].map((_,i)=>({
     target: Math.max(0, parseInt($('#stat-val-'+i)?.value||'0',10)),
     suffix: ($('#stat-sfx-'+i)?.value||'+').trim()||'+',
     label:  ($('#stat-lbl-'+i)?.value||'').trim()
@@ -4444,17 +4262,18 @@ function _collectStatsFromDOM(){
 function addStatRow(){
   const current = _collectStatsFromDOM();
   STATE.data.site.stats = [...current, {target:0, suffix:'+', label:'New Stat'}];
-  switchBrandTab('stats');
+  switchBrandTab('stats',true);
 }
 function removeStatRow(i){
-  if((STATE.data.site.stats||[]).length <= 1){ showToast('Need at least one stat','error'); return; }
   const current = _collectStatsFromDOM();
+  if(current.length <= 1){ showToast('Need at least one stat','error'); return; }
   current.splice(i,1);
   STATE.data.site.stats = current;
-  switchBrandTab('stats');
+  switchBrandTab('stats',true);
 }
 async function saveStats(){
-  const n = (STATE.data.site.stats||[]).length || 4;
+  if(!_siteCanMutate())return;
+  const n = document.querySelectorAll('#stats-rows-wrap > div').length;
   const stats = Array.from({length: n}, (_,i) => ({
     target: Math.max(0, parseInt($('#stat-val-'+i)?.value||0, 10) || 0),
     suffix: ($('#stat-sfx-'+i)?.value||'+').trim() || '+',
@@ -4468,9 +4287,11 @@ async function saveStats(){
   showToast('✅ Stats saved — visible in the hero section now','success');
 }
 async function saveContact(){
+  if(!_siteCanMutate())return;
+  const contact=$('#brand-pane')._contactDraft;
   // Clean up rows: drop empty ones
-  const rows = (STATE.data.site.contact.rows||[]).filter(r => (r.value||'').trim() !== '');
-  const social = (STATE.data.site.contact.social||[])
+  const rows = (contact.rows||[]).filter(r => (r.value||'').trim() !== '');
+  const social = (contact.social||[])
     .filter(s => (s.url||'').trim() !== '')
     .map(s => ({
       name: (s.name||'').trim() || (s.url.match(/\/\/(?:www\.)?([^\/]+)/)?.[1]?.split('.')?.[0] || 'Link'),
@@ -4478,6 +4299,7 @@ async function saveContact(){
       icon: (s.icon||'').trim() || detectSocialIcon(s.url)
     }));
   STATE.data.site.contact = {
+    ...STATE.data.site.contact,
     email:    $('#ci-email-in').value.trim(),
     phone:    $('#ci-phone-in').value.trim(),
     whatsapp: $('#ci-wa-in').value.trim(),
@@ -4488,19 +4310,19 @@ async function saveContact(){
   const _saved = await persist();
   if(!_saved) return; // persist() already showed the real error — don't follow it with a fake "saved" toast
   renderAll();
+  switchBrandTab('contact');
   showToast('✅ Contact info saved — visible on the live site now','success');
 }
 function uploadLogo(e, which){
+  if(!_siteCanMutate())return;
   const file = e.target.files[0]; if(!file) return;
   if(file.size > 2*1024*1024){ showToast('Logo should be under 2MB','error'); return; }
+  const input=$('#bl'),original=input?.value;
   const reader = new FileReader();
   reader.onload = () => {
-    const inp = $('#bl');
-    if(inp) inp.value = reader.result;
+    if(!input?.isConnected||$('#bl')!==input||input.value!==original||$('#brand-pane')?.dataset.brandTab!==which||!_siteCanMutate())return;
+    input.value = reader.result;
     showToast('✅ Logo loaded — click Save to apply','success');
-    // Re-render the branding tab so the preview thumb appears immediately
-    if(STATE.data?.site?.[which]) STATE.data.site[which].logo = reader.result;
-    switchBrandTab(which);
   };
   reader.onerror = ()=> showToast('Failed to read file','error');
   reader.readAsDataURL(file);
@@ -4620,19 +4442,7 @@ function clearFirebaseCfg(){
   showToast('Nothing to disconnect — this project always uses its one built-in Firebase backend.','error');
 }
 async function pushDataToCloud(){
-  if(!STATE.fbConfigured || !STATE.isAdmin) return;
-  // Security: only allow push if admin is authenticated with email/password (not anonymous)
-  const currentUser = STATE.fbAuth?.currentUser;
-  if(!currentUser || currentUser.isAnonymous){
-    showToast('🔒 Push failed: Must be logged in as admin to push data','error');
-    return;
-  }
-  try {
-    const cleanData = _buildSiteCloudPayload(STATE.data);
-    await window.__fb.setDoc(window.__fb.doc(STATE.fbDb,'site','main'), cleanData);
-    showToast('✅ Local data pushed to cloud','success');
-  }
-  catch(e){ showToast('Push failed: '+e.message,'error'); }
+  if(await persist())showToast('Cloud content saved with conflict checks','success');
 }
 
 /* ===== Account tab ===== */
@@ -4681,24 +4491,28 @@ function exportJSON(){
   a.href = URL.createObjectURL(blob); a.download = 'visionflow-data.json'; a.click();
 }
 function importJSON(e){
+  if(!_siteCanMutate())return;
   const file = e.target.files[0]; if(!file) return;
+  const importBase=VFSiteStore.clone(_siteEditorBase||_siteViewBase);
   const reader = new FileReader();
   reader.onload = async () => {
     try {
+      if(!_siteCanMutate())return;
       const data = JSON.parse(reader.result);
-      if(!data || typeof data !== 'object' || !data.site) throw new Error('Invalid data file — missing site data');
-      if(!confirm('This will replace all current data. Continue?')) return;
-      STATE.data = _deepMerge(data, DEFAULT_DATA);
-      ['services','portfolio','categories','team','reviews','courses','codeDemos','liveSites','leads','tickerBrands','tickerPeople'].forEach(k=>{
-        if(!Array.isArray(STATE.data[k])) STATE.data[k] = Array.isArray(DEFAULT_DATA[k]) ? JSON.parse(JSON.stringify(DEFAULT_DATA[k])) : [];
+      if(!data || typeof data !== 'object' || Array.isArray(data) || !data.site || typeof data.site!=='object' || Array.isArray(data.site)) throw new Error('Invalid data file — missing site data');
+      const imported=_deepMerge(_buildSiteCloudPayload(data),DEFAULT_DATA);
+      ['services','portfolio','categories','team','reviews','courses','codeDemos','liveSites','tickerBrands','tickerPeople','certificationsAndResearch'].forEach(k=>{
+        if(!Array.isArray(imported[k]))throw new Error('Invalid data file — '+k+' must be a list');
       });
-      STATE.data.site.contact = STATE.data.site.contact || {};
-      if(!Array.isArray(STATE.data.site.contact.rows)) STATE.data.site.contact.rows = [];
-      if(!Array.isArray(STATE.data.site.contact.social)||!STATE.data.site.contact.social.length) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
-      if(!Array.isArray(STATE.data.site.stats)||!STATE.data.site.stats.length) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
-      const _saved = await persist();
+      if(!imported.site.contact||typeof imported.site.contact!=='object'||Array.isArray(imported.site.contact))throw new Error('Invalid contact data');
+      if(!Array.isArray(imported.site.contact.rows)||!Array.isArray(imported.site.contact.social)||!Array.isArray(imported.site.stats))throw new Error('Invalid contact or statistics lists');
+      if(!confirm('This will replace all current data. Continue?')) return;
+      imported.leads=STATE.data.leads||[];
+      STATE.data=imported;
+      const _saved = await persist(importBase);
       if(!_saved) return; // persist() already showed the real error — don't follow it with a fake "imported" toast
       renderAll();
+      if(_adminCurrentTab)adminTab(_adminCurrentTab);
       showToast('Data imported successfully','success');
     } catch(err){ showToast('Import failed: '+err.message,'error'); }
   };
@@ -4730,6 +4544,8 @@ function renderFirebaseStatus(){
   }
 }
 </script>
+<script src="site/uploads.js?v=20261001-r1"></script>
+<script src="site/persistence.js?v=20261001-r1"></script>
 <script>
 /* ============================================================
    VISION FLOW — INIT & FIREBASE BOOT
@@ -4776,57 +4592,24 @@ async function bootFirebase(){
     // Track lead count for new-lead browser notifications
     let _lastLeadCount = (STATE.data.leads||[]).length;
 
-    // Live listen — skip our own save echo using counter + time lock
-    STATE.fbUnsub = window.__fb.onSnapshot(window.__fb.doc(STATE.fbDb,'site','main'), snap => {
-      if(STATE._pendingSync > 0){ STATE._pendingSync--; return; }
-      if(STATE._ignoreSyncUntil && Date.now() < STATE._ignoreSyncUntil){
-        // During ignore window (our own save echoing back) — skip re-render but
-        // still verify our local data is persisted
-        return;
+    // Cloud snapshots are authoritative. Save conflict resolution handles
+    // concurrent edits; browser clocks and local seed/migration heuristics do not.
+    STATE.fbUnsub = window.__fb.onSnapshot(
+      window.__fb.doc(STATE.fbDb,'site','main'),
+      {includeMetadataChanges:true},
+      _siteReceiveSnapshot,
+      err=>{
+        _siteServerReady=false;
+        console.warn('Firestore listen error',err.code||'unavailable');
       }
-      if(snap.exists()){
-        const d = snap.data();
-        const cloudTs = d?.meta?.updatedAt || 0;
-        const localTs = STATE.data?.meta?.updatedAt || 0;
-        if(d && cloudTs > localTs){
-          const existingLeads = Array.isArray(STATE.data?.leads) ? STATE.data.leads : [];
-          STATE.data = _deepMerge(d, DEFAULT_DATA);
-          if(existingLeads.length && (!Array.isArray(STATE.data.leads) || STATE.data.leads.length === 0)) STATE.data.leads = existingLeads;
-          STATE.data.site = STATE.data.site || {};
-          STATE.data.site.contact = STATE.data.site.contact || {};
-          STATE.data.site.contact.rows = Array.isArray(STATE.data.site.contact.rows) ? STATE.data.site.contact.rows : [];
-          if(!Array.isArray(STATE.data.site.contact.social) || STATE.data.site.contact.social.length === 0) STATE.data.site.contact.social = JSON.parse(JSON.stringify(DEFAULT_DATA.site.contact.social));
-          if(!Array.isArray(STATE.data.site.stats) || STATE.data.site.stats.length === 0) STATE.data.site.stats = JSON.parse(JSON.stringify(DEFAULT_DATA.site.stats));
-          // Apply pending migrations to cloud-loaded data so all browsers stay current
-          let _cloudNeedsPush = false;
-          // v11 cloud-side migration REMOVED (2026-06-30) — see loadData() for why: it was
-          // overwriting admin-uploaded team photos and re-pushing the wrong image to Firestore.
-          if((STATE.data.meta?.version||0) < 12){
-            const _cm12 = {}; (DEFAULT_DATA.team||[]).forEach(t=>{ _cm12[t.id]=t; });
-            (STATE.data.team||[]).forEach(m=>{ if(m.img&&!m.img.startsWith('data:')&&(m.img.includes('graph.facebook.com')||m.img.includes('dicebear'))){ if(_cm12[m.id]) m.img=_cm12[m.id].img; } });
-            STATE.data.meta.version = 12; _cloudNeedsPush = true;
-          }
-          // v13 cloud-side migration REMOVED (2026-06-30) — see loadData() for why: its
-          // 'not a data: URI' guard wrongly matched Cloudinary URLs and kept re-pushing
-          // the default avatar back to the cloud, overwriting the admin's real upload.
-          localStorage.setItem(LS_KEYS.data, JSON.stringify(STATE.data));
-          renderAllDebounced();
-          if(_cloudNeedsPush) setTimeout(()=> persist(), 4000); // push migrated data back to Firestore
-          _syncLeadBadge();
-        }
-      } else if(STATE.isAdmin && STATE.fbAuth?.currentUser && !STATE.fbAuth.currentUser.isAnonymous) {
-        window.__fb.setDoc(window.__fb.doc(STATE.fbDb,'site','main'), _buildSiteCloudPayload(STATE.data)).catch(e=>console.warn('Seed failed',e.code||e.message));
-      }
-    }, err => console.warn('Firestore listen error', err));
+    );
 
-    // Auth state listener — any verified Firebase email/password user is an admin.
-    // Authority is enforced at the Firestore Rules layer (server-side), so client-side
-    // email matching is redundant and was causing silent sign-outs across devices when
-    // each browser's localStorage held a different cached email. We now auto-sync the
-    // local cached email to whatever the signed-in Firebase user is.
+    // Match the fixed server-side administrator identity for UI access too.
+    // Firestore Rules remain the authorization boundary.
     window.__fb.onAuthStateChanged(STATE.fbAuth, user => {
      try{
-      if(user && !user.isAnonymous){
+      _syncMediaAccess();
+      if(_isSiteAdmin(user)){
         const signedInEmail = (user.email || '').trim().toLowerCase();
         // Keep a local copy of the signed-in email for offline display & Firestore rules hint
         try {
@@ -4861,8 +4644,8 @@ async function bootFirebase(){
         // a "ghost" admin panel open that looks normal but can no longer reach the
         // cloud — close it and force a visible re-login immediately.
         if(_wasAdmin && $('#admin-panel-modal')?.classList.contains('open')){
-          closeModal('edit-modal');
-          closeModal('admin-panel-modal');
+          closeModal('edit-modal',true);
+          closeModal('admin-panel-modal',true);
           showToast('🔒 Your Firebase session was lost — please log in again.','error');
           openAdminLogin();
         }

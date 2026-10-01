@@ -2,8 +2,21 @@
   "name": "vision-flow-portal-checks",
   "private": true,
   "scripts": {
-    "test": "node --test tests/data.test.mjs tests/recovery.test.mjs tests/custom-labels.test.mjs",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-visionflow-rules \"node --test tests/firestore-rules.test.cjs\""
+    "build:backend": "node backend/apps-script/runtime/build.mjs",
+    "test:backup": "node --test tests/backup.test.mjs",
+    "test:site": "node --test tests/site-store.test.cjs tests/site-media.test.cjs tests/site-reviews.test.cjs tests/site-accessibility.test.cjs",
+    "test:site:browser": "node --test tests/site-media-browser.test.mjs",
+    "test:site:emulator": "firebase emulators:exec --only firestore --project demo-visionflow-site \"node --test tests/site-store-emulator.test.cjs\"",
+    "test:pdf:browser": "node --test tests/report-browser.test.mjs",
+    "test:backup:emulator": "firebase emulators:exec --only firestore --project demo-visionflow-backup \"node --test tests/backup-emulator.test.mjs\"",
+    "test:runtime": "npm run build:backend && node --test tests/backend-apps-script/runtime/adapter.test.mjs tests/backend-apps-script/runtime/corrective.test.mjs tests/backend-apps-script/runtime/readiness.test.mjs",
+    "test:runtime:emulator": "npm run build:backend && firebase emulators:exec --only firestore --project demo-visionflow-runtime \"node --test tests/backend-apps-script/runtime/emulator.test.mjs\"",
+    "test:backend": "node --test tests/backend-apps-script/worker.test.mjs tests/backend-apps-script/regressions.test.mjs tests/backend-apps-script/source-binding.test.mjs tests/backend-apps-script/email.test.mjs tests/backend-apps-script/review-activation.test.mjs",
+    "test:backend:emulator": "firebase emulators:exec --only firestore --project demo-visionflow-backend \"node --test tests/backend-apps-script/review-emulator.test.mjs\"",
+    "test": "node --test tests/data.test.mjs tests/recovery.test.mjs tests/custom-labels.test.mjs tests/secure-gate.test.mjs tests/corrective.test.mjs tests/migration.test.mjs tests/review-engine.test.mjs tests/review-display.test.mjs tests/notification-publication.test.mjs tests/feedback-attachments.test.mjs tests/portal-upload.test.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-visionflow-rules \"node --test tests/firestore-rules.test.cjs\"",
+    "test:browser": "firebase emulators:exec --only firestore --project demo-visionflow-browser \"node --test tests/onboarding-browser.test.mjs\"",
+    "test:migration": "firebase emulators:exec --only firestore --project demo-visionflow-migration \"node --test tests/migration-emulator.test.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "5.0.2",
