@@ -95,6 +95,13 @@ test('apply and rollback use durable pre-commit journals, exact versions and byt
   await rollbackRestore(plan,committed,{...f,operationId:'restore-test'});
   assert.equal(await f.adapter.get(root+'custom/doc'),null);assert.equal((await f.adapter.get(root+'portal_settings/recovery')).fields.active.booleanValue,true);
 });
+test('restore verification accepts Firestore REST omission of empty array values',async()=>{
+  const source=await fixture({'custom/doc':{empty:{arrayValue:{values:[]}},label:{stringValue:'ok'}}}).snapshot(),f=fixture();f.lock();
+  const plan=await planRestore(source,await f.snapshot()),get=f.adapter.get,commit=f.adapter.commit;let committed=false;
+  f.adapter.commit=async writes=>{const result=await commit(writes);committed=true;return result;};
+  f.adapter.get=async name=>{const document=await get(name);if(committed&&name===root+'custom/doc')delete document.fields.empty.arrayValue.values;return document;};
+  const result=await applyRestore(plan,{...f,operationId:'restore-test'});assert.equal(result.verified,true);
+});
 test('changed targets, absent/young lock, uncertain commit and changed rollback target never silently continue',async()=>{
   const source=await fixture({'custom/doc':fields}).snapshot(),f=fixture();
   let plan=await planRestore(source,await f.snapshot());await assert.rejects(applyRestore(plan,{...f,operationId:'restore-test'}),/lock/);

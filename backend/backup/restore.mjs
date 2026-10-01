@@ -3,6 +3,16 @@ import {planSecureMigration} from '../../portal/migration.js';
 import {fromFirestoreValue as decode,toFirestoreValue as encode} from '../apps-script/runtime/adapters.mjs';
 const copy=value=>JSON.parse(JSON.stringify(value));
 const fieldsObject=fields=>decode({mapValue:{fields:fields||{}}});
+// Firestore omits empty array/map members in REST responses. Compare the
+// canonical wire shape so a successful commit is not reported as failed.
+const canonicalWire=value=>{
+  if(Array.isArray(value))return value.map(canonicalWire);
+  if(!value||typeof value!=='object')return value;
+  if(Object.hasOwn(value,'arrayValue'))return {arrayValue:{values:(value.arrayValue?.values||[]).map(canonicalWire)}};
+  if(Object.hasOwn(value,'mapValue'))return {mapValue:{fields:Object.fromEntries(Object.entries(value.mapValue?.fields||{}).map(([key,item])=>[key,canonicalWire(item)]))}};
+  return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,canonicalWire(item)]));
+};
+const sameWire=(left,right)=>stable(canonicalWire(left||{}))===stable(canonicalWire(right||{}));
 const pausedReview=new Set(['pending','blocked','awaiting-notification','awaiting-review-notification']);
 const completedMail=new Set(['sent','sent-unconfirmed','sent-partial','deduplicated','skipped-pre-activation']);
 const immutable=path=>/^portal_public\/[^/]+\/(sigs|confirms|feedback|consent|agreements|acknowledgements|attachments)\//.test(path)||path.startsWith('portal_backend_events/')||path.startsWith('portal_archives/');
@@ -81,9 +91,9 @@ export async function planRestore(backup,current,{replacePaths=[]}={}){
     // Preserve current worker evidence and settings; never rewind a sent log,
     // queue outcome, or an unknown current recipient configuration.
     if(before&&(path.startsWith('portal_outbox/')||path.startsWith('portal_backend_events/')||path==='portal_settings/notifications'))after=quarantine(path,before.fields,backup.readTime);
-    if(before&&stable(before.fields||{})===stable(after||{}))continue;
+    if(before&&sameWire(before.fields,after))continue;
     const original=backup.documents.find(d=>d.name===name);
-    const unchangedSource=before&&original&&stable(before.fields||{})===stable(original.fields||{});
+    const unchangedSource=before&&original&&sameWire(before.fields,original.fields);
     if(before&&!unchangedSource&&!safetyOnly.has(name)&&path!=='portal_settings/notifications'&&!path.startsWith('portal_outbox/')){
       const protectedEvidence=immutable(path);
       if(protectedEvidence||!replacements.has(path)){conflicts.push({path,reason:protectedEvidence?'immutable-newer-evidence':'explicit-replacement-required'});continue;}
@@ -146,7 +156,7 @@ export async function applyRestore(plan,{adapter,journal,operationId}){
     lock.updateTime=result.writeResults.at(-1).updateTime;
     await journal.commit(index,{lockUpdateTime:lock.updateTime,documents:group.map((op,i)=>({name:op.name,updateTime:result.writeResults[i].updateTime}))});index++;
   }
-  for(const op of plan.operations){const current=await adapter.get(op.name);if(!current||stable(current.fields||{})!==stable(op.after))throw Error('Post-restore verification failed. Keep maintenance enabled.');}
+  for(const op of plan.operations){const current=await adapter.get(op.name);if(!current||!sameWire(current.fields,op.after))throw Error('Post-restore verification failed. Keep maintenance enabled.');}
   if((await adapter.get(lock.name))?.updateTime!==lock.updateTime)throw Error('Recovery lock changed during verification.');
   await journal.complete({batches:index,documents:plan.operations.length});
   return {verified:true,documents:plan.operations.length,maintenanceActive:true};
@@ -156,7 +166,7 @@ export async function rollbackRestore(plan,committed,{adapter,journal,operationI
   const lock=await recoveryReady(adapter,operationId);
   const byName=new Map(plan.operations.map(op=>[op.name,op])),seen=new Set(),operations=[];
   for(const record of committed){const op=byName.get(record.name);if(!op||seen.has(record.name)||!record.updateTime)throw Error('Invalid rollback journal.');seen.add(record.name);
-    const current=await adapter.get(op.name);if(current?.updateTime!==record.updateTime||stable(current?.fields||{})!==stable(op.after))throw Error('A restored target has newer data. Rollback must not overwrite it.');
+    const current=await adapter.get(op.name);if(current?.updateTime!==record.updateTime||!sameWire(current?.fields,op.after))throw Error('A restored target has newer data. Rollback must not overwrite it.');
     operations.push({op,updateTime:record.updateTime});}
   await journal.start({planDigest:plan.digest,database:plan.database,operationId,rollback:true});let index=0;
   for(const group of batches(operations)){
@@ -169,7 +179,7 @@ export async function rollbackRestore(plan,committed,{adapter,journal,operationI
     lock.updateTime=result.writeResults.at(-1).updateTime;
     await journal.commit(index,{commitTime:result.commitTime,lockUpdateTime:lock.updateTime});index++;
   }
-  for(const {op} of operations){const current=await adapter.get(op.name);if(op.before?stable(current?.fields)!==stable(op.before.fields):current!==null)throw Error('Rollback verification failed. Keep maintenance enabled.');}
+  for(const {op} of operations){const current=await adapter.get(op.name);if(op.before?!sameWire(current?.fields,op.before.fields):current!==null)throw Error('Rollback verification failed. Keep maintenance enabled.');}
   if((await adapter.get(lock.name))?.updateTime!==lock.updateTime)throw Error('Recovery lock changed during rollback verification.');
   await journal.complete({batches:index,documents:operations.length});return {verified:true,documents:operations.length,maintenanceActive:true};
 }
