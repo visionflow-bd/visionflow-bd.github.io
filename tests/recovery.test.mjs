@@ -44,9 +44,9 @@ test('render routing preserves a mail deep link, and hostile hashes are not CSS 
   const ctx={location,state:{mode:'client',token:'test-token',projectKey:'p'},URLSearchParams,history:{replaceState:(_a,_b,url)=>calls.push(url)}};
   const setRoute=runInNewContext(section('function setRoute(', 'function clientUrl(')+';setRoute;',ctx);
   setRoute();assert.equal(calls[0],'/portal/?access=test-token&p=p#notice-specific-update');
-  let target;
-  const hashScroll=runInNewContext(section('function hashScroll(', 'function render(')+';hashScroll;',{location,document:{getElementById:id=>{target=id;return null;}},setTimeout:()=>{}});
-  hashScroll();assert.equal(target,'notice-specific-update');
+  const targets=[];
+  const hashScroll=runInNewContext(section('function hashScroll(', 'function render(')+';hashScroll;',{location,document:{getElementById:id=>{targets.push(id);return null;}},setTimeout:()=>{}});
+  hashScroll();assert.deepEqual(targets,['notice-specific-update','review-specific-update']);
   location.hash='#%ZZ';assert.doesNotThrow(hashScroll);
 });
 

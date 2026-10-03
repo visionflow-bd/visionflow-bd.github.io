@@ -4,6 +4,9 @@ import {REVIEW_POLICY} from './review-policy.js?v=20260928-r1';
 import {paymentChanges} from './payment-notification.js?v=20261003-a1';
 
 const visibleProject = project => Object.fromEntries(Object.entries(project||{}).filter(([key])=>!['lastUpdated','notificationRevision','deliveryVersion','ackId'].includes(key)));
+const readyItems = (old,project) => {const a=deliveryLinks(old),b=deliveryLinks(project);return Object.keys(b).filter(n=>a[n]!==b[n]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);};
+const deliveryTitle = ready => ready.length===1?`Deliverable ${ready[0]} is ready - verify and download`:ready.length>1?`${ready.length} deliverables are ready - verify and download`:'Delivery updated';
+const DELIVERY_MESSAGE = 'Open the Production log and press "Verify & download" next to the deliverable. Tick the confirmation box and the file opens. You have 72 hours to report any problem; after that the delivery counts as accepted.';
 
 // Returned writes join the same transaction as private/public data + manifests.
 // A migration, private note edit, or recovery must not backdate a review window.
@@ -31,8 +34,8 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
       ...(paymentsChanged?{paymentChanges:paymentChanges(before.projects[key]?.payments||[],after.projects[key]?.payments||[])}:{}),
       ...(requested&&manualNotice.responseTarget?{responseTarget:manualNotice.responseTarget}:{}),
       ...redactDeliverySecrets({
-      title:requested?String(manualNotice.title||'Project update').slice(0,200):paymentsChanged?'Payment record updated':deliveryChanged?'Delivery updated':'Project update',
-      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
+      title:requested?String(manualNotice.title||'Project update').slice(0,200):paymentsChanged?'Payment record updated':deliveryChanged?deliveryTitle(readyItems(old,project)):'Project update',
+      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):deliveryChanged&&!paymentsChanged&&readyItems(old,project).length?DELIVERY_MESSAGE:'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
       },next)};
     const event={eventType,clientSlug:next.slug,portalToken:next.accessToken,reviewEpoch:next.reviewEpoch||0,
       projectKey:key,sourceCollection:`${root}/notices`,sourceId:id,sourceVersion:version,status:'queued',createdAt:timestamp,retryCount:0};

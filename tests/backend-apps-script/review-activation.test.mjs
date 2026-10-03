@@ -66,7 +66,7 @@ test('real portal publication -> mail -> late signing -> review email -> fresh f
   f.setNow('2026-10-05T12:00:00.000Z');await f.sign();
   await f.tick();assert.equal((await f.read()).status,'awaiting-review-notification');
   assert.equal((await f.read()).publishedAt,undefined);assert.equal(f.messages.length,1);
-  await f.send();assert.equal(f.messages.length,2);assert.match(f.messages[1].body,/at least until 2026-10-08T12:00:00.000Z/);
+  await f.send();assert.equal(f.messages.length,2);assert.match(f.messages[1].body,/at least until 8 Oct 2026, 6:00 PM \(Bangladesh time\)/);
   f.setNow('2026-10-05T12:05:00.000Z');await f.tick();
   const review=await f.read();assert.equal(review.status,'pending');assert.equal(review.publishedAt,'2026-10-05T12:05:00.000Z');assert.equal(review.deadline,'2026-10-08T12:05:00.000Z');
   assert.equal((await f.db.get(`${root}/reviews/${reviewId}`)).deadline,review.deadline);

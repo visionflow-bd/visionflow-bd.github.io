@@ -23,7 +23,7 @@ export function notificationStatusHtml(records,clients={}) {
   if(!records.length)return '<p>No email notifications yet.</p>';
   return records.map(record=>{
     const c=clients[record.clientSlug],project=c?.projects?.[record.projectKey]?.name||record.projectKey||'';
-    const results=(record.deliveryResults||[]).map(result=>`<p class="small muted">${esc(result.to)}: ${esc(result.status==='sent-unconfirmed'?'sent':result.status)}</p>`).join('');
+    const results=(record.deliveryResults||[]).map(result=>`<p class="small muted">${esc(result.to==='admin'?'Admin alert':result.to==='client'?'Client email':result.to)}: ${esc(['sent-unconfirmed','handed-to-provider'].includes(result.status)?'sent':result.status)}</p>`).join('');
     return `<article class="list-row"><div class="panel-head"><strong>${esc(EVENT_LABELS[record.eventType]||record.eventType||'Notification')}</strong><span class="badge ${tone(record.status)}">${esc(notificationStatus(record))}</span></div><p>${esc(c?.name||record.clientSlug||'Unknown client')}${project?` · ${esc(project)}`:''}</p><p class="small muted">Created ${esc(when(record.createdAt)||'—')}${record.sentAt?` · Sent ${esc(when(record.sentAt)||String(record.sentAt))}`:''}</p>${results}</article>`;
   }).join('');
 }

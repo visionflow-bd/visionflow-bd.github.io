@@ -125,7 +125,7 @@ test('admin queue view distinguishes uncertainty and never renders private paylo
   assert.match(notificationStatus({status:'needs-reconciliation'}),/before any resend/);
   const html=notificationStatusHtml([{clientSlug:'c',eventType:'<script>bad()</script>',status:'needs-reconciliation',portalToken:'DO-NOT-RENDER',lastError:'PRIVATE-ERROR',dl:'https://example.invalid/final',deliveryResults:[{to:'client',status:'unknown'}]}],{c:{name:'<img onerror="bad()">'}});
   for(const text of ['<script>','<img','DO-NOT-RENDER','PRIVATE-ERROR','example.invalid/final'])assert.ok(!html.includes(text));
-  assert.ok(html.includes('client: unknown'));assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(html.includes('Client email: unknown'));assert.ok(html.includes('&lt;script&gt;'));
 });
 
 test('client actions send a receipt to the client and a distinct alert to the administrator',()=>{

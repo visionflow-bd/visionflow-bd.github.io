@@ -498,7 +498,7 @@ async function settleReviewTimers({firestore,clock,config}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/worker.mjs (SHA-256: ed24e075f4bc5fddb6ebb9e3029800f82a1f0613a0ba262180f1f5261ddc5dbc)
+// Source: backend/apps-script/worker.mjs (SHA-256: be57c2f65629e49395099319cd3c37d859186572ffb20f84d7356ece20b91ea4)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Apps Script V8 Module
@@ -833,8 +833,17 @@ function emailLinks(event, context, targetType='client') {
   else if(event.eventType==='review-window'){hash=`review-${event.sourceId}`;label='Review, confirm or object';}
   else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label=targetType==='admin'?'Review client response':'View your saved response';}
   else if(context.source?.responseTarget&&['review','evidence'].includes(context.source.responseTarget.kind)&&/^[A-Za-z0-9_-]{1,200}$/.test(context.source.responseTarget.id)){hash=`${context.source.responseTarget.kind}-${context.source.responseTarget.id}`;label='Read our response';}
+  else if(event.eventType==='delivery-notification'&&event.projectKey){hash='deliveries';label=targetType==='admin'?'Open production log':'Verify & download';destination=`${project}&tab=log`;}
   else {hash=`notice-${event.sourceId}`;}
   return {overview,project,action:hash?`${destination}#${encodeURIComponent(hash)}`:destination,label};
+}
+
+function bdTime(iso) {
+  // Bangladesh has no DST; avoid Intl time zones, which Apps Script V8 does not fully support.
+  const ms=Date.parse(iso);if(!Number.isFinite(ms))return '';
+  const d=new Date(ms+6*3600000),months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const h=d.getUTCHours(),m=String(d.getUTCMinutes()).padStart(2,'0');
+  return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${h%12||12}:${m} ${h<12?'AM':'PM'} (Bangladesh time)`;
 }
 
 function emailCopy(event, context, targetType) {
@@ -843,34 +852,34 @@ function emailCopy(event, context, targetType) {
   const name=label(context?.portal?.name)||'there',project=label(context?.project?.name);
   const clientIntro={
     'consent-complete':context?.portal?.agreementMode==='project'?'Your Terms and Privacy acceptance is saved. Choose a project to review its details and any applicable project agreement.':'Your Terms and Privacy acceptance is saved. Review and sign your Master Partner Agreement once for this workspace.',
-    'master-signed':'Your signed master agreement is saved. Project particulars remain available in your workspace; material changes require a separate acknowledgement, not another signature drawing.',
+    'master-signed':'Your signed Master Partner Agreement is saved. You will not need to sign again for new projects. If project details change in an important way, you will only be asked to acknowledge them.',
     'project-signed':'Your signed agreement for this project is saved. You can view the captured terms in your workspace.',
-    'project-acknowledged':'Your acknowledgement of the current project particulars is saved.',
-    'project-notification':'A project is ready for your review. Open the exact update to read the current details.',
-    'payment-notification':'A payment record was updated. Please review the record and raise any discrepancy. This notification does not verify payment.',
-    'delivery-notification':'A delivery was updated. Please review it in your workspace. Final download access remains subject to the current agreement requirements.',
-    'update-notification':'Your project workspace was updated. Please review the current details and send any questions or objections through the portal.',
-    'confirmation-received':'Your confirmation is saved. You can view the recorded response in your private workspace.',
-    'objection-received':'Your feedback or objection is saved for the Vision Flow team to review. An unresolved objection stops automatic acceptance. We will notify you when we respond.',
-    'deemed-accepted':'The trusted server recorded deemed acceptance after the review period. This is not an explicit client confirmation, signature, payment verification or download authorization.',
-    'review-window':`Your signed review policy is in place. You have at least until ${context?.earliestDeadline||'the deadline displayed in your workspace'} to review this update. The portal records the full 72-hour window after the notification handoff; a delayed handoff may extend, never shorten, this deadline. Confirm or object in the portal. An unresolved objection stops automatic acceptance.`,
+    'project-acknowledged':'Your acknowledgement of the current project details is saved.',
+    'project-notification':'A new project is ready for you. Open it to read the details.',
+    'payment-notification':'A payment record on your project was updated. Please check the amounts below and tell us through the portal if anything looks wrong. This email is a record update, not a payment receipt.',
+    'delivery-notification':'Good news - a delivery is ready for you.',
+    'update-notification':'Your project was updated. Please check the latest details and send any questions through the portal.',
+    'confirmation-received':'Your confirmation is saved - thank you. You can see it in your workspace at any time.',
+    'objection-received':'Your feedback was received. Automatic acceptance is paused until we review it and reply. We will email you when we respond.',
+    'deemed-accepted':'The 72-hour review period for this update ended without any reported problem, so it is now recorded as accepted. You can still contact us through the portal if anything needs attention.',
+    'review-window':`You have at least until ${bdTime(context?.earliestDeadline)||'the deadline shown in your workspace'} to review this update. Confirm it or report a problem in your workspace. If nothing is reported before the deadline, the update counts as accepted.`,
   }[event.eventType]||'Open your workspace to review this update.';
   const adminIntro={
     'consent-complete':`Client ${name} completed Terms and Privacy consent. Review the onboarding record and applicable agreement status.`,
     'master-signed':`Client ${name} signed the Master Partner Agreement. Review the saved signature and covered project particulars.`,
     'project-signed':`Client ${name} signed the project agreement. Review the captured project terms and signature.`,
-    'project-acknowledged':`Client ${name} acknowledged the current project particulars.`,
-    'project-notification':`A project update for ${name} is ready for your review.`,
-    'payment-notification':`A payment record for ${name} was updated. Review the saved record; this notification does not verify payment.`,
-    'delivery-notification':`A delivery record for ${name} was updated. Review the current delivery state before releasing access.`,
-    'update-notification':`The ${name} workspace was updated. Review the exact project change.`,
-    'confirmation-received':`Client ${name} explicitly confirmed an update. Review the immutable response record.`,
-    'objection-received':`Client ${name} submitted feedback or an objection. Review the exact response before proceeding.`,
-    'deemed-accepted':`The trusted server recorded a deemed outcome for ${name} after the disclosed review period.`,
-    'review-window':`A fresh 72-hour review window is ready for ${name}. Review the current project response and deadline.`,
+    'project-acknowledged':`Client ${name} acknowledged the current project details.`,
+    'project-notification':`A new project for ${name} was published to the client portal.`,
+    'payment-notification':`A payment record for ${name} was updated. The summary below is a record update, not a payment confirmation.`,
+    'delivery-notification':`A delivery for ${name} was published. The client must verify it before downloading; it is auto-accepted after 72 hours if no problem is reported.`,
+    'update-notification':`The ${name} project was updated and the client was notified.`,
+    'confirmation-received':`Client ${name} confirmed an update. The response is saved in the workspace.`,
+    'objection-received':`Client ${name} reported a problem or sent feedback. Automatic acceptance is paused until you respond in the portal.`,
+    'deemed-accepted':`The 72-hour review period for ${name} ended without an objection. The update is recorded as accepted (deemed, not an explicit confirmation).`,
+    'review-window':`A 72-hour review window started for ${name}. The deadline is shown in the workspace.`,
   }[event.eventType]||'Open the administrator workspace to review this notification.';
   const source=context?.source;
-  const note=context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType?String(source.message||'').replace(/https?:\/\/\S+/gi,'[view workspace]').slice(0,4000):'';
+  const note=context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType&&!(targetType==='admin'&&event.eventType==='delivery-notification')?String(source.message||'').replace(/https?:\/\/\S+/gi,'[view workspace]').slice(0,4000):'';
   return {greeting:targetType==='admin'?'Dear Sir':`Hello ${name}`,project,note,intro:targetType==='admin'?adminIntro:clientIntro};
 }
 
@@ -914,10 +923,10 @@ function emailHtml(event, context, targetType) {
       <p style="margin:22px 0;"><a href="${esc(links.action)}" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:7px;font-weight:700;">${esc(links.label)}</a></p>
       ${event.projectKey?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
       <p style="margin:0 0 14px;"><a href="${esc(links.overview)}" style="color:#0f766e;">All projects</a></p>
-      <p style="font-size:12px;line-height:1.55;color:#64748b;">When a 72-hour review is active, the server-recorded deadline and live countdown appear in the workspace. This email alone does not start or complete a review.</p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">Updates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends.</p>
       <p style="font-size:12px;line-height:1.55;color:#64748b;">If this is your first message from Vision Flow, please check Spam or Promotions and mark it as trusted so future updates are not missed.</p>
     </td></tr>
-    <tr><td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.55;color:#64748b;">Automated notification from Vision Flow. Keep private workspace links confidential and use the portal to preserve your response in the shared project record.</td></tr>
+    <tr><td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.55;color:#64748b;">Automated notification from Vision Flow. Please keep your private workspace link confidential.</td></tr>
   </table>
 </div></body></html>`;
 }
@@ -926,7 +935,7 @@ function emailPlain(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
   const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
   const paymentText=payment?`\nPayment summary\n${payment.map(([label,value])=>`${label}: ${value}`).join('\n')}\n`:'';
-  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nThe workspace shows the server-recorded deadline when a 72-hour review is active. This notification is not payment verification or download authorization. If this is your first message, check Spam or Promotions and mark it trusted. Keep private links confidential.`;
+  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nUpdates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends. If this is your first message, check Spam or Promotions and mark it trusted. Keep your private link confidential.`;
 }
 
 // ── Process Single Event ──────────────────────────────────────────

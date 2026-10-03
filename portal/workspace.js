@@ -9,9 +9,9 @@ import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from '.
 import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a1';
 import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a1';
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
-import { prepareNotificationSave } from './notification-publication.js?v=20261003-a1';
+import { prepareNotificationSave } from './notification-publication.js?v=20261003-a2';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
-import { notificationStatusHtml } from './notification-status.js?v=20261003-a1';
+import { notificationStatusHtml } from './notification-status.js?v=20261003-a2';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';
 import {uploadPortalImage} from './image-upload.js?v=20261001-r1';
 import {founderBranding,saveFounderBranding} from './founder-branding.js?v=20261001-r1';
@@ -128,7 +128,7 @@ function actionCenter() {
   return `<section class="action-center" id="action-center" aria-label="Your next steps"><div class="action-head"><div><p class="eyebrow">Welcome, ${esc(c.name)}</p><h2>${items.length?`${items.length} thing${items.length>1?'s':''} need${items.length>1?'':'s'} your attention`:'You are all caught up'}</h2></div></div>${items.length?`<ul class="action-list">${list}</ul>`:'<p class="muted">Every update and delivery is confirmed. New items will appear here.</p>'}<p class="small muted action-mail">We also email you every important update with a direct link. If you cannot find our email, please check your Spam or Promotions folder and mark Vision Flow as “Not spam”.</p></section>`;
 }
 
-function hashScroll(){if(location.hash){let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}const el=document.getElementById(id);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',2000);}}}
+function hashScroll(){if(location.hash){let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}let el=document.getElementById(id);if(!el&&id.startsWith('notice-'))el=document.getElementById(`review-${id.slice(7)}`);if(!el&&id.startsWith('review-'))el=document.getElementById(`notice-${id.slice(7)}`);if(el){const fold=el.closest('details');if(fold)fold.open=true;el.scrollIntoView({behavior:'smooth',block:'start'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',2000);}}}
 
 
 
