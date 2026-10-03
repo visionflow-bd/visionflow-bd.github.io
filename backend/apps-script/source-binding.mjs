@@ -18,6 +18,7 @@ export async function resolveEventSource(event,{firestore,clock,config}) {
   const expected={
     'consent-complete':`${root}/consent`,
     'master-signed':`${root}/agreements`,
+    'project-signed':`${root}/sigs`,
     'project-acknowledged':`${root}/acknowledgements`,
     'confirmation-received':`${root}/confirms`,
     'objection-received':[`${root}/feedback`,`${root}/confirms`],
@@ -39,11 +40,14 @@ export async function resolveEventSource(event,{firestore,clock,config}) {
       if(event.projectKey||event.sourceId!==portal.consentTerms?.version||event.sourceVersion!==source.termsVersion||source.termsVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.consentTerms))return failure('source-version-mismatch');
       sourceTime=source.agreedAt;break;
     case 'master-signed':
-      if(event.projectKey||event.sourceId!==portal.masterAgreement?.version||event.sourceVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.masterAgreement))return failure('source-version-mismatch');
+      if(portal.agreementMode==='project'||event.projectKey||event.sourceId!==portal.masterAgreement?.version||event.sourceVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.masterAgreement))return failure('source-version-mismatch');
       sourceTime=source.signedAt;break;
     case 'project-acknowledged':
-      if(!project||source.projectKey!==event.projectKey||event.sourceId!==project.ackId||event.sourceVersion!==event.sourceId||source.masterVersion!==portal.masterAgreement?.version||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
+      if(portal.agreementMode==='project'||!project||source.projectKey!==event.projectKey||event.sourceId!==project.ackId||event.sourceVersion!==event.sourceId||source.masterVersion!==portal.masterAgreement?.version||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
       sourceTime=source.acknowledgedAt;break;
+    case 'project-signed':
+      if(!project||portal.agreementMode!=='project'||source.projectKey!==event.projectKey||event.sourceId!==project.signatureId||event.sourceVersion!==event.sourceId||source.revoked||['void','deleted'].includes(portal.signatureReviews?.[event.sourceId]?.state)||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
+      sourceTime=source.signedAt;break;
     case 'confirmation-received':
     case 'objection-received':{
       const objection=event.sourceCollection===`${root}/feedback`||['feedback','rejected','rejection-pending'].includes(source.kind);

@@ -121,10 +121,11 @@ test('built runtime activates a newly published notice only after both client ha
   await fs.set('portal_clients/runtime-client',client);await fs.set(publicRoot,portal);
   await fs.set('portal_settings/notifications',{enabled:true,clientEnabled:true,adminEnabled:false});
   for(const w of plan.writes)await fs.set(w.path,w.data);await fs.set(`${publicRoot}/review_guards/p`,{revision:0});
-  const props={ENABLED:'true',REVIEW_STATE_READY:'true',PROJECT_ID:project,ADMIN_UID:'synthetic',ACTIVATION_BOUNDARY:at},messages=[];
+  const props={ENABLED:'true',REVIEW_STATE_READY:'true',PROJECT_ID:project,ADMIN_UID:'synthetic',ACTIVATION_BOUNDARY:at,EXPECTED_SENDER:'owner@example.invalid'},messages=[];
   const context={UrlFetchApp:urlFetch,ScriptApp:scriptApp,PropertiesService:{getScriptProperties:()=>({getProperties:()=>props,getProperty:key=>props[key]})},Logger:{log:()=>{}},MailApp:{getRemainingDailyQuota:()=>100,sendEmail:message=>messages.push(message)}};
   runInNewContext(readFileSync('backend/apps-script/runtime/Code.gs','utf8'),context);
   let now=at;context.createClockAdapter=()=>({now:()=>now});
+  context.Session={getEffectiveUser:()=>({getEmail:()=> 'owner@example.invalid'})};
   await context.scheduledWorker();assert.equal(messages.length,1);assert.equal((await fs.get('portal_reviews/'+id)).status,'awaiting-notification');
   now='2026-10-05T12:00:00.000Z';
   await fs.set(`${publicRoot}/consent/${portal.consentTerms.version}`,{termsSnapshot:portal.consentTerms,agreedAt:now});

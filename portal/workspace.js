@@ -1,19 +1,21 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocFromServer, getDocs, onSnapshot, runTransaction, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, query, orderBy, limit, startAfter, documentId } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { ADMIN_UID, STATUS, LABEL, clone, esc, text, asValidDate, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns, prepareSecureSave, redactDeliverySecrets, sameRecord } from './data.js?v=20260928-r10';
+import { ADMIN_UID, STATUS, LABEL, clone, esc, text, asValidDate, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns, prepareSecureSave, redactDeliverySecrets, sameRecord } from './data.js?v=20261003-a1';
 import { buildProjectReport, buildProjectAgreement, buildMasterAgreement } from './report.js?v=20261001-r2';
-import { createOnboarding } from './onboarding.js?v=20260928-r1';
-import { submitReviewEvidence } from './review-submissions.js?v=20260928-r1';
+import { createOnboarding } from './onboarding.js?v=20261003-a1';
+import { submitReviewEvidence } from './review-submissions.js?v=20261002-r2';
 import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from './review-lifecycle.js?v=20260928-r1';
-import { renderReviewPanel, refreshReviewCountdowns } from './review-display.js?v=20260928-r1';
-import { writeClientRecord } from './notification-events.js?v=20260930-r1';
-import { prepareNotificationSave } from './notification-publication.js?v=20260930-r1';
+import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a1';
+import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a1';
+import { writeClientRecord } from './notification-events.js?v=20261002-r2';
+import { prepareNotificationSave } from './notification-publication.js?v=20261003-a1';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
-import { notificationStatusHtml } from './notification-status.js?v=20260930-r1';
+import { notificationStatusHtml } from './notification-status.js?v=20261003-a1';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';
 import {uploadPortalImage} from './image-upload.js?v=20261001-r1';
 import {founderBranding,saveFounderBranding} from './founder-branding.js?v=20261001-r1';
+import {REVIEW_POLICY,REVIEW_POLICY_TEXT} from './review-policy.js?v=20260928-r1';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
 const firebaseConfig = { apiKey:'AIzaSyCFzQL7oBNA49r2xGh7DwiFmcTBFr1qqiM', authDomain:'visionflow-bd.firebaseapp.com', projectId:'visionflow-bd', storageBucket:'visionflow-bd.firebasestorage.app', messagingSenderId:'233587493754', appId:'1:233587493754:web:a9d064de81f356ab81e4c3' };
@@ -74,7 +76,9 @@ const dateValue = value => asValidDate(value)?.valueOf()||0;
 // A browser clock cannot safely verify a payment, delivery, or contract. The
 // portal therefore records only an explicit client action; no timer may turn a
 // pending request into a verified record.
-const pendingReview = () => '<span class="badge pending">Awaiting client confirmation</span>';
+const responseFor = (approval, projectKey) => artifacts(state.clientKey).confirms.find(c => c.kind !== 'feedback' && c.id === approval.id && (!c.projectKey || c.projectKey === projectKey));
+const approvalInfo = (approval, projectKey = state.projectKey) => approvalState(approval, responseFor(approval, projectKey));
+const isoText = ms => Number.isFinite(ms) ? dateText(new Date(ms).toISOString()) : '—';
 const client = () => state.mode === 'client' ? state.publicClient : state.clients[state.clientKey];
 const project = () => client()?.projects?.[state.projectKey];
 const deliveryLabels = p => ({ item:text(p?.itemLabel)||'Item / subject', title:text(p?.titleLabel)||'Deliverable title', showItem:p?.showItemField!==false });
@@ -86,8 +90,12 @@ const requests = (key = state.clientKey, projectKey = state.projectKey) => [...a
 const reviewOf = entry => client()?.feedbackReviews?.[entry.id] || {};
 const visibleRequests = () => requests().filter(r => reviewOf(r).status !== 'deleted');
 const sigReview = sig => client()?.signatureReviews?.[sig.id] || {};
-const activeSignature = () => projectSigs().filter(s => !['void','deleted'].includes(sigReview(s).state) && !signatureOutdated(s,project())).sort((a,b) => dateValue(b.signedAt)-dateValue(a.signedAt))[0];
-const confirmation = approval => artifacts(state.clientKey).confirms.find(c => c.kind !== 'feedback' && c.id === approval.id && (!c.projectKey || c.projectKey === state.projectKey));
+const activeSignature = () => {
+  const candidates = projectSigs().filter(s => !['void','deleted'].includes(sigReview(s).state) && !signatureOutdated(s,project()));
+  const expectedId = project()?.signatureId;
+  return (expectedId ? candidates.find(s => s.id === expectedId) : candidates.sort((a,b) => dateValue(b.signedAt)-dateValue(a.signedAt))[0]) || null;
+};
+const confirmation = approval => responseFor(approval, state.projectKey);
 const button = (label, action, data = '', classes = '') => `<button class="button ${classes}" type="button" data-action="${action}" ${data}>${esc(label)}</button>`;
 const field = (label,name,value='',type='text',extra='') => `<div class="field"><label for="f-${name}">${esc(label)}</label><input class="input" id="f-${name}" name="${name}" type="${type}" value="${type === 'file' ? '' : esc(value)}" ${extra}></div>`;
 const area = (label,name,value='',extra='') => `<div class="field"><label for="f-${name}">${esc(label)}</label><textarea class="textarea" id="f-${name}" name="${name}" ${extra}>${esc(value)}</textarea></div>`;
@@ -102,26 +110,23 @@ function fail(error) { console.error(error); notify(errorMessage(error),true); }
 function setRoute() { const q=new URLSearchParams(); if(state.mode==='client') q.set('access',state.token); else if(state.clientKey) q.set('c',state.clientKey); if(state.projectKey) q.set('p',state.projectKey); if(state.tab==='log') q.set('tab','log'); if(state.page==='trash') q.set('v','trash'); history.replaceState(null,'',`${location.pathname}${q.size?'?'+q:''}${location.hash}`); }
 function clientUrl(c, projectKey) { const token=c?.accessToken||state.token;if(!token)throw new Error('The private client link is unavailable. Refresh the workspace and try again.');const u=new URL(location.pathname,location.origin);u.searchParams.set('access',token);if(projectKey)u.searchParams.set('p',projectKey);return u.href; }
 
-function notificationBar() {
-  if(admin()) return '';
-  const p = project();
-  if(!p) return '';
-  const items = [];
-  const approvals=(p.approvals||[]).filter(a=>!confirmation(a));
-  if(approvals.length)items.push({icon:'📋',text:approvals.length+' update'+(approvals.length>1?'s':'')+' awaiting your confirmation',type:'info',hash:'#approvals'});
-  if(!onboarding.master())items.push({icon:'✍️',text:'Review and sign your master agreement once',type:'urgent',hash:'#master-agreement'});
-  else if(!onboarding.acknowledged(state.projectKey))items.push({icon:'📋',text:'Review changed project particulars',type:'urgent',hash:'#agreement'});
-  if(items.length === 0) return '';
-  
-  return '<div id="notif-area">' + items.map(it => 
-    '<div class="notif-card notif-'+it.type+'">' +
-    '<span class="notif-icon">'+it.icon+'</span>' +
-    '<span class="notif-text">'+it.text+'</span>' +
-    (it.hash ? '<a href="'+it.hash+'" class="notif-link">View →</a>' : '') +
-    '</div>'
-  ).join('') + '</div>';
+// Client action centre: every open task across projects, rendered inside the
+// page flow (never floating over navigation), plus the welcome/spam reminder.
+function actionCenter() {
+  if(state.mode!=='client'||!client())return '';
+  const c=client(),items=[],agency=onboarding.isAgencyPartner(),masterMissing=agency&&!onboarding.master();
+  if(masterMissing)items.push({urgent:true,text:'Sign your master agreement once to unlock final downloads',project:'',hash:'master-agreement'});
+  for(const [key,p] of projectsOf(c)){
+    if(state.projectKey&&key!==state.projectKey)continue;
+    const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');
+    const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
+    if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});
+    if(updates)items.push({text:`${p.name}: ${updates} update${updates>1?'s':''} awaiting your confirmation`,project:key,hash:'approvals'});
+    if(deliveries)items.push({text:`${p.name}: ${deliveries} deliver${deliveries>1?'ies':'y'} ready to verify & download`,project:key,hash:'approvals'});
+  }
+  const list=items.map(it=>`<li class="action-item${it.urgent?' urgent':''}"><span>${esc(it.text)}</span>${button('Open','go-action',`data-project="${esc(it.project)}" data-hash="${esc(it.hash)}"`,'small'+(it.urgent?' primary':''))}</li>`).join('');
+  return `<section class="action-center" id="action-center" aria-label="Your next steps"><div class="action-head"><div><p class="eyebrow">Welcome, ${esc(c.name)}</p><h2>${items.length?`${items.length} thing${items.length>1?'s':''} need${items.length>1?'':'s'} your attention`:'You are all caught up'}</h2></div></div>${items.length?`<ul class="action-list">${list}</ul>`:'<p class="muted">Every update and delivery is confirmed. New items will appear here.</p>'}<p class="small muted action-mail">We also email you every important update with a direct link. If you cannot find our email, please check your Spam or Promotions folder and mark Vision Flow as “Not spam”.</p></section>`;
 }
-function pendingCounts(){const p=project();if(!p)return'';const items=[];const unconfApp=(p.approvals||[]).filter(a=>!confirmation(a)).length;if(unconfApp)items.push(unconfApp+' pending approval'+(unconfApp>1?'s':''));if(!onboarding.master())items.push('Master agreement signature required');return items.length?`<div class="notif-bar">${items.join(' · ')}</div>`:'';}
 
 function hashScroll(){if(location.hash){let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}const el=document.getElementById(id);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',2000);}}}
 
@@ -130,7 +135,7 @@ function hashScroll(){if(location.hash){let id;try{id=decodeURIComponent(locatio
 function render() {
   if (!$('modalLayer').hidden || state.busy) return;
   $('topActions').innerHTML = state.mode==='admin' ? `${badge('active','Admin')}${button('Dashboard','dashboard')}${button('Notifications','notification-status')}${button('Recycle bin','trash')}${button('Sign out','logout')}` : state.mode==='client' ? badge('completed','Private client view') : '';
-  document.querySelectorAll('#notif-area').forEach(el=>el.remove());const _nb=notificationBar();if(_nb){const _nd=document.createElement('div');_nd.id='notif-wrap';_nd.innerHTML=_nb;const oldWrap=document.getElementById('notif-wrap');if(oldWrap)oldWrap.remove();$('topActions').after(_nd);}
+  document.getElementById('notif-wrap')?.remove();
   if(state.mode==='login') return renderLogin();
   if(state.mode==='error') { $('view').innerHTML=`<section class="empty"><h2>Workspace unavailable</h2><p>${esc(state.error)}</p><p class="muted" style="margin-top:12px;font-size:11px">If you believe this is a mistake, contact your Vision Flow administrator or request a new private link.</p></section>`+button('Try again','refresh'); return; }
   if(state.mode==='loading')return;
@@ -141,7 +146,7 @@ function render() {
   if(state.mode==='admin' && !state.clientKey) return renderDashboard();
   if(!client()) { $('view').innerHTML=empty('This workspace is not available','The private link may have been disabled. Ask Vision Flow for the current link.'); return; }
   if(state.projectKey && !project())state.projectKey=null;
-  $('view').innerHTML=(state.projectKey ? projectView() : clientView())+renderReviewPanel({...artifacts(state.clientKey),feedbackReviews:client().feedbackReviews,projectKey:state.projectKey,canRespond:state.mode==='client',canManage:admin()})+`<p class="footer-note">Vision Flow · Live project workspace · ${client().lastUpdated ? `Updated ${esc(dateText(client().lastUpdated))}` : 'Ready for your next update'}</p>`;
+  $('view').innerHTML=actionCenter()+(state.projectKey ? projectView() : clientView())+renderReviewPanel({...artifacts(state.clientKey),feedbackReviews:client().feedbackReviews,projectKey:state.projectKey,projectNames:Object.fromEntries(projectsOf(client()).map(([k,p])=>[k,p.name])),canRespond:state.mode==='client',canManage:admin()})+`<p class="footer-note">Vision Flow · Live project workspace · ${client().lastUpdated ? `Updated ${esc(dateText(client().lastUpdated))}` : 'Ready for your next update'}</p>`;
   $('view').querySelectorAll('[data-id]').forEach(control=>{const row=control.closest('.list-row');if(row&&!row.id)row.id=`evidence-${control.dataset.id}`;});
   if(state.tab==='log') applyFilters();
   setTimeout(hashScroll,500);
@@ -173,7 +178,24 @@ function projectView() {
 }
 function scopeView(p){return `<section class="panel" style="margin-top:16px"><div class="panel-head"><h3>Project particulars</h3>${button('Open terms & agreement','agreement')}</div><div class="scope-grid"><p><strong>Scope / description</strong><br><span class="prewrap">${esc(p.scope||'Project scope can be confirmed with Vision Flow before signing.')}</span></p><p><strong>Target date</strong><br>${p.deadline?fmtDate(p.deadline):'Not set'}</p><p><strong>Weekly target</strong><br>${p.weeklyTarget?esc(p.weeklyTarget)+' deliverables':'Not set'}</p><p><strong>Next milestone</strong><br><span class="prewrap">${esc(p.milestoneText||'Not set')}</span></p><p><strong>Payment & delivery terms</strong><br><span class="prewrap">${esc(p.terms||'No additional project-specific terms recorded.')}</span></p><p><strong>Source material</strong><br>${link(p.sourceScriptUrl,'Source scripts')||'—'}<br>${link(p.avatarFolderUrl,'Character references')||'—'}</p></div></section>`;}
 function paymentView(p){const rows=p.payments||[];return `<div class="panel-head"><h3>Payments</h3>${badge('active',money(metrics(p).paid)+' recorded')}</div>${[...rows].reverse().map(pay=>`<div class="list-row"><div class="record"><span class="record-mark ok">৳</span><div><strong>${money(pay.amount)} · ${esc(pay.type)}</strong><p>${fmtDate(pay.date)}${pay.note?' · '+esc(pay.note):''}</p>${safeUrl(pay.proofUrl)?`<a href="${esc(safeUrl(pay.proofUrl))}" target="_blank" rel="noopener noreferrer"><img class="payment-proof" src="${esc(safeUrl(pay.proofUrl))}" alt="Payment proof for ${fmtDate(pay.date)}"></a>`:''}</div>${admin()?`<div class="row-actions">${button('Edit','edit-payment',`data-id="${esc(pay.id)}"`)}${button('Bin','archive-payment',`data-id="${esc(pay.id)}"`,'danger')}</div>`:''}</div></div>`).join('')||'<p class="muted">No payment recorded yet.</p>'}`;}
-function approvalView(p){return `<div class="panel-head"><h3>Approvals</h3>${badge('active',(p.approvals||[]).length+' requests')}</div>${[...(p.approvals||[])].reverse().map(a=>{const c=confirmation(a);const rej=c&&c.kind==='rejected';const rejPending=c&&c.kind==='rejection-pending';return `<div class="list-row"><strong>${esc(a.title)}</strong><p class="prewrap">${linkify(a.desc)}</p>${rej?'<div class="rejection-card"><div class="rejection-header">'+badge('danger','Rejected')+' <span class="rejection-date">'+esc(dateText(c.confirmedAt))+'</span></div><div class="rejection-reason"><strong>Reason for rejection:</strong><p class="prewrap">'+esc(c.rejectReason||'No reason provided')+'</p></div></div>':rejPending?'<div class="rejection-card rejection-pending"><div class="rejection-header">'+badge('warn','Rejection submitted')+' <span class="rejection-date">'+esc(dateText(c.confirmedAt))+'</span></div><div class="rejection-reason"><strong>Client\'s reason:</strong><p class="prewrap">'+esc(c.rejectReason||'No reason provided')+'</p></div></div>':c?'<p>Confirmed '+esc(dateText(c.confirmedAt))+'</p>':'<p>'+pendingReview()+'</p>'}<div class="actions wrap">${admin()?button('Edit','edit-approval','data-id="'+esc(a.id)+'"')+(rejPending?button('Confirm rejection','confirm-rejection','data-id="'+esc(a.id)+'"','danger')+button('Dismiss rejection','reset-approval','data-id="'+esc(a.id)+'"'):c?button('Reset confirmation','reset-approval','data-id="'+esc(a.id)+'"'):'')+button('Bin','archive-approval','data-id="'+esc(a.id)+'"','danger'):!c?button('Confirm update','confirm-approval','data-id="'+esc(a.id)+'"','primary')+button('Reject','reject-approval','data-id="'+esc(a.id)+'"','danger'):rejPending?badge('warn','Rejection under review'):rej?badge('danger','Rejected'):badge('delivered','Confirmed')}</div></div>`;}).join('')||'<p class="muted">No updates are waiting for confirmation.</p>'}`;}
+function approvalCard(a){
+  const v=approvalInfo(a),c=v.response,id=`data-id="${esc(a.id)}"`,delivery=a.kind==='delivery';
+  const rejection=(cls,label,heading)=>`<div class="rejection-card${cls}"><div class="rejection-header">${badge(cls?'warn':'danger',label)} <span class="rejection-date">${esc(dateText(c.confirmedAt))}</span></div><div class="rejection-reason"><strong>${heading}</strong><p class="prewrap">${esc(c.rejectReason||'No reason was recorded with this older rejection.')}</p></div></div>`;
+  const status=v.state==='rejected'?rejection('','Rejected','Reason for rejection:')
+    :v.state==='rejection-pending'?rejection(' rejection-pending','Rejection submitted','Client’s reason:')
+    :v.state==='confirmed'?`<p>${badge('delivered',delivery?'Verified':'Confirmed')} <span class="small muted">${esc(dateText(c.confirmedAt))}</span></p>`
+    :v.state==='deemed'?`<p>${badge('completed','Deemed accepted')} <span class="small muted">No response within 72 hours · window ended ${esc(isoText(v.deadline))}</span></p>`
+    :`<p>${badge('pending',admin()?'Awaiting client confirmation':delivery?'Ready for your verification':'Awaiting your confirmation')}</p>${countdownHtml(v.deadline,Date.now(),'Review window ended — counted as accepted')}${v.deadline?`<p class="small muted">${admin()?'No client response by':'Please respond by'} ${esc(isoText(v.deadline))}${admin()?' counts as accepted.':'. No response within 72 hours counts as accepted.'}</p>`:''}`;
+  const actions=admin()?button('Edit','edit-approval',id)+(v.state==='rejection-pending'?button('Confirm rejection','confirm-rejection',id,'danger')+button('Dismiss rejection','reset-approval',id):c?button('Reset response','reset-approval',id):'')+button('Bin','archive-approval',id,'danger')
+    :v.state==='pending'?button(delivery?'Verify delivery':'Confirm update','confirm-approval',id,'primary')+button('Reject','reject-approval',id,'danger'):'';
+  return `<div class="list-row approval-row" id="approval-${esc(a.id)}"><strong>${esc(a.title)}</strong>${a.createdAt?`<p class="small muted">Requested ${esc(dateText(a.createdAt))}</p>`:''}<p class="prewrap">${linkify(a.desc)}</p>${status}${actions?`<div class="actions wrap">${actions}</div>`:''}</div>`;
+}
+function approvalView(p){
+  const order=a=>dateValue(a.createdAt||a.updatedAt);
+  const rows=[...(p.approvals||[])].sort((a,b)=>order(b)-order(a));
+  const open=rows.filter(a=>['pending','rejection-pending'].includes(approvalInfo(a).state)),done=rows.filter(a=>!open.includes(a));
+  return `<div class="panel-head"><h3>Approvals</h3>${badge(open.length?'pending':'active',open.length?`${open.length} open · ${rows.length} total`:`${rows.length} total`)}</div>${open.map(approvalCard).join('')||'<p class="muted">Nothing is waiting for confirmation.</p>'}${done.length?`<details class="history-more"><summary>Approval history (${done.length})</summary>${done.map(approvalCard).join('')}</details>`:''}`;
+}
 function signatureView(p){return onboarding.projectPanel()+(projectSigs().length?`<section class="panel" style="margin-top:16px">${button('Historical project signatures','legacy-signatures')}</section>`:'');}
 function legacySignatureView(p){
   const sig=activeSignature(); const historical=projectSigs().filter(s=>!['void','deleted'].includes(sigReview(s).state)).sort((a,b)=>dateValue(b.signedAt)-dateValue(a.signedAt));const list=admin()?projectSigs():(sig?[sig]:historical.slice(0,1));
@@ -188,12 +210,15 @@ function productionView(){
       // Gated delivery: client dl requires active signature
       if(column.key==='dl' && !admin()) {
         if(!item.hasDelivery && !item.dl) return '—';
-        if(!onboarding.master()||!onboarding.acknowledged(state.projectKey)) return '<button class="button small primary" type="button" data-action="sign-required">Review agreement to download</button>';
-        const deliveryId = String(item.n);
-        return '<button class="button small" type="button" data-action="gated-download" data-delivery="' + esc(deliveryId) + '">Download</button>';
+        if(!onboarding.projectReady(state.projectKey)) return '<button class="button small primary" type="button" data-action="sign-required">Review agreement to download</button>';
+        const d=downloadDecision(p,item,confirmation),attr=`type="button" data-action="gated-download" data-delivery="${esc(String(item.n))}"`;
+        if(d.allowed)return `<button class="button small" ${attr}>Download</button>${d.reason==='deemed'?'<span class="small muted cell-note">Auto-verified</span>':''}`;
+        if(d.reason==='pending')return `<button class="button small primary" ${attr}>Verify &amp; download</button>`;
+        return `<button class="button small" ${attr}>${d.reason==='rejection-pending'?'Rejection under review':'Revision in progress'}</button>`;
       }
       const url = safeUrl(item[column.key]);
       if(!url) return '—';
+      if(column.key==='dl'&&admin()){const d=downloadDecision(p,{...item,hasDelivery:true},confirmation);const note=d.reason==='legacy'?'':{confirmed:'Verified',deemed:'Auto-verified (72h)',pending:'Awaiting verification','rejection-pending':'Rejection submitted',rejected:'Rejected'}[d.reason]||'';return link(url,'Open')+(note?`<span class="small muted cell-note">${esc(note)}</span>`:'');}
       return link(url, 'Open');
     }
     return column.type==='date'&&item[column.key]?fmtDate(item[column.key]):esc(item[column.key]||'—');
@@ -224,7 +249,8 @@ function startClient(access){
   rootStop=onSnapshot(doc(db,'portal_public',access),snap=>{if(!snap.exists()||snap.data().enabled===false){state.mode='error';state.error='This private link is no longer active. It may have been replaced or disabled by the administrator. Please contact Vision Flow for a current link.';render();return;}state.publicClient=normalizeClient(snap.data(),snap.data().clientSlug);state.clientKey=state.publicClient.clientSlug;watchArtifacts(state.clientKey,{accessToken:access});render();},error=>{state.mode='error';state.error=error.code?.includes('permission-denied')?'This private link is unavailable or has been disabled. Ask Vision Flow for a current link.':errorMessage(error);render();});
 }
 async function saveClient(draft,notice='Saved',operations=[],{allowRecovery=false,manualNotice=null}={}){
-  requireAdmin();const next=normalizeClient(draft,draft.slug);const expected=Number(draft._revision)||0;next.lastUpdated=now();next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
+  requireAdmin();const next=normalizeClient(draft,draft.slug);const expected=Number(draft._revision)||0;next.lastUpdated=now();
+  if(!allowRecovery&&!next._deleted)operations=[...operations,...ensureDeliveryApprovals(next,next.lastUpdated).map(id=>({path:['confirms',id],delete:true}))];next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
   if(operations.length>MAX_SAVE_OPERATIONS)throw new Error('This operation is too large for one save. Export a backup and process records in smaller groups.');
   await runTransaction(db,async tx=>{
     const ref=doc(db,'portal_clients',next.slug),current=await tx.get(ref),persisted=current.data();
@@ -270,10 +296,15 @@ function confirmAction(message){
   });
 }
 function waLink(){const c=client(),phone=(c.phone||'').replace(/[^0-9]/g,'');if(!phone){notify('No phone number saved for this client.');return;}const msg=encodeURIComponent('Hello '+c.name+', please check your project portal for updates: '+clientUrl(c,state.projectKey));window.open('https://wa.me/'+phone+'?text='+msg,'_blank');}
-function mailLink(){const c=client();if(!c.email){notify('No email saved for this client.');return;}const subj=encodeURIComponent('Project Update - Vision Flow');const body=encodeURIComponent('Hello '+c.name+',\n\nPlease check your project portal for the latest updates:\n'+clientUrl(c,state.projectKey)+'\n\nBest regards,\nVision Flow Agency');window.open('mailto:'+c.email+'?subject='+subj+'&body='+body,'_blank');}
+function mailLink(){
+  requireAdmin();const c=client();if(!c.email){notify('Save this client\'s email before sending.');return;}
+  modal('Email this project','The agency worker sends this message to the saved client address. This creates a new reviewable update; the old history stays intact.',`${field('Update title','title','Project update','text','required maxlength="200"')}${area('Message visible to the client','message','','required minlength="10" maxlength="4000"')}<p class="small muted">The email includes this project\'s private action link. Queued does not mean sent. If notifications or the worker are paused, it waits in the queue.</p>`,async data=>{
+    await saveClient(clone(c),'Email queued; open Notification queue to check its status.',[],{manualNotice:{projectKey:state.projectKey,title:text(data.get('title')),message:text(data.get('message'))}});finishModal();
+  },'Queue agency email');
+}
 function openClientForm(edit=false){
-  requireAdmin();const draft=edit?clone(client()):normalizeClient({name:'',accessEnabled:true},'');
-  modal(edit?'Edit client':'Create a client','A private share link is created automatically.',`${field('Client name','name',draft.name,'text','required maxlength="120"')}${!edit?field('URL label','slug','','text','required pattern="[a-z0-9-]+" maxlength="80"'):''}${field('Email','email',draft.email||'','email')}${field('Phone','phone',draft.phone||'')}`,async data=>{const c=clone(draft);if(!edit){c.slug=text(data.get('slug'));if(state.clients[c.slug])throw new Error('This URL label already exists, including the recycle bin. Choose a different label.');c.createdAt=now();}c.name=text(data.get('name'));c.email=text(data.get('email'));c.phone=text(data.get('phone'));await saveClient(c,edit?'Client updated':'Client created');state.clientKey=c.slug;state.projectKey=null;finishModal();});
+  requireAdmin();const draft=edit?clone(client()):normalizeClient({name:'',accessEnabled:true},'');draft.agreementMode=draft.agreementMode==='project'?'project':'agency-partner';
+  modal(edit?'Edit client':'Create a client','A private share link is created automatically.',`${field('Client name','name',draft.name,'text','required maxlength="120"')}${!edit?field('URL label','slug','','text','required pattern="[a-z0-9-]+" maxlength="80"'):''}${field('Email','email',draft.email||'','email')}${field('Phone','phone',draft.phone||'')}${select('Agreement route','agreementMode',[['agency-partner','Agency partner — one master signature across projects'],['project','Project-by-project signature']],draft.agreementMode)}`,async data=>{const c=clone(draft);if(!edit){c.slug=text(data.get('slug'));if(state.clients[c.slug])throw new Error('This URL label already exists, including the recycle bin. Choose a different label.');c.createdAt=now();}c.name=text(data.get('name'));c.email=text(data.get('email'));c.phone=text(data.get('phone'));c.agreementMode=data.get('agreementMode')==='project'?'project':'agency-partner';await saveClient(c,edit?'Client updated':'Client created');state.clientKey=c.slug;state.projectKey=null;finishModal();});
 }
 function approvalSuggestion(title,desc){modal('Request client confirmation?','Your change is saved. Add a review request only when the client needs to explicitly confirm it.',`${field('Approval title','title',title,'text','required maxlength="200"')}${area('Message','desc',desc,'required maxlength="4000"')}`,async data=>{const c=clone(client());c.projects[state.projectKey].approvals.push({id:uid('approval'),title:text(data.get('title')),desc:text(data.get('desc')),createdAt:now()});await saveClient(c,'Approval request sent');await sendNotification({type:'approval',projectName:c.projects[state.projectKey].name,message:text(data.get('title'))+' - '+text(data.get('desc'))});finishModal();},'Send approval request');}
 function openProjectForm(edit=false){
@@ -282,7 +313,7 @@ function openProjectForm(edit=false){
 }
 function openItem(number){
   requireAdmin();const draft=clone(client()),p=draft.projects[state.projectKey],i=p.items.find(x=>Number(x.n)===number);if(!i)return;const labels=deliveryLabels(p);
-  modal(`Edit deliverable ${number}`,'Every source and delivery link you add is shown to the client in its own column. Internal notes never leave the administrator workspace.',`<div class="form-grid two">${labels.showItem?field(labels.item,'b',i.b||''):''}${field(labels.title,'t',i.t||'')}${select('Status','s',STATUS,i.s)}${field('Batch','batch',i.batch||(number<=50?1:2),'number','min="1" max="100"')}${field('Started date','sd',i.sd||'','date')}${field('Delivered date','dd',i.dd||'','date')}${field('Duration','dur',i.dur||'')}</div>${field('Final delivery / Drive link','dl',i.dl||'','url')}${field('Script URL','scriptUrl',i.scriptUrl||'','url')}${field('Character / avatar URL','avatarUrl',i.avatarUrl||'','url')}${field('Reference URL','referenceUrl',i.referenceUrl||'','url')}${area('Client-visible delivery note','clientNote',i.clientNote||'','maxlength="4000"')}${area('Internal admin note — never visible to the client','no',i.no||'','maxlength="4000"')}${button('Move row to bin','archive-item',`data-number="${number}"`,'danger')}`,async data=>{const c=clone(draft),item=c.projects[state.projectKey].items.find(x=>Number(x.n)===number);for(const f of ['t','s','sd','dd','dur','dl','scriptUrl','avatarUrl','referenceUrl','clientNote','no'])item[f]=text(data.get(f));if(labels.showItem)item.b=text(data.get('b'));item.batch=Number(data.get('batch'));await saveClient(c,'Deliverable updated');finishModal();if(isDone(item)&&item.s!==i.s){const name=[labels.showItem&&item.b,item.t].filter(Boolean).join(' — ');sendNotification({type:'delivery',projectName:c.projects[state.projectKey].name,videoTitle:name,deliveryNum:number,note:item.clientNote||''});approvalSuggestion(`Deliverable ${number} — ${LABEL[item.s]}`,`${name}\nPlease review this delivery and confirm.`);}});
+  modal(`Edit deliverable ${number}`,'Every source and delivery link you add is shown to the client in its own column. Internal notes never leave the administrator workspace.',`<div class="form-grid two">${labels.showItem?field(labels.item,'b',i.b||''):''}${field(labels.title,'t',i.t||'')}${select('Status','s',STATUS,i.s)}${field('Batch','batch',i.batch||(number<=50?1:2),'number','min="1" max="100"')}${field('Started date','sd',i.sd||'','date')}${field('Delivered date','dd',i.dd||'','date')}${field('Duration','dur',i.dur||'')}</div>${field('Final delivery / Drive link','dl',i.dl||'','url')}${field('Script URL','scriptUrl',i.scriptUrl||'','url')}${field('Character / avatar URL','avatarUrl',i.avatarUrl||'','url')}${field('Reference URL','referenceUrl',i.referenceUrl||'','url')}${area('Client-visible delivery note','clientNote',i.clientNote||'','maxlength="4000"')}${area('Internal admin note — never visible to the client','no',i.no||'','maxlength="4000"')}${button('Move row to bin','archive-item',`data-number="${number}"`,'danger')}`,async data=>{const c=clone(draft),item=c.projects[state.projectKey].items.find(x=>Number(x.n)===number);for(const f of ['t','s','sd','dd','dur','dl','scriptUrl','avatarUrl','referenceUrl','clientNote','no'])item[f]=text(data.get(f));if(labels.showItem)item.b=text(data.get('b'));item.batch=Number(data.get('batch'));await saveClient(c,'Deliverable updated');finishModal();if(isDone(item)&&item.s!==i.s){const name=[labels.showItem&&item.b,item.t].filter(Boolean).join(' — ');sendNotification({type:'delivery',projectName:c.projects[state.projectKey].name,videoTitle:name,deliveryNum:number,note:item.clientNote||''});}});
 }
 function portalUploadOptions(form){
   return {authorize:requireAdmin,observeAuth:listener=>onAuthStateChanged(auth,user=>listener(user?.uid===ADMIN_UID)),
@@ -344,10 +375,10 @@ async function prepareFounderPreview(input){
 let notificationPageCursor=null;
 async function openNotificationStatus(next=false){
   requireAdmin();
-  const snapshot=await getDocs(query(collection(db,'portal_outbox'),orderBy(documentId()),...(next&&notificationPageCursor?[startAfter(notificationPageCursor)]:[]),limit(40)));
+  const snapshot=await getDocs(query(collection(db,'portal_outbox'),orderBy('createdAt','desc'),...(next&&notificationPageCursor?[startAfter(notificationPageCursor)]:[]),limit(40)));
   notificationPageCursor=snapshot.docs.at(-1)||null;
-  modal('Notification queue','Read-only status, 40 events per page in event-ID order. Provider handoff does not confirm inbox delivery.',
-    `${notificationStatusHtml(snapshot.docs.map(d=>({...d.data(),id:d.id})),state.clients)}<div class="actions wrap">${button('First page / refresh','notification-status')}${snapshot.size===40?button('Next page','notification-next'):''}${button('Notification preferences','email-settings')}</div><p class="small muted">For uncertain sends, check the authorized sender log or recipient inbox before reissuing. Publish a fresh review from its project when a superseded update or changed agreement needs review; old records stay intact.</p>`,null);
+  modal('Email notifications','Newest first, 40 per page. “Sent” means Gmail accepted the message; the recipient inbox is not confirmed.',
+    `${notificationStatusHtml(snapshot.docs.map(d=>({...d.data(),id:d.id})),state.clients)}<div class="actions wrap">${button('First page / refresh','notification-status')}${snapshot.size===40?button('Next page','notification-next'):''}${button('Notification preferences','email-settings')}</div><p class="small muted">If a message shows an uncertain status, check the sender’s Gmail “Sent” folder before sending again.</p>`,null);
 }
 async function openEmailSettings(){
   requireAdmin();
@@ -355,17 +386,17 @@ async function openEmailSettings(){
   const existing=privateSnap.exists()?privateSnap.data():{},settings=notificationSettings(existing);
   const site=siteSnap.data()||{},legacyKeys=['emailWebhookUrl','adminWebhookUrl','adminEmail','senders','enableEmail'];
   const hasLegacy=legacyKeys.some(key=>Object.hasOwn(site.notifications||{},key)||Object.hasOwn(site.site?.notifications||{},key));
-  modal('Trusted email settings','Notifications are queued with their source records. Only the configured trusted worker may send them.',
-    `<label class="check-field"><input type="checkbox" name="enabled" ${settings.enabled?'checked':''}> Allow the trusted worker to process new notifications</label>
-    <p class="small muted">This control cannot deploy or authorize the worker. Its owner must complete server setup first. Provider handoff is not inbox delivery. Changing a display name or reply-to does not change the authenticated sending account.</p>
-    <h3>Client notifications</h3><label class="check-field"><input type="checkbox" name="clientEnabled" ${settings.clientEnabled?'checked':''}> Send client updates to each client's saved email</label>
-    ${field('Client sender display name','clientSenderName',settings.clientSenderName,'text','required maxlength="120"')}
-    ${field('Client reply-to','clientReplyTo',settings.clientReplyTo,'email','maxlength="254"')}
-    <h3>Internal-team alerts</h3><label class="check-field"><input type="checkbox" name="adminEnabled" ${settings.adminEnabled?'checked':''}> Send internal action alerts</label>
-    ${field('Team recipient','adminEmail',settings.adminEmail,'email','maxlength="254"')}
-    ${field('Team sender display name','adminSenderName',settings.adminSenderName,'text','required maxlength="120"')}
-    ${field('Team reply-to','adminReplyTo',settings.adminReplyTo,'email','maxlength="254"')}
-    <p class="small muted">Client and internal messages use separate destinations and branding. Multiple authenticated sender accounts require separate authorized runtime setup; this form does not provision accounts or bypass provider quotas.</p>
+  modal('Email settings','Choose who receives automatic emails. Emails are sent from the agency Gmail account by the Vision Flow email service.',
+    `<label class="check-field"><input type="checkbox" name="enabled" ${settings.enabled?'checked':''}> Send automatic emails</label>
+    <p class="small muted">Turn this off to pause all emails; nothing is lost — paused emails wait and send when you turn it back on. The display name and reply-to change how emails look, not the sending Gmail account.</p>
+    <h3>Client notifications</h3><label class="check-field"><input type="checkbox" name="clientEnabled" ${settings.clientEnabled?'checked':''}> Email clients about updates, deliveries, payments and approvals</label>
+    ${field('Sender name shown to clients','clientSenderName',settings.clientSenderName,'text','required maxlength="120"')}
+    ${field('Client replies go to (optional)','clientReplyTo',settings.clientReplyTo,'email','maxlength="254"')}
+    <h3>Admin alerts</h3><label class="check-field"><input type="checkbox" name="adminEnabled" ${settings.adminEnabled?'checked':''}> Email me when a client confirms, rejects, signs or sends feedback</label>
+    ${field('Admin alert email','adminEmail',settings.adminEmail,'email','maxlength="254"')}
+    ${field('Sender name for admin alerts','adminSenderName',settings.adminSenderName,'text','required maxlength="120"')}
+    ${field('Admin alert reply-to (optional)','adminReplyTo',settings.adminReplyTo,'email','maxlength="254"')}
+    <p class="small muted">Gmail allows about 100 recipients per day on this account.</p>
     ${hasLegacy?'<p class="small muted">Saving also removes retired relay settings from public website data. No browser will send to those endpoints.</p>':''}`,
     async data=>{
       const value=validateNotificationSettings(notificationSettings({...Object.fromEntries(data),enabled:data.get('enabled')==='on',clientEnabled:data.get('clientEnabled')==='on',adminEnabled:data.get('adminEnabled')==='on'}));
@@ -379,7 +410,7 @@ function openPayment(id){
   requireAdmin();const draft=clone(client()),existing=project().payments.find(p=>p.id===id),p=clone(existing||{date:localDay(),amount:'',type:'Advance',note:''});
   modal(existing?'Edit payment':'Record payment','Upload proof here. The preview appears before saving.',`<div class="form-grid two">${field('Payment date','date',p.date,'date','required')}${field('Amount (BDT)','amount',p.amount,'number','min="0" step="0.01" required')}${select('Payment type','type',['Advance','Milestone','bKash','Nagad','Bank transfer','Final','Other'],p.type)}</div>${area('Payment note','note',p.note||'','maxlength="2000"')}${field('Payment proof image','proof','','file','accept="image/png,image/jpeg,image/webp,image/gif"')}${p.proofUrl?`<label><input type="checkbox" name="removeProof"> Remove existing proof</label>`:''}<img id="proofPreview" class="preview ${p.proofUrl?'visible':''}" ${safeUrl(p.proofUrl)?`src="${esc(safeUrl(p.proofUrl))}"`:''} alt="Payment proof preview">`,async(data,form)=>{const c=clone(draft),pay=clone(p);pay.date=text(data.get('date'));pay.amount=validateAmount(data.get('amount'));pay.type=text(data.get('type'));pay.note=text(data.get('note'));if(data.get('removeProof'))delete pay.proofUrl;const file=form.elements.proof.files[0];if(file)pay.proofUrl=await uploadProof(file,form);pay.id ||= uid('payment');pay.recordedAt ||= now();delete pay.verifyDeadline;const rows=c.projects[state.projectKey].payments;const index=rows.findIndex(x=>x.id===id);index<0?rows.push(pay):rows.splice(index,1,pay);await saveClient(c,'Payment saved');const pm=metrics(c.projects[state.projectKey]);await sendNotification({type:'payment',projectName:c.projects[state.projectKey].name,amount:pay.amount,paymentType:pay.type,date:fmtDate(pay.date),method:pay.type,totalPaid:pm.paid,totalDue:pm.budget-pm.paid,budget:pm.budget,proofUrl:pay.proofUrl||''});finishModal();});
 }
-function openApproval(id){requireAdmin();const draft=clone(client()),a=clone(project().approvals.find(a=>a.id===id)||{title:'',desc:''});modal(id?'Edit approval':'Request approval','The client can explicitly confirm or reject this update from the overview.',`${field('Title','title',a.title,'text','required maxlength="200"')}${area('What should the client review?','desc',a.desc,'required maxlength="4000"')}`,async data=>{const c=clone(draft),rows=c.projects[state.projectKey].approvals;const entry={...a,id:id?uid('approval'):a.id||uid('approval'),title:text(data.get('title')),desc:text(data.get('desc')),createdAt:a.createdAt||now(),updatedAt:now()};delete entry.verifyDeadline;const index=rows.findIndex(x=>x.id===id);index<0?rows.push(entry):rows.splice(index,1,entry);const ops=id?[{path:['confirms',id],delete:true}]:[];await saveClient(c,id?'Approval updated; client review restarted':'Approval requested',ops);finishModal();});}
+function openApproval(id){requireAdmin();const draft=clone(client()),a=clone(project().approvals.find(a=>a.id===id)||{title:'',desc:''});modal(id?'Edit approval':'Request approval','The client can explicitly confirm or reject this update from the overview.',`${field('Title','title',a.title,'text','required maxlength="200"')}${area('What should the client review?','desc',a.desc,'required maxlength="4000"')}`,async data=>{const c=clone(draft),rows=c.projects[state.projectKey].approvals;const entry={...a,id:id?uid('approval'):a.id||uid('approval'),title:text(data.get('title')),desc:text(data.get('desc')),createdAt:id?now():a.createdAt||now(),updatedAt:now()};delete entry.verifyDeadline;const index=rows.findIndex(x=>x.id===id);index<0?rows.push(entry):rows.splice(index,1,entry);const ops=id?[{path:['confirms',id],delete:true}]:[];await saveClient(c,id?'Approval updated; client review restarted':'Approval requested',ops);finishModal();});}
 async function submitClientEvidence(id,data,attachments=[]){
   const root=`portal_public/${state.token}`;
   return submitReviewEvidence({root,collection:'confirms',id,data,attachments,timestamp:serverTimestamp(),transaction:fn=>runTransaction(db,tx=>fn({get:async path=>{const snap=await tx.get(doc(db,path));return snap.exists()?snap.data():null;},set:(path,value)=>tx.set(doc(db,path),value)}))});
@@ -404,9 +435,29 @@ async function downloadFeedbackAttachment(source){
   // Never execute or embed client documents in the authenticated portal origin.
   download(meta.name,bytes,'application/octet-stream');
 }
-function openFeedbackReview(id,collectionName){requireAdmin();const draft=clone(client()),entry=requests().find(r=>r.id===id&&r.collection===collectionName);if(!entry)throw new Error('Request no longer exists.');const r=reviewOf(entry);modal('Manage client request',`Received ${dateText(entry.submittedAt)}`,`${area('Client request text','message',r.displayMessage??entry.message,'required maxlength="4000"')}${select('Status','status',[['new','New'],['in-progress','In progress'],['resolved','Resolved'],['closed','Closed']],r.status||'new')}${area('Reply visible to client','response',r.response||'','maxlength="4000"')}${button('Move request to bin','archive-feedback',`data-id="${esc(id)}" data-collection="${collectionName}"`,'danger')}`,async data=>{const c=clone(draft);c.feedbackReviews[id]={status:text(data.get('status')),displayMessage:text(data.get('message')),response:text(data.get('response')),updatedAt:now()};await saveClient(c,'Client request updated',[],{manualNotice:{projectKey:entry.projectKey,title:'Response to your feedback',message:text(data.get('response'))||'Your request status was updated. Please review the feedback section.'}});finishModal();});}
+function openFeedbackReview(id,collectionName){
+  requireAdmin();const draft=clone(client()),entry=requests().find(r=>r.id===id&&r.collection===collectionName);if(!entry)throw new Error('Request no longer exists.');
+  const r=reviewOf(entry);
+  modal('Manage client request',`Received ${dateText(entry.submittedAt||entry.confirmedAt)}`,`${area('Client request text','message',r.displayMessage??entry.message??entry.rejectReason??'Client response','required maxlength="4000"')}${select('Status','status',[['new','New'],['in-progress','In progress'],['resolved','Resolved'],['closed','Closed']],r.status||'new')}${select('Optional reply starter','replyStarter',[['','Write a custom reply'],['Please clarify the requested changes so we can proceed.','Clarification needed'],['The requested changes are outside the agreed scope. Please contact us to confirm the revised scope and cost.','Scope change'],['We have addressed your feedback. Please review the updated project and tell us if anything remains.','Changes ready for review']], '')}${area('Reply visible to client','response',r.response||'','maxlength="4000"')}${button('Move request to bin','archive-feedback',`data-id="${esc(id)}" data-collection="${collectionName}"`,'danger')}`,async data=>{
+    const c=clone(draft),response=[text(data.get('replyStarter')),text(data.get('response'))].filter(Boolean).join('\n\n'),status=text(data.get('status'));
+    if(['resolved','closed'].includes(status)&&response.length<10)throw Error('Explain the resolution or closure in at least 10 characters.');
+    if(response.length>4000)throw Error('Keep the combined reply within 4,000 characters.');
+    c.feedbackReviews[id]={status,displayMessage:text(data.get('message')),response,updatedAt:now()};
+    await saveClient(c,'Client reply saved and email queued',[],{manualNotice:{projectKey:entry.projectKey,title:'Response to your feedback',message:response||'Your request is being reviewed. Please check its current status.',responseTarget:{kind:entry.requestId?'review':'evidence',id:entry.requestId||entry.id}}});finishModal();
+  });
+}
 function termsHtml(t){return `<div class="agreement"><p class="eyebrow">Project agreement · ${esc(t.agreementVersion||'Legacy record')}</p><h3>${esc(t.projectName)}</h3><p>${t.totalItems} deliverables · ${money(t.rate)} each · Agreed budget ${money(t.budget)}</p><div class="scope-grid"><p><strong>Scope / description</strong><br><span class="prewrap">${esc(t.scope||'To be confirmed in writing')}</span></p><p><strong>Payment & delivery terms</strong><br><span class="prewrap">${esc(t.terms||'No additional project-specific terms recorded.')}</span></p><p><strong>Schedule</strong><br>Target date: ${esc(t.deadline||'Not set')}<br>Weekly target: ${t.weeklyTarget||'Not set'}</p><p><strong>Next milestone</strong><br><span class="prewrap">${esc(t.milestoneText||'Not set')}</span></p></div><p class="small muted">The complete numbered Terms & Agreement PDF is available from the project overview.</p></div>`;}
-function openSignature(){const terms=agreementTerms(project());modal('Review and sign','Your signature records these project terms and the signing time.',`${termsHtml(terms)}${field('Full name','name','','text','required maxlength="200"')}<canvas id="signatureCanvas" class="signature-pad" aria-label="Draw your signature with mouse or touch"></canvas>${button('Clear signature','clear-signature')}<label><input type="checkbox" name="agree" required> I have reviewed these details and agree to this project record.</label>`,async data=>{if(!pad?.drawn)throw new Error('Please draw your signature before submitting.');await setDoc(doc(db,'portal_public',state.token,'sigs',uid('signature')),{projectKey:state.projectKey,name:text(data.get('name')),image:pad.canvas.toDataURL('image/png'),signedAt:serverTimestamp(),userAgent:navigator.userAgent,termsSnapshot:terms});notify('Signature saved');finishModal();},'Save signature');initPad();}
+function openSignature(){
+  const terms=agreementTerms(project()),signatureId=project()?.signatureId;
+  if(!signatureId)throw new Error('This project signature route is unavailable. Refresh the workspace and retry.');
+  modal('Review and sign','Your signature records these project terms and the signing time.',`${termsHtml(terms)}<h3>72-hour review policy</h3><p>${esc(REVIEW_POLICY_TEXT)}</p>${field('Full name','name','','text','required maxlength="200"')}<canvas id="signatureCanvas" class="signature-pad" aria-label="Draw your signature with mouse or touch"></canvas>${button('Clear signature','clear-signature')}<label><input type="checkbox" name="agree" required> I have reviewed these details and the 72-hour review policy and agree to this project record.</label>`,async data=>{
+    if(!pad?.drawn)throw new Error('Please draw your signature before submitting.');
+    await writeClientRecord({root:`portal_public/${state.token}`,collection:'sigs',id:signatureId,
+      data:{id:signatureId,projectKey:state.projectKey,name:text(data.get('name')),image:pad.canvas.toDataURL('image/png'),signedAt:serverTimestamp(),userAgent:navigator.userAgent,termsSnapshot:terms,reviewPolicy:clone(REVIEW_POLICY)},timestamp:serverTimestamp(),
+      transaction:fn=>runTransaction(db,tx=>fn({get:async path=>{const snap=await tx.get(doc(db,path));return snap.exists()?snap.data():null;},set:(path,value)=>tx.set(doc(db,path),value)}))});
+    notify('Signature saved; notification queued.');finishModal();
+  },'Save signature');initPad();
+}
 function initPad(){const canvas=$('signatureCanvas');const rect=canvas.getBoundingClientRect(),ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=rect.width*ratio;canvas.height=180*ratio;const ctx=canvas.getContext('2d');ctx.scale(ratio,ratio);ctx.strokeStyle='#167aa6';ctx.lineWidth=2.4;ctx.lineCap='round';pad={canvas,ctx,drawn:false};let drawing=false;const pt=e=>{const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top};};canvas.onpointerdown=e=>{drawing=true;canvas.setPointerCapture(e.pointerId);const p=pt(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};canvas.onpointermove=e=>{if(!drawing)return;const p=pt(e);ctx.lineTo(p.x,p.y);ctx.stroke();pad.drawn=true;};canvas.onpointerup=canvas.onpointercancel=()=>drawing=false;}
 function openSignatureReview(id){requireAdmin();const draft=clone(client()),s=projectSigs().find(s=>s.id===id);if(!s)return;const r=sigReview(s);modal('Manage signature',`Signed ${dateText(s.signedAt)}`,`${field('Signer display name','displayName',r.displayName||s.name,'text','required maxlength="200"')}${select('Review state','state',[['pending','Awaiting verification'],['verified','Verified'],['void','Void / request replacement']],r.state||'pending')}${area('Note visible to client','message',r.message||'','maxlength="2000"')}${button('Move signature to bin','archive-signature',`data-id="${esc(id)}"`,'danger')}`,async data=>{const c=clone(draft);c.signatureReviews[id]={state:text(data.get('state')),displayName:text(data.get('displayName')),message:text(data.get('message')),updatedAt:now()};await saveClient(c,'Signature updated');finishModal();});}
 
@@ -646,22 +697,35 @@ async function loadProjectArtifacts({includeHistoricalSignature=false}={}){
   return s?{...s,review:r,displayName:r.displayName||s.name,outdated:signatureOutdated(s,project())}:null;
 }
 function openDocument(title,subtitle,html){modal(title,subtitle,`<iframe class="report-frame" title="${esc(title)}" srcdoc="${esc(html)}"></iframe>`,null);$('modalLayer').querySelector('.modal').classList.add('report-modal');}
-async function report(){notify('Loading complete report…');const signature=await loadProjectArtifacts({includeHistoricalSignature:true}),founder=state.founder;const html=buildProjectReport({client:client(),project:project(),items:itemsOf(project()),isAdmin:admin(),masterSignature:onboarding.master(),projectAcknowledged:onboarding.acknowledged(state.projectKey),approvals:project().approvals.map(a=>({...a,confirmation:confirmation(a)})),signature,feedback:visibleRequests().map(f=>({...f,...reviewOf(f)})),logoUrl:new URL('../logo.png',location.href).href,founderSignatureUrl:founder.signatureUrl,authorizedName:founder.name,authorizedTitle:founder.title,pdfLibraryUrl:new URL('./html2pdf.bundle.min.js',location.href).href,exportScriptUrl:new URL('./report-export.js?v=20261001-r2',location.href).href,generatedAt:now()});openDocument('Project report','Complete delivery, payment, approval and feedback record. Use the preview to download a PDF.',html);notify('Project report ready. No pop-up permission is needed.');}
-async function agreement(){notify('Loading agreement…');const signature=await loadProjectArtifacts(),founder=state.founder;const html=buildProjectAgreement({client:client(),project:project(),signature,masterSignature:onboarding.master(),projectAcknowledged:onboarding.acknowledged(state.projectKey),logoUrl:new URL('../logo.png',location.href).href,founderSignatureUrl:founder.signatureUrl,authorizedName:founder.name,authorizedTitle:founder.title,pdfLibraryUrl:new URL('./html2pdf.bundle.min.js',location.href).href,exportScriptUrl:new URL('./report-export.js?v=20261001-r2',location.href).href,generatedAt:now()});openDocument('Terms & agreement','A clean, numbered agreement with project particulars and signature blocks. Use the preview to download a PDF.',html);notify('Terms & agreement ready.');}
+async function report(){notify('Loading complete report…');const signature=await loadProjectArtifacts({includeHistoricalSignature:true}),founder=state.founder;const html=buildProjectReport({client:client(),project:project(),items:itemsOf(project()),isAdmin:admin(),masterSignature:onboarding.isAgencyPartner()?onboarding.master():null,projectAcknowledged:onboarding.projectReady(state.projectKey),approvals:project().approvals.map(a=>({...a,confirmation:confirmation(a)})),signature,feedback:visibleRequests().map(f=>({...f,...reviewOf(f)})),logoUrl:new URL('../logo.png',location.href).href,founderSignatureUrl:founder.signatureUrl,authorizedName:founder.name,authorizedTitle:founder.title,pdfLibraryUrl:new URL('./html2pdf.bundle.min.js',location.href).href,exportScriptUrl:new URL('./report-export.js?v=20261001-r2',location.href).href,generatedAt:now()});openDocument('Project report','Complete delivery, payment, approval and feedback record. Use the preview to download a PDF.',html);notify('Project report ready. No pop-up permission is needed.');}
+async function agreement(){notify('Loading agreement…');const signature=await loadProjectArtifacts(),founder=state.founder;const html=buildProjectAgreement({client:client(),project:project(),signature,masterSignature:onboarding.isAgencyPartner()?onboarding.master():null,projectAcknowledged:onboarding.projectReady(state.projectKey),logoUrl:new URL('../logo.png',location.href).href,founderSignatureUrl:founder.signatureUrl,authorizedName:founder.name,authorizedTitle:founder.title,pdfLibraryUrl:new URL('./html2pdf.bundle.min.js',location.href).href,exportScriptUrl:new URL('./report-export.js?v=20261001-r2',location.href).href,generatedAt:now()});openDocument('Terms & agreement','A clean, numbered agreement with project particulars and signature blocks. Use the preview to download a PDF.',html);notify('Terms & agreement ready.');}
 
 async function downloadDelivery(source){
   if(admin())throw new Error('Open the private client view to use this action.');
-  if(!onboarding.master())return onboarding.sign();
-  if(!onboarding.acknowledged(state.projectKey))return onboarding.acknowledge();
-  const item=itemsOf(project()).find(i=>String(i.n)===source.dataset.delivery);
+  if(!onboarding.projectReady(state.projectKey))return onboarding.isAgencyPartner()&&onboarding.master()?onboarding.acknowledge():onboarding.sign();
+  const p=project(),item=itemsOf(p).find(i=>String(i.n)===source.dataset.delivery);
   if(!item?.hasDelivery)throw new Error('This deliverable is no longer available. Refresh the workspace.');
-  const popup=window.open('about:blank','_blank');if(popup)popup.opener=null;
+  const decision=downloadDecision(p,item,confirmation);
+  if(decision.allowed)return openDeliveryLink(item,true);
+  if(decision.reason==='pending')return verifyDelivery(decision.approval,item);
+  const message=decision.reason==='rejection-pending'?'You reported a problem with this deliverable. Vision Flow is reviewing your reason. The download unlocks after the revised file is ready and verified.':'This deliverable was rejected and is being revised. You will be notified when the corrected file is ready to verify.';
+  return modal('Download locked',`Deliverable ${item.n}${item.t?` · ${item.t}`:''}`,`<p>${esc(message)}</p>`,null);
+}
+async function openDeliveryLink(item,usePopup){
+  const popup=usePopup?window.open('about:blank','_blank'):null;if(popup)popup.opener=null;
   try{
     const snap=await getDocFromServer(doc(db,'portal_public',state.token,'deliveries',state.projectKey));
     const target=safeUrl(snap.data()?.links?.[String(item.n)]);
     if(!target)throw new Error('This delivery is unavailable. Contact Vision Flow.');
-    if(popup)popup.location.replace(target);else modal('Your delivery is ready','Open the authorized file below.',link(target,'Open delivery file'),null);
+    if(popup)popup.location.replace(target);else modal('Your delivery is ready',`Deliverable ${item.n} is verified. Open the authorized file below.`,`<p>${link(target,'Open delivery file')}</p>`,null);
   }catch(error){popup?.close();throw error;}
+}
+function verifyDelivery(approval,item){
+  const v=approvalState(approval,null);
+  modal('Verify & download',`Deliverable ${item.n}${item.t?` · ${item.t}`:''}`,`<p>Please confirm you have reviewed this deliverable. Your confirmation is saved with the date and time, and the final file unlocks immediately.</p>${countdownHtml(v.deadline,Date.now(),'Review window ended — counted as accepted')}<p class="small muted">No response within 72 hours counts as accepted. If something is wrong, cancel and use “Reject” in Approvals or “Feedback / revision” on this row.</p><label class="check-field"><input type="checkbox" name="verified" required> I have reviewed Deliverable ${esc(String(item.n))} and confirm it is acceptable.</label>`,async()=>{
+    await submitClientEvidence(approval.id,{projectKey:state.projectKey,confirmedAt:serverTimestamp(),userAgent:navigator.userAgent});
+    finishModal();notify('Delivery verified. Preparing your download…');await openDeliveryLink(item,false);
+  },'Verify & unlock download');
 }
 async function masterPdf(){
   await loadProjectArtifacts();const p=onboarding.portal(),s=onboarding.master(),f=state.founder;
@@ -688,14 +752,16 @@ async function action(name,source){
     },reject?'Submit objection':'Confirm update');
   }
   if(name==='master-sign'||name==='sign')return onboarding.sign();
+  if(name==='project-sign')return onboarding.sign();
   if(name==='master-details')return onboarding.details();
   if(name==='master-pdf')return masterPdf();
   if(name==='portal-policy')return modal('Terms & Privacy',onboarding.portal().consentTerms.version,onboarding.sections(onboarding.portal().consentTerms),null);
   if(name==='project-ack')return onboarding.acknowledge();
   if(name==='master-manage'){requireAdmin();return onboarding.manage();}
   if(name==='legacy-signatures')return modal('Historical project signatures','These original records are separate from the master agreement.',legacySignatureView(project()),null);
-  if(name==='sign-required')return onboarding.master()?onboarding.acknowledge():onboarding.sign();
+  if(name==='sign-required')return onboarding.isAgencyPartner()&&onboarding.master()?onboarding.acknowledge():onboarding.sign();
   if(name==='gated-download')return downloadDelivery(source);
+  if(name==='go-action'){state.projectKey=source.dataset.project||null;state.tab='overview';render();const target=source.dataset.hash;setTimeout(()=>{history.replaceState(null,'',`${location.pathname}${location.search}#${target}`);hashScroll();},60);return;}
   if(name==='all-records'){
     requireAdmin();const records=(await allRecords(client().accessToken)).filter(record=>record.collection!=='deliveries');
     modal('All submitted records','Includes legacy and unlinked records. Archive to the recycle bin before permanent deletion.',records.map(r=>'<div class="record"><strong>'+esc(r.collection+' · '+r.id)+'</strong><p>'+esc(r.name||r.message||r.projectKey||'Legacy / unlinked record')+'</p>'+button('Move record to bin','archive-record',`data-id="${esc(r.id)}" data-collection="${esc(r.collection)}"`,'danger')+'</div>').join('')||'<p>No submitted records.</p>',null);return;
@@ -762,7 +828,7 @@ document.addEventListener('change',async e=>{if(e.target.id==='itemStatus'){stat
 $('modalLayer').addEventListener('click',event=>{if(event.target===$('modalLayer'))closeModal();});
 document.addEventListener('keydown',event=>{if(document.querySelector('.confirmation-dialog[open]')||$('modalLayer').hidden)return;if(event.key==='Escape'){event.preventDefault();closeModal();}if(event.key==='Tab'){const nodes=[...$('modalLayer').querySelectorAll('button:not(:disabled),input,select,textarea,a[href]')].filter(x=>!x.hidden);const first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}});
 const onboarding=createOnboarding({
-  state,getClient:client,isAdmin:admin,artifacts:()=>artifacts(state.clientKey),button,field,modal,finishModal,notify,fail,render,dateText,termsHtml,initPad,getPad:()=>pad,saveClient,timestamp:serverTimestamp,
+  state,getClient:client,isAdmin:admin,artifacts:()=>artifacts(state.clientKey),button,field,modal,finishModal,notify,fail,render,dateText,termsHtml,initPad,getPad:()=>pad,saveClient,projectSign:openSignature,timestamp:serverTimestamp,
   writeRecord:(col,id,data)=>writeClientRecord({root:`portal_public/${state.token}`,collection:col,id,data,timestamp:serverTimestamp(),transaction:fn=>runTransaction(db,tx=>fn({get:async path=>{const snap=await tx.get(doc(db,path));return snap.exists()?snap.data():null;},set:(path,value)=>tx.set(doc(db,path),value)}))}),
   readRecord:async(col,id)=>{const snap=await getDocFromServer(doc(db,'portal_public',state.token,col,id));return snap.exists()?snap.data():null;}
 });

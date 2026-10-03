@@ -1,6 +1,7 @@
-import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20260928-r10';
-import {notificationEventId} from './notification-events.js?v=20260930-r1';
+import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20261003-a1';
+import {notificationEventId} from './notification-events.js?v=20261002-r2';
 import {REVIEW_POLICY} from './review-policy.js?v=20260928-r1';
+import {paymentChanges} from './payment-notification.js?v=20261003-a1';
 
 const visibleProject = project => Object.fromEntries(Object.entries(project||{}).filter(([key])=>!['lastUpdated','notificationRevision','deliveryVersion','ackId'].includes(key)));
 
@@ -27,6 +28,8 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
     const root=`portal_public/${next.accessToken}`,version=`revision-${project.notificationRevision}`;
     const notice={schemaVersion:1,eventType,clientSlug:next.slug,projectKey:key,
       version,projectRevision:project.notificationRevision,reviewEpoch:next.reviewEpoch||0,createdAt:timestamp,
+      ...(paymentsChanged?{paymentChanges:paymentChanges(before.projects[key]?.payments||[],after.projects[key]?.payments||[])}:{}),
+      ...(requested&&manualNotice.responseTarget?{responseTarget:manualNotice.responseTarget}:{}),
       ...redactDeliverySecrets({
       title:requested?String(manualNotice.title||'Project update').slice(0,200):paymentsChanged?'Payment record updated':deliveryChanged?'Delivery updated':'Project update',
       message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
@@ -40,7 +43,9 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
       policyVersion:REVIEW_POLICY.version,reviewHours:REVIEW_POLICY.hours,status:'awaiting-notification',revision:0,createdAt:timestamp};
     const request={...shared,clientSlug:next.slug,portalToken:next.accessToken,reviewEpoch:next.reviewEpoch||0,
       sourceCollection:event.sourceCollection,sourceId:id,projectRevision:project.notificationRevision,
-      masterVersion:after.masterAgreement.version,ackId:after.projects[key].ackId,notificationEventId:event.id};
+      masterVersion:after.masterAgreement.version,agreementMode:after.agreementMode,
+      agreementVersion:after.agreementMode==='project'?after.projects[key].signatureId:after.masterAgreement.version,
+      ackId:after.projects[key].ackId,notificationEventId:event.id};
     writes.push({path:`${root}/notices/${id}`,data:notice},{path:`${root}/reviews/${id}`,data:shared},
       {path:`portal_reviews/${id}`,data:request},{path:`portal_outbox/${event.id}`,data:event});
     guardKeys.push(key);

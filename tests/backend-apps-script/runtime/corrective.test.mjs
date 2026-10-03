@@ -20,7 +20,7 @@ test('read-only transactions release their locks',async()=>{
   await fs.runTransaction(()=>{});assert.ok(calls.some(url=>url.endsWith(':rollback')));
 });
 test('provider exception text is never proof that mail was not accepted',async()=>{
-  const mail=createMailAdapter({mailApp:{sendEmail:()=>{throw Error('daily limit exceeded');}}});
+  const mail=createMailAdapter({expectedSender:'owner@example.invalid',session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.invalid'})},mailApp:{sendEmail:()=>{throw Error('daily limit exceeded');}}});
   await assert.rejects(mail.send({to:'synthetic@example.invalid'}),e=>e.notAccepted!==true);
 });
 test('built scheduled entrypoint awaits completion and returns result, with no overlap',async()=>{

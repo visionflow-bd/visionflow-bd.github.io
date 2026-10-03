@@ -108,7 +108,7 @@ test('built owner entrypoint logs only sanitized diagnostics and is not public',
   assert.equal(JSON.parse(context.doGet({parameter:{action:'ownerReadinessCheck'}}).body).status,'healthy');
   assert.equal(deps.calls.length,reads);assert.equal(logs.length,1);
 });
-test('expected sender remains diagnostic-only and required identity scope is declared locally',()=>{
+test('expected sender is loaded without enabling the worker and identity scope is declared locally',()=>{
   const props={EXPECTED_SENDER:'owner@example.invalid'},config=loadConfig({propertiesService:{getScriptProperties:()=>({getProperties:()=>props})}});
   assert.equal(config.expectedSender,props.EXPECTED_SENDER);assert.equal(config.enabled,false);
   const manifest=JSON.parse(readFileSync('backend/apps-script/appsscript.json','utf8'));

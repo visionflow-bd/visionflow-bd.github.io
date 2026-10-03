@@ -24,6 +24,7 @@ test('actual project change publishes bound notice, public/private review and ou
   const records=Object.fromEntries(plan.writes.map(w=>[w.path,w.data]));
   const event=plan.writes.find(w=>w.path.startsWith('portal_outbox/')).data;
   assert.equal(event.eventType,'payment-notification');assert.equal(event.id,notificationEventId(event));
+  assert.deepEqual(plan.writes[0].data.paymentChanges.items,[{kind:'added',before:null,after:{id:'pay1',amount:10000,date:'2026-09-30',type:''}}]);
   assert.equal(next.projects.p.notificationRevision,1);
   const portal=publicSnapshot(next,next.slug);
   assert.equal(portal.projects.p.notificationRevision,1);
@@ -87,4 +88,15 @@ test('event payload cannot carry caller recipients, arbitrary content, or final 
   const portal=publicSnapshot(fixture(),'test');
   const event=clientSourceEvent({portal,token,collection:'confirms',id:'a1',data:{projectKey:'p',to:'attacker@example.invalid',dl:'https://example.invalid/final',message:'secret'},timestamp:stamp});
   assert.equal(event.to,undefined);assert.equal(event.message,undefined);assert.equal(event.dl,undefined);
+});
+
+test('project signature queues a current source-bound event atomically and rejects superseded signatures',async()=>{
+  const c=fixture();c.agreementMode='project';const portal=publicSnapshot(c,c.slug),id=portal.projects.p.signatureId;
+  const db=createFakeFirestore({[root]:portal,'portal_clients/test':c});
+  await writeClientRecord({transaction:db.runTransaction,root,collection:'sigs',id,data:{projectKey:'p',termsSnapshot:portal.projectTerms.p,reviewPolicy:portal.masterAgreement.reviewPolicy,signedAt:stamp},timestamp:stamp});
+  const [event]=await db.query('portal_outbox');assert.equal(event.eventType,'project-signed');
+  assert.equal(event.id,`client:${token}:sigs:${id}`);
+  assert.equal((await resolveEventSource(event,{firestore:db,clock,config})).ok,true);
+  await db.set(root,{signatureReviews:{[id]:{state:'void'}}},{merge:true});
+  assert.equal((await resolveEventSource(event,{firestore:db,clock,config})).ok,false);
 });

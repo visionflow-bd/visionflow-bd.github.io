@@ -20,7 +20,7 @@ const REVIEW_POLICY_TEXT = 'Each new review request gives you 72 hours from its 
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: portal/data.js (SHA-256: 42e4aa899abffbede09e718bff0e15a97b7b2ee58d1c0ace39e3e7f5e0260a84)
+// Source: portal/data.js (SHA-256: 6ab747ddd190780cab390038d20f7bde9c2c54cedf82aaa491ff2d3478223d8c)
 // ═══════════════════════════════════════════════════════════════════
 
 function sameRecord(a,b) {
@@ -39,7 +39,7 @@ function projectAcknowledged(portal,key,master,records=[]) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/review-engine.mjs (SHA-256: 9ca3cdd8d2cea8581751f9104b680360ef87827333d52f05e1ae2ccf4743d2f2)
+// Source: backend/review-engine.mjs (SHA-256: 997fbc7b1c31a415d5ecd290ac7df4038ebe80ca73809586f6dd12dbd675a949)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -62,7 +62,7 @@ function reviewDeadline(request) {
 // The caller supplies ONLY server timestamps and rule-validated source records.
 // A feedback record arriving while the worker commits must invalidate its
 // transaction/precondition, so rejection can never lose a race to a worker.
-function assessReview({request,now,portalActive,master,consentValid,projectAcknowledged,objections=[],decision=null,notificationReady=false}) {
+function assessReview({request,now,portalActive,master,agreement=master,consentValid,projectAcknowledged,objections=[],decision=null,notificationReady=false}) {
   const deadline=reviewDeadline(request);
   if(!deadline)return {status:'manual-review',reason:'No valid, newly published 72-hour review request.'};
   if(decision)return {status:decision.status,terminal:true,deadline};
@@ -70,8 +70,9 @@ function assessReview({request,now,portalActive,master,consentValid,projectAckno
   if(!Number.isFinite(clock)||clock<published)return {status:'blocked',reason:'Invalid server time.',deadline};
   if(!portalActive)return {status:'blocked',reason:'Workspace is paused or archived.',deadline};
   if(request.cancelledAt)return {status:'cancelled',deadline};
-  if(!master||master.revoked||!consentValid||!projectAcknowledged||master.termsSnapshot?.reviewPolicy?.version!==REVIEW_POLICY.version||master.termsSnapshot.reviewPolicy.hours!==72||master.id!==request.masterVersion)return {status:'blocked',reason:'Current consent, signed review policy and project acknowledgement are required.',deadline};
-  if(!Number.isFinite(reviewTimestamp(master.signedAt))||reviewTimestamp(master.signedAt)>published)return {status:'blocked',reason:'Signing after publication cannot authorize a retroactive review window.',deadline};
+  const policy=request.agreementMode==='project'?agreement?.reviewPolicy:agreement?.termsSnapshot?.reviewPolicy;
+  if(!agreement||agreement.revoked||!consentValid||!projectAcknowledged||policy?.version!==REVIEW_POLICY.version||policy.hours!==72||agreement.id!==(request.agreementVersion||request.masterVersion))return {status:'blocked',reason:'Current consent, signed review policy and project acknowledgement are required.',deadline};
+  if(!Number.isFinite(reviewTimestamp(agreement.signedAt))||reviewTimestamp(agreement.signedAt)>published)return {status:'blocked',reason:'Signing after publication cannot authorize a retroactive review window.',deadline};
   // Any unresolved project objection is conservative evidence to stop expiry.
   // Do not infer that a client's objection is irrelevant from its free text.
   const objection=objections.find(o=>o.projectKey===request.projectKey&&!o.resolvedAt);
@@ -92,11 +93,12 @@ function explicitReviewDecision(request,{action,reason='',now}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: portal/notification-events.js (SHA-256: 249c2f09608400ba96f271e71da6fc2c78a19360fbb6e189538be836eeb62984)
+// Source: portal/notification-events.js (SHA-256: b2f8f84bd32ab95a18f8fbc03f00bf78fab6134420007a9de0287a61c580d8ee)
 // ═══════════════════════════════════════════════════════════════════
 
 const clientEventCollections = Object.freeze({
   'consent-complete':'consent', 'master-signed':'agreements',
+  'project-signed':'sigs',
   'project-acknowledged':'acknowledgements',
   'confirmation-received':'confirms', 'objection-received':null,
 });
@@ -114,7 +116,7 @@ function notificationEventId(event) {
 
 function clientSourceEvent({portal,token,collection,id,data,timestamp}) {
   if (![token,id,portal?.clientSlug].every(eventPart)) throw Error('Invalid notification source identity.');
-  const eventType = {consent:'consent-complete',agreements:'master-signed',acknowledgements:'project-acknowledged'}[collection]
+  const eventType = {consent:'consent-complete',agreements:'master-signed',sigs:'project-signed',acknowledgements:'project-acknowledged'}[collection]
     || (collection==='feedback'||collection==='confirms'&&['feedback','rejected','rejection-pending'].includes(data.kind)?'objection-received':collection==='confirms'?'confirmation-received':null);
   if (!eventType) throw Error('Unsupported notification source.');
   const event = {
@@ -139,7 +141,93 @@ async function writeClientRecord({transaction,root,collection,id,data,timestamp}
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/review-context.mjs (SHA-256: 51b8663e886e2cd33003e0ea2a0884bfb260d193e8b09e1a89b3f75e01f13a20)
+// Source: portal/payment-notification.js (SHA-256: 8d254ff20c9996f51ee817ca105713003a6a4fa07540502200780259197fffb2)
+// ═══════════════════════════════════════════════════════════════════
+
+
+function paymentCents(value) {
+  if(!['number','string'].includes(typeof value)||!/^\d+(?:\.\d{1,2})?$/.test(String(value)))return null;
+  const cents=Math.round(Number(value)*100);
+  return Number.isSafeInteger(cents)&&cents>=0?cents:null;
+}
+
+function paymentMoney(cents) {
+  return Number.isSafeInteger(cents)&&cents>=0?`BDT ${(cents/100).toFixed(2)}`:'Not available - review the record';
+}
+
+// Store only the changed records, not whichever payment happens to sort last.
+function paymentChanges(before=[],after=[]) {
+  const valid=rows=>rows.every(p=>typeof p?.id==='string'&&p.id.length>0)&&new Set(rows.map(p=>p.id)).size===rows.length;
+  if(!valid(before)||!valid(after))return {identified:false,count:0,items:[]};
+  const summary=p=>({id:p.id,amount:paymentCents(p.amount),date:String(p.date||'').slice(0,10),type:String(p.type||'').slice(0,80)});
+  const old=new Map(before.map(p=>[p.id,p])),current=new Map(after.map(p=>[p.id,p])),items=[];
+  for(const p of after){const prior=old.get(p.id);if(!prior||!sameRecord(prior,p))items.push({kind:prior?'updated':'added',before:prior?summary(prior):null,after:summary(p)});}
+  for(const p of before)if(!current.has(p.id))items.push({kind:'removed',before:summary(p),after:null});
+  return {identified:true,count:items.length,items:items.slice(0,20)};
+}
+
+function paymentTotals(project={}) {
+  const rows=Array.isArray(project.payments)?project.payments:[];
+  let paid=0;
+  for(const p of rows){const amount=paymentCents(p?.amount);if(amount===null||!Number.isSafeInteger(paid+amount)){paid=null;break;}paid+=amount;}
+  const budget=paymentCents(project.budget),balance=budget!==null&&paid!==null?budget-paid:null;
+  return {paid,budget,balance,credit:balance!==null&&balance<0};
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Source: backend/apps-script/payment-document.mjs (SHA-256: 4738cbd8bf3758ebfc262bf4d2a3ffdf1815ec910244b52043b5c10d0e4cdd73)
+// ═══════════════════════════════════════════════════════════════════
+
+
+const proofLocation=/^https:\/\/res\.cloudinary\.com\/dohlemsrz\/image\/upload\/(?:v[0-9]+\/)?visionflow\/proofs\/[A-Za-z0-9_./-]+$/;
+const receiptEsc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const receiptLabel=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\r\n]/g,' ').slice(0,200);
+
+function paymentDocument(context,rows,action) {
+  if(!context?.ok)return null;
+  const changes=context.source?.paymentChanges,proofs=[];
+  for(const change of changes?.identified&&Array.isArray(changes.items)?changes.items:[]){
+    if(!change.after)continue;
+    const payment=context.project?.payments?.find(p=>p.id===change.after.id);
+    if(!payment?.proofUrl)continue;
+    // Do not allow external redirects, remote fetch relays or a final-delivery URL.
+    if(!proofLocation.test(payment.proofUrl)||payment.proofUrl.includes('/../'))throw Error('Payment proof must use the verified agency proof-upload location.');
+    if(!proofs.some(p=>p.url===payment.proofUrl))proofs.push({url:payment.proofUrl,label:`${receiptLabel(payment.date)} / ${paymentMoney(change.after.amount)}`});
+  }
+  if(proofs.length>10||changes?.count>20)throw Error('Split this payment update into smaller groups before emailing proof attachments.');
+  return {schemaVersion:1,client:receiptLabel(context.portal?.name),project:receiptLabel(context.project?.name),rows,action,proofs};
+}
+
+function paymentDocumentHtml(document,images=[]) {
+  if(document?.schemaVersion!==1||!Array.isArray(document.rows)||!Array.isArray(images)||images.length!==document.proofs.length)throw Error('Payment document preparation is incomplete.');
+  for(const image of images)if(!/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(image))throw Error('Invalid payment proof image.');
+  return `<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4;margin:20mm}body{font-family:Georgia,serif;color:#17313e;font-size:12pt;line-height:1.5}header{border-bottom:4px solid #0f766e;padding-bottom:14px}h1{font-size:26pt;margin:20px 0 8px}h2{font-size:16pt}small{font-family:Arial,sans-serif;color:#526573}table{width:100%;border-collapse:collapse;margin:24px 0;font-family:Arial,sans-serif;font-size:10pt}td{padding:10px;border-bottom:1px solid #dce5e9}td:last-child{text-align:right}.proof{break-before:page;page-break-before:always}.proof img{display:block;max-width:100%;max-height:210mm;object-fit:contain}a{color:#0f766e;overflow-wrap:anywhere}.foot{margin-top:25px;font-size:10pt;color:#526573}</style></head><body><header><strong>VISION FLOW</strong><br><small>Creative Production Agency</small></header><h1>Payment record</h1><p>${receiptEsc(document.client)}<br><strong>${receiptEsc(document.project)}</strong></p><table>${document.rows.map(([label,value])=>`<tr><td>${receiptEsc(label)}</td><td>${receiptEsc(value)}</td></tr>`).join('')}</table><p><a href="${receiptEsc(document.action)}">Review this payment update in your workspace</a></p><p class="foot">This document records an agency payment update and supplied supporting evidence. It is not bank-issued proof, payment verification, a signature or download authorization. Please report discrepancies through your project workspace. Keep this document and its private link confidential.</p>${images.map((image,i)=>`<section class="proof"><h2>Supporting payment proof ${i+1}</h2><p>${receiptEsc(document.proofs[i].label)}</p><img src="${image}" alt="Supporting payment proof ${i+1}"><p class="foot">Evidence supplied with this payment record. Vision Flow has not independently verified the transfer.</p></section>`).join('')}</body></html>`;
+}
+
+function createPaymentAttachment(document,{urlFetch,utilities,htmlService}) {
+  let bytesTotal=0;
+  const images=document.proofs.map(proof=>{
+    if(!proofLocation.test(proof.url)||proof.url.includes('/../'))throw Error('Unapproved payment proof location.');
+    const response=urlFetch.fetch(proof.url,{method:'get',followRedirects:false,muteHttpExceptions:true});
+    if(response.getResponseCode()!==200)throw Error('Payment proof could not be retrieved.');
+    const blob=response.getBlob(),mime=String(blob.getContentType()).split(';')[0].toLowerCase(),bytes=blob.getBytes();
+    if(!['image/png','image/jpeg','image/webp','image/gif'].includes(mime)||!bytes.length||bytes.length>10*1024*1024)throw Error('Payment proof is not a supported bounded image.');
+    const head=bytes.slice(0,12).map(b=>b&255),ascii=String.fromCharCode(...head);
+    const matches=mime==='image/png'?head.slice(0,8).join(',')==='137,80,78,71,13,10,26,10':mime==='image/jpeg'?head.slice(0,3).join(',')==='255,216,255':mime==='image/gif'?/^GIF8[79]a/.test(ascii):ascii.startsWith('RIFF')&&ascii.slice(8,12)==='WEBP';
+    if(!matches)throw Error('Payment proof bytes do not match the image type.');
+    bytesTotal+=bytes.length;if(bytesTotal>12*1024*1024)throw Error('Combined payment proof images exceed the email limit.');
+    return `data:${mime};base64,${utilities.base64Encode(bytes)}`;
+  });
+  const pdf=htmlService.createHtmlOutput(paymentDocumentHtml(document,images)).getAs('application/pdf');
+  const bytes=pdf.getBytes();
+  if(bytes.length<5||bytes.length>18*1024*1024||String.fromCharCode(...bytes.slice(0,5))!=='%PDF-')throw Error('Payment PDF conversion failed or exceeded the attachment limit.');
+  return pdf.setName('VisionFlow-payment-record.pdf');
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Source: backend/apps-script/review-context.mjs (SHA-256: 6918c1e41c1f275987312c8b875c929de0d5aa6128a01db03522f112281549f9)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -148,10 +236,11 @@ async function writeClientRecord({transaction,root,collection,id,data,timestamp}
 async function loadReviewContext(request,{firestore,portal,clock}) {
   const root=`portal_public/${request.portalToken}`,key=request.projectKey;
   const consentId=portal.consentTerms?.version,masterId=portal.masterAgreement?.version,ackId=portal.projects?.[key]?.ackId;
+  const projectMode=portal.agreementMode==='project',signatureId=portal.projects?.[key]?.signatureId;
   const valid=value=>typeof value==='string'&&value.length>0&&value.length<=200&&!value.includes('/');
-  if(![consentId,masterId,ackId].every(valid))throw Error('Missing current agreement context.');
+  if(![consentId,...(projectMode?[signatureId]:[masterId,ackId])].every(valid))throw Error('Missing current agreement context.');
   const [consent,masterRecord,ack,feedback,confirms,direct]=await Promise.all([
-    firestore.get(`${root}/consent/${consentId}`),firestore.get(`${root}/agreements/${masterId}`),firestore.get(`${root}/acknowledgements/${ackId}`),
+    firestore.get(`${root}/consent/${consentId}`),firestore.get(projectMode?`${root}/sigs/${signatureId}`:`${root}/agreements/${masterId}`),projectMode?null:firestore.get(`${root}/acknowledgements/${ackId}`),
     firestore.query(`${root}/feedback`,{where:[['projectKey','==',key]]}),
     firestore.query(`${root}/confirms`,{where:[['projectKey','==',key]]}),
     valid(request.sourceId)?firestore.get(`${root}/confirms/${request.sourceId}`):null,
@@ -161,18 +250,24 @@ async function loadReviewContext(request,{firestore,portal,clock}) {
   const objections=[...feedback,...existing.filter(r=>['feedback','rejection-pending','rejected'].includes(r.kind))]
     .filter(r=>!['resolved','closed'].includes(portal.feedbackReviews?.[r.id]?.status))
     .map(r=>({...r,projectKey:key}));
-  const master=currentMaster(portal,masterRecord?[{...masterRecord,id:masterId}]:[]);
+  const master=projectMode?null:currentMaster(portal,masterRecord?[{...masterRecord,id:masterId}]:[]);
+  const projectSignature=projectMode&&masterRecord&&!masterRecord.revoked&&masterRecord.projectKey===key
+    &&!['void','deleted'].includes(portal.signatureReviews?.[signatureId]?.state)
+    &&sameRecord(masterRecord.termsSnapshot,portal.projectTerms?.[key])?{...masterRecord,id:signatureId}:null;
+  const agreement=projectMode?projectSignature:master;
   const consentValid=!!consent&&!consent.revoked&&sameRecord(consent.termsSnapshot,portal.consentTerms);
-  const acknowledged=projectAcknowledged(portal,key,master,ack?[{...ack,id:ackId}]:[]);
-  const now=reviewTimestamp(clock.now()),signatureTime=reviewTimestamp(master?.signedAt);
-  const ready=consentValid&&acknowledged&&master?.id===request.masterVersion
-    &&master.termsSnapshot?.reviewPolicy?.version===REVIEW_POLICY.version&&master.termsSnapshot.reviewPolicy.hours===72
+  const acknowledged=projectMode?!!projectSignature:projectAcknowledged(portal,key,master,ack?[{...ack,id:ackId}]:[]);
+  const now=reviewTimestamp(clock.now()),signatureTime=reviewTimestamp(agreement?.signedAt);
+  const policy=projectMode?agreement?.reviewPolicy:agreement?.termsSnapshot?.reviewPolicy;
+  const ready=consentValid&&acknowledged&&agreement?.id===(request.agreementVersion||request.masterVersion)
+    &&(!projectMode||request.agreementMode==='project')
+    &&sameRecord(policy,REVIEW_POLICY)
     &&Number.isFinite(signatureTime)&&signatureTime<=now;
   // New activation must also validate timestamps; historic pending records keep
   // their existing assessment path and never acquire a retroactive new window.
-  const times=[consent?.agreedAt,master?.signedAt,...(sameRecord(master?.projectTerms?.[key],portal.projectTerms?.[key])?[]:[ack?.acknowledgedAt])];
+  const times=[consent?.agreedAt,agreement?.signedAt,...(projectMode||sameRecord(master?.projectTerms?.[key],portal.projectTerms?.[key])?[]:[ack?.acknowledgedAt])];
   const canActivate=!!ready&&times.every(t=>Number.isFinite(reviewTimestamp(t))&&reviewTimestamp(t)<=now);
-  return {master,consentValid,projectAcknowledged:acknowledged,objections,decision,canActivate,latestPrerequisiteAt:canActivate?Math.max(...times.map(reviewTimestamp)):null};
+  return {master,agreement,consentValid,projectAcknowledged:acknowledged,objections,decision,canActivate,latestPrerequisiteAt:canActivate?Math.max(...times.map(reviewTimestamp)):null};
 }
 
 function clientMailHandedOff(event) {
@@ -183,7 +278,7 @@ function clientMailHandedOff(event) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/source-binding.mjs (SHA-256: 55c6b47414d96c287f43222589c85d19450c35a4658540842cb4901f8aa7bc2f)
+// Source: backend/apps-script/source-binding.mjs (SHA-256: ac1d75b00118889e9ec04b0d86507ca981fb83f693a3c866423abf54df6a6db2)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -205,6 +300,7 @@ async function resolveEventSource(event,{firestore,clock,config}) {
   const expected={
     'consent-complete':`${root}/consent`,
     'master-signed':`${root}/agreements`,
+    'project-signed':`${root}/sigs`,
     'project-acknowledged':`${root}/acknowledgements`,
     'confirmation-received':`${root}/confirms`,
     'objection-received':[`${root}/feedback`,`${root}/confirms`],
@@ -226,11 +322,14 @@ async function resolveEventSource(event,{firestore,clock,config}) {
       if(event.projectKey||event.sourceId!==portal.consentTerms?.version||event.sourceVersion!==source.termsVersion||source.termsVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.consentTerms))return failure('source-version-mismatch');
       sourceTime=source.agreedAt;break;
     case 'master-signed':
-      if(event.projectKey||event.sourceId!==portal.masterAgreement?.version||event.sourceVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.masterAgreement))return failure('source-version-mismatch');
+      if(portal.agreementMode==='project'||event.projectKey||event.sourceId!==portal.masterAgreement?.version||event.sourceVersion!==event.sourceId||source.revoked||!sameRecord(source.termsSnapshot,portal.masterAgreement))return failure('source-version-mismatch');
       sourceTime=source.signedAt;break;
     case 'project-acknowledged':
-      if(!project||source.projectKey!==event.projectKey||event.sourceId!==project.ackId||event.sourceVersion!==event.sourceId||source.masterVersion!==portal.masterAgreement?.version||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
+      if(portal.agreementMode==='project'||!project||source.projectKey!==event.projectKey||event.sourceId!==project.ackId||event.sourceVersion!==event.sourceId||source.masterVersion!==portal.masterAgreement?.version||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
       sourceTime=source.acknowledgedAt;break;
+    case 'project-signed':
+      if(!project||portal.agreementMode!=='project'||source.projectKey!==event.projectKey||event.sourceId!==project.signatureId||event.sourceVersion!==event.sourceId||source.revoked||['void','deleted'].includes(portal.signatureReviews?.[event.sourceId]?.state)||!sameRecord(source.termsSnapshot,portal.projectTerms?.[event.projectKey]))return failure('source-version-mismatch');
+      sourceTime=source.signedAt;break;
     case 'confirmation-received':
     case 'objection-received':{
       const objection=event.sourceCollection===`${root}/feedback`||['feedback','rejected','rejection-pending'].includes(source.kind);
@@ -272,7 +371,7 @@ async function reviewSourceCurrent(request,{firestore,portal}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/review-worker.mjs (SHA-256: 3b42ecae60bafee7e5cc10890a0ead0894fd90fcea7cbdcee5bf1d54b8153418)
+// Source: backend/apps-script/review-worker.mjs (SHA-256: d374f3f64c242262d4dfd99a9df283970535cd13743c0584ca58a13ce6d2b1be)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -284,23 +383,30 @@ const terminal=new Set(['client-confirmed','objected','deemed-accepted','cancell
 const waiting=new Set(['awaiting-notification','awaiting-review-notification']);
 const scanPath='portal_backend_state/review-scan';
 
+const reviewClientScope=config=>{
+  const value=typeof config?.clientScopeSlug==='string'?config.clientScopeSlug.trim():'';
+  return value||null;
+};
+
 // A document-name cursor visits every request, including blocked/malformed ones.
 // No oldest-request starvation, composite-index dependency or unbounded scan.
-async function reviewCandidates(firestore) {
-  const cursor=await firestore.get(scanPath);
-  let page=await firestore.query('portal_reviews',{orderBy:['__name__','asc'],limit:20,...(validId(cursor?.lastId)?{startAfterId:cursor.lastId}:{})});
-  if(!page.length&&cursor?.lastId)page=await firestore.query('portal_reviews',{orderBy:['__name__','asc'],limit:20});
-  return page;
+async function reviewCandidates(firestore,config) {
+  const scope=reviewClientScope(config),path=scope?`${scanPath}-${scope}`:scanPath;
+  const cursor=await firestore.get(path),where=scope?{where:[['clientSlug','==',scope]]}:{};
+  let page=await firestore.query('portal_reviews',{...where,orderBy:['__name__','asc'],limit:20,...(validId(cursor?.lastId)?{startAfterId:cursor.lastId}:{})});
+  if(!page.length&&cursor?.lastId)page=await firestore.query('portal_reviews',{...where,orderBy:['__name__','asc'],limit:20});
+  return {page,path,scope};
 }
 
 async function settleReviewTimers({firestore,clock,config}) {
   if(config?.enabled!==true||config.reviewStateReady!==true)return {processed:0,results:[],disabled:true};
   if((await firestore.get('portal_settings/recovery'))?.active===true)return {processed:0,results:[],disabled:true};
-  const candidates=await reviewCandidates(firestore),results=[];
+  const candidateState=await reviewCandidates(firestore,config),candidates=candidateState.page,scan=candidateState.path,scope=candidateState.scope,results=[];
   for(const candidate of candidates){
     try{firestore.checkBudget?.(30);}catch{break;}
+    if(scope&&candidate.clientSlug!==scope)continue;
     if(!validId(candidate.id)||terminal.has(candidate.status)){
-      await firestore.set(scanPath,{lastId:candidate.id,checkedAt:clock.now()});continue;
+      await firestore.set(scan,{lastId:candidate.id,checkedAt:clock.now()});continue;
     }
     let outcome={id:candidate.id,status:'blocked'};
     try{
@@ -383,19 +489,21 @@ async function settleReviewTimers({firestore,clock,config}) {
       });
     }catch{outcome={id:candidate.id,status:'race-or-validation-blocked'};}
     results.push(outcome);
-    await firestore.set(scanPath,{lastId:candidate.id,checkedAt:clock.now()});
+    await firestore.set(scan,{lastId:candidate.id,checkedAt:clock.now()});
   }
   // Save progress per candidate so a runtime deadline cannot starve later work.
-  if(!candidates.length)await firestore.set(scanPath,{lastId:null,checkedAt:clock.now()});
+  if(!candidates.length)await firestore.set(scan,{lastId:null,checkedAt:clock.now()});
   return {processed:results.length,results};
 }
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/worker.mjs (SHA-256: 85baee61f290b645c6c20959577ac4f21dacd4c4e5ab30314f0e6674cb897b14)
+// Source: backend/apps-script/worker.mjs (SHA-256: ed24e075f4bc5fddb6ebb9e3029800f82a1f0613a0ba262180f1f5261ddc5dbc)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Apps Script V8 Module
+
+
 
 
 
@@ -434,10 +542,12 @@ const MAX_EVENTS_PER_RUN = 20;
 const MAX_RETRIES = 3;
 const BACKOFF_BASE_MS = 30000;
 const PORTAL_HOST = 'https://visionflow-bd.github.io';
+const EMAIL_LOGO_URL = `${PORTAL_HOST}/logo.png`;
 
 const EVENT_TYPES = Object.freeze([
   'consent-complete',
   'master-signed',
+  'project-signed',
   'project-acknowledged',
   'project-notification',
   'payment-notification',
@@ -537,26 +647,38 @@ function createOutboxEvent({
 }
 
 // ── Lease Acquisition (atomic) ────────────────────────────────────
-async function claimEvents({ firestore, clock, workerId, limit = MAX_EVENTS_PER_RUN }) {
+function workerClientScope(config) {
+  const value = typeof config?.clientScopeSlug === 'string' ? config.clientScopeSlug.trim() : '';
+  return value || null;
+}
+
+function scopeCursor(base, scope) {
+  return scope ? `${base}-${scope}` : base;
+}
+
+async function claimEvents({ firestore, clock, workerId, limit = MAX_EVENTS_PER_RUN, config }) {
   if((await firestore.get('portal_settings/recovery'))?.active===true)return [];
   const now = clock.now();
   const nowMs = Date.parse(now);
+  const scope = workerClientScope(config);
 
   // Sending is recovered only into reconciliation; terminal handoffs are never
   // candidates for another send even if their secondary dedup log is missing.
   //        (leasedUntil is null OR leasedUntil < now) AND
   //        retryCount < MAX_RETRIES
-  const scan='portal_backend_state/outbox-scan',cursor=await firestore.get(scan);
+  const scan=scopeCursor('portal_backend_state/outbox-scan',scope),cursor=await firestore.get(scan);
   const cursorValid=typeof cursor?.lastId==='string'&&cursor.lastId.length>0&&cursor.lastId.length<=1400&&!cursor.lastId.includes('/');
   const options={orderBy:['__name__','asc'],limit:limit*2};
-  let candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...(cursorValid?{startAfterId:cursor.lastId}:{})});
-  if(!candidates.length&&cursorValid)candidates=await firestore.query(OUTBOX_COLLECTION,options);
+  const scopedWhere=scope ? {where:[['clientSlug','==',scope]]} : {};
+  let candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...scopedWhere,...(cursorValid?{startAfterId:cursor.lastId}:{})});
+  if(!candidates.length&&cursorValid)candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...scopedWhere});
 
   const claimed = [];
   let lastId=null;
   for (const event of candidates) {
     if (claimed.length >= limit) break;
     lastId=event.id;
+    if(scope && event.clientSlug!==scope)continue;
     if(!['queued','retry','processing','sending','quota-exhausted','settings-paused'].includes(event.status)||event.retryCount>=MAX_RETRIES)continue;
 
     // Skip events with active leases
@@ -627,7 +749,7 @@ function validRecipient(value) { return typeof value==='string'&&value.length<=2
 // - Arbitrary external CTAs
 // Only the canonical portal host is used for action links.
 function buildEmail(event, recipients, { config, context }) {
-  const subject = emailSubject(event);
+  const subject = emailSubject(event, context);
 
   const messages = [];
 
@@ -657,21 +779,31 @@ function buildEmail(event, recipients, { config, context }) {
     });
   }
 
+  if(event.eventType==='payment-notification'&&context?.ok){
+    for(const message of messages)message.paymentDocument=paymentDocument(context,paymentSummary(context),emailLinks(event,context,message.targetType).action);
+  }
   return messages;
 }
 
 function isClientEvent(type) {
   return [
-    'consent-complete', 'master-signed', 'project-acknowledged',
+    'consent-complete', 'master-signed', 'project-signed', 'project-acknowledged',
     'project-notification', 'payment-notification', 'delivery-notification',
     'update-notification', 'deemed-accepted', 'review-window',
+    'confirmation-received', 'objection-received',
   ].includes(type);
 }
 
-function emailSubject(event) {
+function emailSubject(event, context) {
+  const source=context?.source;
+  if(context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType&&['project-notification','payment-notification','delivery-notification','update-notification'].includes(event.eventType)){
+    const title=String(source.title||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,200);
+    if(title)return title;
+  }
   const subjects = {
     'consent-complete': 'Welcome to Vision Flow',
     'master-signed': 'Master agreement signed',
+    'project-signed': 'Project agreement signed',
     'project-acknowledged': 'Project acknowledgement recorded',
     'project-notification': 'Project update',
     'payment-notification': 'Payment update',
@@ -693,60 +825,108 @@ function emailLinks(event, context, targetType='client') {
   const overview=targetType==='admin'?`${base}?c=${encodeURIComponent(context.portal.clientSlug)}`:`${base}?access=${encodeURIComponent(context.portalToken)}`;
   const project=event.projectKey?`${overview}&p=${encodeURIComponent(event.projectKey)}`:overview;
   let hash='review-updates',label='Review this update',destination=project;
-  if(event.eventType==='consent-complete'){hash='master-agreement';label=targetType==='admin'?'View client onboarding':'Review & sign master agreement';destination=overview;}
+  if(event.eventType==='consent-complete'){hash=context.portal.agreementMode==='project'?'':'master-agreement';label=targetType==='admin'?'View client onboarding':context.portal.agreementMode==='project'?'Choose your project':'Review & sign master agreement';destination=overview;}
   else if(event.eventType==='master-signed'){hash='master-agreement';label='View signed master agreement';destination=overview;}
   else if(event.eventType==='project-acknowledged'){hash='agreement';label='View acknowledged project';}
+  else if(event.eventType==='project-signed'){hash='agreement';label='View signed project agreement';}
   else if(event.eventType==='deemed-accepted'){hash=`review-${event.sourceId}`;label='View review outcome';}
   else if(event.eventType==='review-window'){hash=`review-${event.sourceId}`;label='Review, confirm or object';}
-  else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label='Review client response';}
+  else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label=targetType==='admin'?'Review client response':'View your saved response';}
+  else if(context.source?.responseTarget&&['review','evidence'].includes(context.source.responseTarget.kind)&&/^[A-Za-z0-9_-]{1,200}$/.test(context.source.responseTarget.id)){hash=`${context.source.responseTarget.kind}-${context.source.responseTarget.id}`;label='Read our response';}
   else {hash=`notice-${event.sourceId}`;}
-  return {overview,project,action:`${destination}#${encodeURIComponent(hash)}`,label};
+  return {overview,project,action:hash?`${destination}#${encodeURIComponent(hash)}`:destination,label};
 }
 
 function emailCopy(event, context, targetType) {
   // Names are short labels, not a channel for arbitrary URLs or private notes.
   const label=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\r\n]/g,' ').slice(0,200);
   const name=label(context?.portal?.name)||'there',project=label(context?.project?.name);
-  const intro={
-    'consent-complete':'Your Terms and Privacy acceptance is saved. Review and sign your Master Partner Agreement once for this workspace.',
+  const clientIntro={
+    'consent-complete':context?.portal?.agreementMode==='project'?'Your Terms and Privacy acceptance is saved. Choose a project to review its details and any applicable project agreement.':'Your Terms and Privacy acceptance is saved. Review and sign your Master Partner Agreement once for this workspace.',
     'master-signed':'Your signed master agreement is saved. Project particulars remain available in your workspace; material changes require a separate acknowledgement, not another signature drawing.',
+    'project-signed':'Your signed agreement for this project is saved. You can view the captured terms in your workspace.',
     'project-acknowledged':'Your acknowledgement of the current project particulars is saved.',
     'project-notification':'A project is ready for your review. Open the exact update to read the current details.',
     'payment-notification':'A payment record was updated. Please review the record and raise any discrepancy. This notification does not verify payment.',
     'delivery-notification':'A delivery was updated. Please review it in your workspace. Final download access remains subject to the current agreement requirements.',
     'update-notification':'Your project workspace was updated. Please review the current details and send any questions or objections through the portal.',
-    'confirmation-received':'The client has explicitly confirmed an update. View the saved response in the administrator workspace.',
-    'objection-received':'The client submitted feedback or an objection. Review their exact response before proceeding.',
+    'confirmation-received':'Your confirmation is saved. You can view the recorded response in your private workspace.',
+    'objection-received':'Your feedback or objection is saved for the Vision Flow team to review. An unresolved objection stops automatic acceptance. We will notify you when we respond.',
     'deemed-accepted':'The trusted server recorded deemed acceptance after the review period. This is not an explicit client confirmation, signature, payment verification or download authorization.',
     'review-window':`Your signed review policy is in place. You have at least until ${context?.earliestDeadline||'the deadline displayed in your workspace'} to review this update. The portal records the full 72-hour window after the notification handoff; a delayed handoff may extend, never shorten, this deadline. Confirm or object in the portal. An unresolved objection stops automatic acceptance.`,
   }[event.eventType]||'Open your workspace to review this update.';
-  return {greeting:targetType==='admin'?`Team update for ${name}`:`Hello ${name}`,project,intro};
+  const adminIntro={
+    'consent-complete':`Client ${name} completed Terms and Privacy consent. Review the onboarding record and applicable agreement status.`,
+    'master-signed':`Client ${name} signed the Master Partner Agreement. Review the saved signature and covered project particulars.`,
+    'project-signed':`Client ${name} signed the project agreement. Review the captured project terms and signature.`,
+    'project-acknowledged':`Client ${name} acknowledged the current project particulars.`,
+    'project-notification':`A project update for ${name} is ready for your review.`,
+    'payment-notification':`A payment record for ${name} was updated. Review the saved record; this notification does not verify payment.`,
+    'delivery-notification':`A delivery record for ${name} was updated. Review the current delivery state before releasing access.`,
+    'update-notification':`The ${name} workspace was updated. Review the exact project change.`,
+    'confirmation-received':`Client ${name} explicitly confirmed an update. Review the immutable response record.`,
+    'objection-received':`Client ${name} submitted feedback or an objection. Review the exact response before proceeding.`,
+    'deemed-accepted':`The trusted server recorded a deemed outcome for ${name} after the disclosed review period.`,
+    'review-window':`A fresh 72-hour review window is ready for ${name}. Review the current project response and deadline.`,
+  }[event.eventType]||'Open the administrator workspace to review this notification.';
+  const source=context?.source;
+  const note=context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType?String(source.message||'').replace(/https?:\/\/\S+/gi,'[view workspace]').slice(0,4000):'';
+  return {greeting:targetType==='admin'?'Dear Sir':`Hello ${name}`,project,note,intro:targetType==='admin'?adminIntro:clientIntro};
+}
+
+function paymentSummary(context) {
+  const totals=paymentTotals(context?.project),changes=context?.source?.paymentChanges;
+  const label=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\r\n]/g,' ').slice(0,80);
+  const rows=[];
+  for(const change of (changes?.identified&&Array.isArray(changes.items)?changes.items:[]).slice(0,20)){
+    if(!['added','updated','removed'].includes(change.kind))continue;
+    const payment=change.after||change.before;
+    const date=/^\d{4}-\d{2}-\d{2}$/.test(payment?.date)?payment.date:'Date not recorded';
+    rows.push([`Record ${change.kind}: ${date}${payment?.type?' / '+label(payment.type):''}`,paymentMoney(payment?.amount)]);
+    if(change.kind==='updated')rows.push(['Previously recorded',paymentMoney(change.before?.amount)]);
+  }
+  if(changes?.count>(changes?.items?.length||0))rows.push(['Additional changed records',`${changes.count-(changes.items?.length||0)} - view workspace`]);
+  rows.push(['Project budget',paymentMoney(totals.budget)],['Total recorded',paymentMoney(totals.paid)],
+    [totals.credit?'Credit balance':'Recorded balance',paymentMoney(totals.balance===null?null:Math.abs(totals.balance))]);
+  return rows;
 }
 
 function emailHtml(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
-  return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#17233a;">
-<div style="background:#10263c;padding:20px;text-align:center;">
-  <h1 style="color:white;margin:0;">Vision Flow</h1>
-  <p style="color:#aaa;margin:4px 0 0;">Creative Production Agency</p>
-  <p><a href="${esc(links.overview)}" style="color:white;">${targetType==='admin'?'Client administration':'All your projects'}</a></p>
-</div>
-<div style="padding:24px;max-width:600px;margin:0 auto;">
-  <h2>${esc(emailSubject(event))}</h2>
-  <p>${esc(copy.greeting)},</p>${copy.project?`<p><strong>${esc(copy.project)}</strong></p>`:''}
-  <p>${esc(copy.intro)}</p>
-  <p><a href="${esc(links.action)}" style="display:inline-block;padding:12px 24px;background:#f36b4e;color:white;text-decoration:none;border-radius:6px;">${esc(links.label)}</a></p>
-  ${event.projectKey?`<p><a href="${esc(links.project)}">Open this project</a></p>`:''}
-  <p style="font-size:12px;color:#65718a;">When a 72-hour review is active, its server-recorded deadline and live countdown appear in the workspace. This message alone does not start or complete a review.</p>
-  <hr style="border:none;border-top:1px solid #dce3ec;margin:24px 0;">
-  <p style="font-size:11px;color:#65718a;">This is an automated notification from Vision Flow. Keep your private workspace links confidential. Use the portal to preserve your response in the shared project record.</p>
-</div>
-</body></html>`;
+  const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
+  const paymentRows=payment?`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;background:#f7fafc;border:1px solid #e2e8f0;">${payment.map(([label,value])=>`<tr><td style="padding:9px 12px;color:#475569;border-bottom:1px solid #e2e8f0;">${esc(label)}</td><td style="padding:9px 12px;text-align:right;font-weight:700;border-bottom:1px solid #e2e8f0;">${esc(value)}</td></tr>`).join('')}</table>`:'';
+  return `<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#17233a;">
+<div style="padding:24px 12px;background:#f4f7fb;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dbe4ee;border-radius:12px;overflow:hidden;">
+    <tr><td style="padding:22px 28px;border-bottom:4px solid #0f9f9a;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="vertical-align:middle;"><img src="${EMAIL_LOGO_URL}" alt="Vision Flow" width="52" height="52" style="display:block;width:52px;height:52px;object-fit:contain;border-radius:10px;"></td>
+        <td style="padding-left:14px;vertical-align:middle;"><a href="${esc(links.overview)}" style="font-size:20px;color:#12304a;font-weight:700;text-decoration:none;">Vision Flow</a><br><span style="font-size:12px;color:#64748b;">Creative Production Agency</span></td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:28px;">
+      <p style="margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700;">${esc(emailSubject(event))}</p>
+      <h1 style="margin:0 0 18px;font-size:25px;line-height:1.25;color:#12304a;overflow-wrap:anywhere;">${esc(emailSubject(event,context))}</h1>
+      <p style="margin:0 0 14px;">${esc(copy.greeting)},</p>${copy.project?`<p style="margin:0 0 14px;font-weight:700;">${esc(copy.project)}</p>`:''}
+      <p style="margin:0 0 18px;line-height:1.65;">${esc(copy.intro)}</p>
+      ${copy.note?`<p style="padding:14px;background:#f7fafc;border-left:3px solid #0f766e;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(copy.note)}</p>`:''}
+      ${paymentRows}
+      <p style="margin:22px 0;"><a href="${esc(links.action)}" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:7px;font-weight:700;">${esc(links.label)}</a></p>
+      ${event.projectKey?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
+      <p style="margin:0 0 14px;"><a href="${esc(links.overview)}" style="color:#0f766e;">All projects</a></p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">When a 72-hour review is active, the server-recorded deadline and live countdown appear in the workspace. This email alone does not start or complete a review.</p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">If this is your first message from Vision Flow, please check Spam or Promotions and mark it as trusted so future updates are not missed.</p>
+    </td></tr>
+    <tr><td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.55;color:#64748b;">Automated notification from Vision Flow. Keep private workspace links confidential and use the portal to preserve your response in the shared project record.</td></tr>
+  </table>
+</div></body></html>`;
 }
 
 function emailPlain(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
-  return `${emailSubject(event)}\n\n${copy.greeting},\n${copy.project}\n\n${copy.intro}\n\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nThe workspace shows the server-recorded deadline when a 72-hour review is active. This notification is not payment verification or download authorization. Keep private links confidential.`;
+  const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
+  const paymentText=payment?`\nPayment summary\n${payment.map(([label,value])=>`${label}: ${value}`).join('\n')}\n`:'';
+  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nThe workspace shows the server-recorded deadline when a 72-hour review is active. This notification is not payment verification or download authorization. If this is your first message, check Spam or Promotions and mark it trusted. Keep private links confidential.`;
 }
 
 // ── Process Single Event ──────────────────────────────────────────
@@ -829,7 +1009,9 @@ async function processOwnedEvent(event, { firestore, mail, clock, config }) {
 
   // 7. Check remaining mail quota
   const remaining = await mail.remainingQuota();
-  let messages = buildEmail(event, recipients, { config, context:binding });
+  let messages;
+  try{messages=buildEmail(event, recipients, { config, context:binding });}
+  catch{await firestore.set(`${OUTBOX_COLLECTION}/${event.id}`,{status:'attachment-blocked',processedAt:now},{merge:true});return {status:'attachment-blocked'};}
   if(!messages.length)return {status:'no-recipients'};
   if (remaining < messages.length) {
     await firestore.set(`${OUTBOX_COLLECTION}/${event.id}`, {
@@ -858,7 +1040,8 @@ async function processOwnedEvent(event, { firestore, mail, clock, config }) {
     const targets=await resolveRecipients(event,{firestore:tx,config,boundClient:fresh.client});
     if(!targets.enabled){authorization={ok:false,status:'settings-paused'};return;}
     if(event.eventType==='review-window')fresh.earliestDeadline=new Date(reviewTimestamp(clock.now())+72*3600000).toISOString();
-    const prepared=buildEmail(event,targets,{config,context:fresh});
+    let prepared;
+    try{prepared=buildEmail(event,targets,{config,context:fresh});}catch{authorization={ok:false,status:'attachment-blocked'};return;}
     if(!prepared.length){authorization={ok:false,status:'no-recipients'};return;}
     if(prepared.length>remaining){authorization={ok:false,status:'quota-exhausted'};return;}
     tx.set(`${OUTBOX_COLLECTION}/${event.id}`,{status:'sending',processedAt:clock.now(),...(fresh.earliestDeadline?{earliestDeadline:fresh.earliestDeadline}:{}),recipientClient:targets.client||null},{merge:true});
@@ -943,6 +1126,8 @@ async function processOutbox({ firestore, mail, clock, config }) {
 
   // 2. Check remaining quota before starting
   if(config.enabled!==true)return {ok:false,error:'Worker is disabled until runtime and rules integration are verified.',processed:0};
+  const sender=await mail.readiness?.();
+  if(sender&&sender.ok!==true)return {ok:false,error:'The authenticated sender does not match the configured agency account.',code:sender.code,processed:0};
   const quota = await mail.remainingQuota();
   if (quota <= 0) {
     return { ok: false, error: 'Daily email quota exhausted.', processed: 0 };
@@ -951,7 +1136,7 @@ async function processOutbox({ firestore, mail, clock, config }) {
 
   // 3. Claim events with atomic leases
   const events = await claimEvents({
-    firestore, clock, workerId,
+    firestore, clock, workerId, config,
     limit: Math.min(MAX_EVENTS_PER_RUN, quota,config.eventBatchLimit||MAX_EVENTS_PER_RUN),
   });
 
@@ -995,6 +1180,11 @@ function validateConfig(config) {
     if (config.portalHost && config.portalHost!==PORTAL_HOST) {
       errors.push('portalHost must be the canonical VisionFlow origin.');
     }
+    if (config.clientScopeSlug !== undefined && config.clientScopeSlug !== null &&
+        (typeof config.clientScopeSlug !== 'string' ||
+         (config.clientScopeSlug.trim() && (config.clientScopeSlug.trim().length > 200 || config.clientScopeSlug.includes('/'))))) {
+      errors.push('clientScopeSlug must be a bounded client id without slash.');
+    }
   }
   return { valid: errors.length === 0, errors };
 }
@@ -1003,7 +1193,7 @@ function validateConfig(config) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/runtime/adapters.mjs (SHA-256: c4fa8145d20fca12abf9024fb579d96d126ace1ab29f865c26c5147344daa9cd)
+// Source: backend/apps-script/runtime/adapters.mjs (SHA-256: fb42f99d6fbf0c2c587248e31f1000df6bc2cc64ab8f7bdd2adc5cdfacd3ba9f)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Runtime Adapters for Apps Script V8
@@ -1331,12 +1521,29 @@ function createFirestoreAdapter(deps) {
 
 function createMailAdapter(deps) {
   const mailApp = deps.mailApp;
+  const readiness=()=>{
+    const normalize=value=>typeof value==='string'?value.trim().toLowerCase():'';
+    const expected=normalize(deps.expectedSender);
+    if(!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(expected))return {ok:false,code:'sender-unconfigured'};
+    try {
+      const actual=normalize(deps.session.getEffectiveUser().getEmail());
+      return {ok:actual===expected,code:actual===expected?'sender-verified':actual?'sender-mismatch':'sender-unavailable'};
+    }catch{return {ok:false,code:'sender-unavailable'};}
+  };
   return {
+    readiness,
     send: async (message) => {
+      if(!readiness().ok)throw Object.assign(new Error('Sender identity check failed before mail handoff.'),{notAccepted:true});
+      let attachments;
+      if(message.paymentDocument){
+        try{attachments=[deps.paymentAttachment(message.paymentDocument)];}
+        catch{throw Object.assign(new Error('Payment attachment preparation failed before mail handoff.'),{notAccepted:true});}
+      }
       try {
         mailApp.sendEmail({
           to: message.to, subject: message.subject, body: message.body,
           htmlBody: message.htmlBody, name: message.name || 'Vision Flow', replyTo: message.replyTo,
+          ...(attachments?{attachments}:{}),
         });
       } catch (err) {
         const error = new Error('Mail handoff failed or is uncertain.');
@@ -1374,6 +1581,8 @@ function loadConfig(deps) {
     portalHost: 'https://visionflow-bd.github.io',
     replyTo: raw.REPLY_TO || 'visionflow.agency.bd@gmail.com',
     expectedSender: raw.EXPECTED_SENDER || '',
+    // Optional owner-controlled staging fence. Empty means normal all-client mode.
+    clientScopeSlug: raw.CLIENT_SCOPE_SLUG || '',
     enabled: raw.ENABLED === 'true',
     reviewStateReady: raw.REVIEW_STATE_READY === 'true',
     eventBatchLimit: 4,
@@ -1499,8 +1708,11 @@ function createFirestoreAdapter_runtime() {
 }
 
 function createMailAdapter_runtime(firestore) {
-  var adapter = createMailAdapter({ mailApp: MailApp });
+  var adapter = createMailAdapter({ mailApp: MailApp, session: typeof Session === 'undefined' ? null : Session, expectedSender: loadConfig_runtime().expectedSender,
+    paymentAttachment: function(document) { firestore.checkBudget(); return createPaymentAttachment(document, {urlFetch: UrlFetchApp, utilities: Utilities, htmlService: HtmlService}); }
+  });
   return {
+    readiness: adapter.readiness,
     remainingQuota: adapter.remainingQuota,
     send: async function(message) { firestore.checkBudget(); return await adapter.send(message); }
   };

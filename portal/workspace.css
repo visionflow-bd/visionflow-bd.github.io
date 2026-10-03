@@ -134,5 +134,22 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offs
 
 /* ── Notification Bar ── */
 .consent-scroll{max-height:38vh;overflow-y:auto;text-align:left;padding:14px;border:1px solid var(--border,#637086);border-radius:10px;line-height:1.7;overscroll-behavior:contain}
-.consent-scroll h3{margin-top:14px}.consent-help{font-size:13px}.terms-card .form-error{white-space:normal}
+.consent-scroll h3{margin-top:14px}.consent-intro{font-size:13px;color:var(--muted,#8899aa);margin-bottom:10px}.consent-links{display:flex;justify-content:center;align-items:center;gap:8px;margin:4px 0 14px}.consent-links .terms-link{background:none;border:0;padding:0;font:inherit}.terms-checkbox-label[aria-disabled="true"]{opacity:.72}.consent-submit{width:100%;margin-top:2px;background:#526178;color:#dbe5ef;border-color:#687b92;cursor:not-allowed}.consent-submit:disabled{opacity:.82;transform:none}.consent-ready .consent-submit{border-color:var(--brand,#5cc8b0)}.consent-ready .terms-checkbox-label{border-color:var(--brand,#5cc8b0);opacity:1}.consent-submit.is-ready{background:linear-gradient(135deg,#f28bcf,#c586ff);border-color:transparent;color:#20122b;cursor:pointer;box-shadow:0 8px 24px rgba(214,126,226,.28)}.terms-card .form-error{white-space:normal}
 #notif-area{position:fixed;top:60px;right:16px;z-index:900;display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:auto}
+
+/* AGY 2026-10-03: action centre, approval history, delivery notes */
+.action-center{margin:0 0 18px;padding:18px 20px;border:1px solid var(--line);border-radius:var(--radius,18px);background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 10%,var(--surface)),var(--surface));box-shadow:var(--shadow)}
+.action-center .eyebrow{margin:0 0 2px}
+.action-center h2{margin:0 0 10px;font-size:18px}
+.action-list{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px}
+.action-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
+.action-item.urgent{border-color:color-mix(in srgb,var(--amber) 55%,transparent);background:color-mix(in srgb,var(--amber) 10%,var(--surface2))}
+.action-item span{flex:1;min-width:0}
+.action-mail{margin:6px 0 0}
+.history-more{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.history-more>summary{cursor:pointer;font-weight:600;color:var(--brand);padding:6px 0;list-style-position:inside}
+.history-more[open]>summary{margin-bottom:6px}
+.approval-row .countdown-wrap{margin:6px 0 2px}
+.cell-note{display:block;margin-top:4px;font-size:11px}
+.payment-proof{width:132px;height:88px;object-fit:contain;background:var(--surface2);padding:4px;margin-top:8px;display:block}
+@media(max-width:600px){.action-item{flex-direction:column;align-items:stretch}.action-item .button{width:100%}.cd-num{width:42px;height:42px;font-size:19px}}

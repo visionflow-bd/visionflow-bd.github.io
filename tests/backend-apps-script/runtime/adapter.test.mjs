@@ -380,15 +380,16 @@ describe('encoded document IDs', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('MailApp adapter', () => {
+  const identity={session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.invalid'})},expectedSender:'owner@example.invalid'};
   test('successful send does not claim delivery', async () => {
     const mailApp = mockMailApp();
-    const adapter = createMailAdapter({ mailApp });
+    const adapter = createMailAdapter({ mailApp, ...identity });
     await adapter.send({ to: 'test@example.com', subject: 'Test', body: 'Hello' });
     assert.equal(mailApp.sent.length, 1);
   });
 
   test('unknown error is ambiguous (no notAccepted flag)', async () => {
-    const adapter = createMailAdapter({ mailApp: mockMailApp({ throwError: 'Network timeout' }) });
+    const adapter = createMailAdapter({ mailApp: mockMailApp({ throwError: 'Network timeout' }), ...identity });
     try {
       await adapter.send({ to: 'test@example.com', subject: 'Test', body: 'Hello' });
       assert.fail('Should have thrown');
@@ -398,7 +399,7 @@ describe('MailApp adapter', () => {
   });
 
   test('daily limit exception remains ambiguous', async () => {
-    const adapter = createMailAdapter({ mailApp: mockMailApp({ throwLimitError: true }) });
+    const adapter = createMailAdapter({ mailApp: mockMailApp({ throwLimitError: true }), ...identity });
     try {
       await adapter.send({ to: 'test@example.com', subject: 'Test', body: 'Hello' });
       assert.fail('Should have thrown');
@@ -417,6 +418,19 @@ describe('MailApp adapter', () => {
     const adapter = createMailAdapter({ mailApp: mockMailApp({ quota: 75 }) });
     const quota = await adapter.remainingQuota();
     assert.equal(quota, 75);
+  });
+  test('missing, wrong or unavailable authenticated sender cannot call MailApp',async()=>{
+    for(const patch of [{expectedSender:''},{expectedSender:'different@example.invalid'},{session:{getEffectiveUser:()=>({getEmail:()=>''})}},{session:{getEffectiveUser:()=>{throw Error('PRIVATE');}}}]){
+      const mailApp=mockMailApp(),adapter=createMailAdapter({mailApp,...identity,...patch});
+      assert.equal(adapter.readiness().ok,false);
+      await assert.rejects(adapter.send({to:'test@example.invalid'}),error=>error.notAccepted===true);
+      assert.equal(mailApp.sent.length,0);
+    }
+  });
+  test('sender identity is checked again at the actual handoff',async()=>{
+    let owner='owner@example.invalid';const mailApp=mockMailApp(),adapter=createMailAdapter({mailApp,...identity,session:{getEffectiveUser:()=>({getEmail:()=>owner})}});
+    assert.equal(adapter.readiness().ok,true);owner='wrong@example.invalid';
+    await assert.rejects(adapter.send({}),e=>e.notAccepted===true);assert.equal(mailApp.sent.length,0);
   });
 });
 

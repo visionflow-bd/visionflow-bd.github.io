@@ -323,12 +323,29 @@ function createFirestoreAdapter(deps) {
 
 function createMailAdapter(deps) {
   const mailApp = deps.mailApp;
+  const readiness=()=>{
+    const normalize=value=>typeof value==='string'?value.trim().toLowerCase():'';
+    const expected=normalize(deps.expectedSender);
+    if(!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(expected))return {ok:false,code:'sender-unconfigured'};
+    try {
+      const actual=normalize(deps.session.getEffectiveUser().getEmail());
+      return {ok:actual===expected,code:actual===expected?'sender-verified':actual?'sender-mismatch':'sender-unavailable'};
+    }catch{return {ok:false,code:'sender-unavailable'};}
+  };
   return {
+    readiness,
     send: async (message) => {
+      if(!readiness().ok)throw Object.assign(new Error('Sender identity check failed before mail handoff.'),{notAccepted:true});
+      let attachments;
+      if(message.paymentDocument){
+        try{attachments=[deps.paymentAttachment(message.paymentDocument)];}
+        catch{throw Object.assign(new Error('Payment attachment preparation failed before mail handoff.'),{notAccepted:true});}
+      }
       try {
         mailApp.sendEmail({
           to: message.to, subject: message.subject, body: message.body,
           htmlBody: message.htmlBody, name: message.name || 'Vision Flow', replyTo: message.replyTo,
+          ...(attachments?{attachments}:{}),
         });
       } catch (err) {
         const error = new Error('Mail handoff failed or is uncertain.');
@@ -366,6 +383,8 @@ function loadConfig(deps) {
     portalHost: 'https://visionflow-bd.github.io',
     replyTo: raw.REPLY_TO || 'visionflow.agency.bd@gmail.com',
     expectedSender: raw.EXPECTED_SENDER || '',
+    // Optional owner-controlled staging fence. Empty means normal all-client mode.
+    clientScopeSlug: raw.CLIENT_SCOPE_SLUG || '',
     enabled: raw.ENABLED === 'true',
     reviewStateReady: raw.REVIEW_STATE_READY === 'true',
     eventBatchLimit: 4,

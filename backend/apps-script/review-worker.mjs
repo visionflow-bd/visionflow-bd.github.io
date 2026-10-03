@@ -8,23 +8,30 @@ const terminal=new Set(['client-confirmed','objected','deemed-accepted','cancell
 const waiting=new Set(['awaiting-notification','awaiting-review-notification']);
 const scanPath='portal_backend_state/review-scan';
 
+const reviewClientScope=config=>{
+  const value=typeof config?.clientScopeSlug==='string'?config.clientScopeSlug.trim():'';
+  return value||null;
+};
+
 // A document-name cursor visits every request, including blocked/malformed ones.
 // No oldest-request starvation, composite-index dependency or unbounded scan.
-async function reviewCandidates(firestore) {
-  const cursor=await firestore.get(scanPath);
-  let page=await firestore.query('portal_reviews',{orderBy:['__name__','asc'],limit:20,...(validId(cursor?.lastId)?{startAfterId:cursor.lastId}:{})});
-  if(!page.length&&cursor?.lastId)page=await firestore.query('portal_reviews',{orderBy:['__name__','asc'],limit:20});
-  return page;
+async function reviewCandidates(firestore,config) {
+  const scope=reviewClientScope(config),path=scope?`${scanPath}-${scope}`:scanPath;
+  const cursor=await firestore.get(path),where=scope?{where:[['clientSlug','==',scope]]}:{};
+  let page=await firestore.query('portal_reviews',{...where,orderBy:['__name__','asc'],limit:20,...(validId(cursor?.lastId)?{startAfterId:cursor.lastId}:{})});
+  if(!page.length&&cursor?.lastId)page=await firestore.query('portal_reviews',{...where,orderBy:['__name__','asc'],limit:20});
+  return {page,path,scope};
 }
 
 export async function settleReviewTimers({firestore,clock,config}) {
   if(config?.enabled!==true||config.reviewStateReady!==true)return {processed:0,results:[],disabled:true};
   if((await firestore.get('portal_settings/recovery'))?.active===true)return {processed:0,results:[],disabled:true};
-  const candidates=await reviewCandidates(firestore),results=[];
+  const candidateState=await reviewCandidates(firestore,config),candidates=candidateState.page,scan=candidateState.path,scope=candidateState.scope,results=[];
   for(const candidate of candidates){
     try{firestore.checkBudget?.(30);}catch{break;}
+    if(scope&&candidate.clientSlug!==scope)continue;
     if(!validId(candidate.id)||terminal.has(candidate.status)){
-      await firestore.set(scanPath,{lastId:candidate.id,checkedAt:clock.now()});continue;
+      await firestore.set(scan,{lastId:candidate.id,checkedAt:clock.now()});continue;
     }
     let outcome={id:candidate.id,status:'blocked'};
     try{
@@ -107,9 +114,9 @@ export async function settleReviewTimers({firestore,clock,config}) {
       });
     }catch{outcome={id:candidate.id,status:'race-or-validation-blocked'};}
     results.push(outcome);
-    await firestore.set(scanPath,{lastId:candidate.id,checkedAt:clock.now()});
+    await firestore.set(scan,{lastId:candidate.id,checkedAt:clock.now()});
   }
   // Save progress per candidate so a runtime deadline cannot starve later work.
-  if(!candidates.length)await firestore.set(scanPath,{lastId:null,checkedAt:clock.now()});
+  if(!candidates.length)await firestore.set(scan,{lastId:null,checkedAt:clock.now()});
   return {processed:results.length,results};
 }

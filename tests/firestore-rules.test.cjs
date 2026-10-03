@@ -414,6 +414,33 @@ test('captured terms must match the project; new schema needs no redundant ID', 
   await assertFails(setDoc(doc(visitor,`${portalPath}/sigs/legacy-new`),legacy));
 });
 
+test('project-by-project signing uses the published deterministic signature route', async () => {
+  const portal = portalFixture();
+  portal.agreementMode = 'project';
+  portal.projects['project-one'].signatureRequired = true;
+  portal.projects['project-one'].signatureId = 'project-project-one-1-1-1';
+  await setDoc(doc(admin, portalPath), portal);
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one'), {
+    projectKey: 'project-one', version: 1, links: { 1: 'https://drive.google.com/file/d/project-one/view' },
+  }));
+  await acceptTerms(portal);
+  const expected = signature(portal.projects['project-one'].signatureId);
+  await assertSucceeds(setDoc(record(visitor, 'sigs', portal.projects['project-one'].signatureId), expected));
+  await assertFails(setDoc(record(visitor, 'sigs', 'random-project-signature'), expected));
+  await assertSucceeds(getDoc(record(visitor, 'deliveries', 'project-one')));
+});
+
+test('queued project signatures and notifications are atomic and cannot invent a review policy',async()=>{
+  const p=await enableEventQueue();p.agreementMode='project';p.projects['project-one'].signatureId='project-project-one-1-1-1';
+  p.masterAgreement.reviewPolicy={version:'VF-REVIEW-72H-v1',hours:72,outcome:'deemed-accepted'};
+  await setDoc(doc(admin,portalPath),p);await onboardingSubmission('consent',p.consentTerms.version,consent(p));
+  const id=p.projects['project-one'].signatureId,data={...signature(id),reviewPolicy:p.masterAgreement.reviewPolicy};
+  await assertFails(setDoc(record(visitor,'sigs',id),data));
+  await assertFails(onboardingSubmission('sigs',id,{...data,reviewPolicy:{...data.reviewPolicy,hours:48}}));
+  await assertSucceeds(onboardingSubmission('sigs',id,data));
+  const queued=await getDocs(collection(admin,'portal_outbox'));assert.ok(queued.docs.some(d=>d.data().eventType==='project-signed'));
+});
+
 test('project and item feedback can be created, and only admin can edit/delete', async () => {
   await assertSucceeds(setDoc(doc(visitor, `${portalPath}/confirms/item-feedback`), feedback()));
   await assertSucceeds(setDoc(doc(visitor, `${portalPath}/confirms/project-feedback`), feedback({ itemNumber: 0, requestType: 'question' })));

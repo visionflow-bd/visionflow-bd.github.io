@@ -19,7 +19,7 @@ test('real browser: consent, one master signature, gated download, changed-proje
   const environment=await initializeTestEnvironment({projectId,firestore:{rules}});
   async function emulatorRules(content){const r=await fetch(`http://127.0.0.1:8088/emulator/v1/projects/${projectId}:securityRules`,{method:'PUT',body:JSON.stringify({rules:{files:[{content}]}})});assert.equal(r.ok,true,await r.text());}
   const token='browser-test-only-0123456789abcdef0123456789abcdef';
-  let client=normalizeClient({name:'Synthetic Browser Client',accessToken:token,projects:{first:{name:'First Project',rate:400,budget:400,items:[{n:1,t:'Synthetic video',s:'delivered',dl:'https://example.invalid/authorized-final'}]},second:{name:'Second Project',rate:500,budget:500,items:[{n:1,s:'pending'}]}}},'browser-client');
+  let client=normalizeClient({name:'Synthetic Browser Client',email:'synthetic@example.invalid',accessToken:token,projects:{first:{name:'First Project',rate:400,budget:400,items:[{n:1,t:'Synthetic video',s:'delivered',dl:'https://example.invalid/authorized-final'}]},second:{name:'Second Project',rate:500,budget:500,items:[{n:1,s:'pending'}]}}},'browser-client');
   async function save(next,previous={}){const manifests=prepareSecureSave(next,previous);await environment.withSecurityRulesDisabled(async c=>{
     await setDoc(doc(c.firestore(),'site/main'),{});
     await setDoc(doc(c.firestore(),'portal_clients',next.slug),next);
@@ -50,11 +50,20 @@ test('real browser: consent, one master signature, gated download, changed-proje
     await context.route('https://example.invalid/**',route=>route.fulfill({contentType:'text/html',body:'Synthetic authorized delivery'}));
     page.on('pageerror',e=>errors.push(e.message));
     const url=`http://127.0.0.1:${server.address().port}/portal/?access=${token}`;
-    await page.goto(url+'#master-agreement');
+    await page.goto(url+'#master-agreement',{waitUntil:'domcontentloaded'});
     await page.locator('#consent-checkbox').waitFor();
+    assert.equal(await page.locator('[data-policy-detail]').count(),2,'Consent must expose direct Terms and Privacy detail links');
+    await page.locator('[data-policy-detail="terms"]').click();
+    await page.locator('[data-policy-panel]').getByRole('heading',{name:'Terms & Conditions'}).waitFor();
+    await page.locator('[data-policy-close]').click();
+    await page.locator('[data-policy-detail="privacy"]').click();
+    await page.locator('[data-policy-panel]').getByRole('heading',{name:'Privacy Policy'}).waitFor();
+    await page.locator('[data-policy-close]').click();
     assert.equal(await page.locator('#consent-submit').isDisabled(),true);
     await page.locator('.consent-scroll').evaluate(el=>{el.scrollTop=el.scrollHeight;el.dispatchEvent(new Event('scroll'));});
     await page.locator('#consent-checkbox').check();
+    assert.equal(await page.locator('#consent-submit').isEnabled(),true);
+    assert.ok(await page.locator('#consent-submit').evaluate(el=>el.classList.contains('is-ready')));
     // Reject a real server write; optimistic local events must not grant entry.
     await emulatorRules(rules.replace("data.type == 'terms-acceptance'","false && data.type == 'terms-acceptance'"));
     await page.locator('#consent-submit').click();
@@ -92,7 +101,7 @@ test('real browser: consent, one master signature, gated download, changed-proje
     assert.equal(popup.url(),'https://example.invalid/authorized-final');await popup.close();
     // A second device uses stored consent/master, not localStorage.
     const secondContext=await browser.newContext({viewport:{width:390,height:844}}),mobile=await secondContext.newPage();
-    await mobile.goto(url+'&p=second');await mobile.locator('#master-agreement').waitFor();
+    await mobile.goto(url+'&p=second',{waitUntil:'domcontentloaded'});await mobile.locator('#master-agreement').waitFor();
     assert.equal(await mobile.locator('#consent-checkbox').count(),0);
     assert.equal(await mobile.locator('[data-action="master-sign"]').count(),0);
     assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Mobile must not overflow horizontally');
@@ -184,8 +193,8 @@ test('real browser: consent, one master signature, gated download, changed-proje
     await adminPage.locator('#f-clientReplyTo').fill('synthetic-reply@example.invalid');
     await adminPage.locator('#modalForm button[type="submit"]').click();await adminPage.locator('#modalLayer').waitFor({state:'hidden'});
     await adminPage.locator('[data-action="notification-status"]').click();
-    await adminPage.getByRole('heading',{name:'Notification queue',exact:true}).waitFor();
-    await adminPage.getByText('confirmation-received',{exact:true}).first().waitFor();
+    await adminPage.getByRole('heading',{name:'Email notifications',exact:true}).waitFor();
+    await adminPage.getByText('Client confirmed an update',{exact:true}).first().waitFor();
     assert.equal(await adminPage.locator('#modalContent').textContent().then(t=>t.includes(token)),false,'Queue status must not display client token');
     await adminPage.locator('[data-action="close-modal"]').first().click();
     await adminPage.locator('[data-action="open-client"][data-client="browser-client"]').click();
@@ -214,6 +223,16 @@ test('real browser: consent, one master signature, gated download, changed-proje
       assert.equal((await getDocs(collection(c.firestore(),'portal_reviews'))).size,2,'Admin response should publish a new bound update');
     });
     // Recycle/restore must preserve file bytes and the original immutable source.
+    await adminPage.locator('[data-action="email-send"]').click();
+    await adminPage.getByRole('heading',{name:'Email this project',exact:true}).waitFor();
+    await adminPage.locator('#f-title').fill('Manual agency update');
+    await adminPage.locator('#f-message').fill('Please review the revised project details in your workspace.');
+    await adminPage.locator('#modalForm button[type="submit"]').click();await adminPage.locator('#modalLayer').waitFor({state:'hidden'});
+    await environment.withSecurityRulesDisabled(async c=>{
+      const notices=(await getDocs(collection(c.firestore(),'portal_public',token,'notices'))).docs.map(d=>d.data());
+      assert.ok(notices.some(n=>n.title==='Manual agency update'));
+      assert.ok(notices.some(n=>n.responseTarget?.id==='browser-object'&&n.responseTarget.kind==='review'));
+    });
     const feedbackId=await adminPage.locator('[data-action="download-feedback-attachment"]').first().getAttribute('data-id');
     await adminPage.locator(`[data-action="review-feedback"][data-id="${feedbackId}"]`).click();
     await adminPage.locator('[data-action="archive-feedback"]').click();
@@ -240,6 +259,31 @@ test('real browser: consent, one master signature, gated download, changed-proje
     const restoredDownload=adminPage.waitForEvent('download');
     await adminPage.locator('[data-action="download-feedback-attachment"]').first().click();
     assert.deepEqual(await readFile(await (await restoredDownload).path()),feedbackBytes);
+    // A fresh project-mode client signs once for this project and atomically
+    // queues an email receipt; no master agreement is demanded by this route.
+    const projectToken='project-mode-synthetic-token',projectClient=normalizeClient({name:'Synthetic Project Client',agreementMode:'project',accessToken:projectToken,projects:{only:{name:'Independent Project',rate:500,budget:500,items:[]}}},'project-client');
+    prepareSecureSave(projectClient);const projectPortal=publicSnapshot(projectClient,projectClient.slug);
+    await environment.withSecurityRulesDisabled(async c=>{
+      await setDoc(doc(c.firestore(),'portal_clients',projectClient.slug),projectClient);
+      await setDoc(doc(c.firestore(),'portal_public',projectToken),projectPortal);
+    });
+    const signing=await context.newPage();await signing.goto(`http://127.0.0.1:${server.address().port}/portal/?access=${projectToken}&p=only#agreement`,{waitUntil:'domcontentloaded'});
+    await signing.locator('.consent-scroll').evaluate(el=>{el.scrollTop=el.scrollHeight;el.dispatchEvent(new Event('scroll'));});
+    await signing.locator('#consent-checkbox').check();await signing.locator('#consent-submit').click();
+    await signing.locator('[data-action="project-sign"]').click();
+    await signing.getByRole('heading',{name:'72-hour review policy',exact:true}).waitFor();
+    await signing.locator('#f-name').fill('Synthetic Project Signer');const signBox=await signing.locator('#signatureCanvas').boundingBox();
+    await signing.mouse.move(signBox.x+20,signBox.y+40);await signing.mouse.down();await signing.mouse.move(signBox.x+130,signBox.y+70,{steps:12});await signing.mouse.up();
+    await signing.locator('#modalForm input[name="agree"]').check();await signing.locator('#modalForm button[type="submit"]').click();
+    await signing.locator('#modalLayer').waitFor({state:'hidden'});
+    await environment.withSecurityRulesDisabled(async c=>{
+      const signatureId=projectPortal.projects.only.signatureId;
+      const stored=(await getDoc(doc(c.firestore(),'portal_public',projectToken,'sigs',signatureId))).data();
+      assert.equal(stored.reviewPolicy.hours,72);
+      assert.equal((await getDoc(doc(c.firestore(),'portal_outbox',`client:${projectToken}:sigs:${signatureId}`))).data().eventType,'project-signed');
+      assert.equal((await getDocs(collection(c.firestore(),'portal_public',projectToken,'agreements'))).size,0);
+    });
+    await signing.close();
     await adminContext.close();
     assert.deepEqual(errors,[]);
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));await environment.cleanup();}

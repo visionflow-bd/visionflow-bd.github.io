@@ -7,6 +7,7 @@ import { prepareNotificationSave } from '../portal/notification-publication.js';
 const runInNewContext=(code,context)=>vmRun(code,{nextReviewEpoch,retainedReviewRecord,belongsToReviewProject,now:()=> '2026-09-28T00:00:00Z',...context});
 import { Timestamp } from 'firebase/firestore';
 import { normalizeClient, publicSnapshot, prepareSecureSave, sameRecord, clone, itemsOf, money } from '../portal/data.js';
+import { ensureDeliveryApprovals } from '../portal/approval-state.js';
 
 // Exercise the actual application functions, with Firestore and the DOM replaced
 // by explicit in-memory boundaries. These complement, not replace, browser/rules QA.
@@ -531,7 +532,7 @@ test('custom confirmation Cancel and Escape resolve false and restore focus',asy
 function transactionHarness(current,{repeat=false}={}) {
   let server = current, writes = 0;
   const state = {clients:{}}, context = {
-    state, normalizeClient,publicSnapshot,prepareSecureSave,prepareNotificationSave,serverTimestamp:()=>Timestamp.fromDate(new Date('2026-09-24T00:00:00.000Z')), requireAdmin:()=>{},recoveryPending:c=>Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||Object.values(c?.trash||{}).some(entry=>entry?.restoreState||entry?.purgeState)), now:()=> '2026-09-24T00:00:00.000Z',MAX_SAVE_OPERATIONS:498,
+    state, normalizeClient,publicSnapshot,prepareSecureSave,prepareNotificationSave,ensureDeliveryApprovals,serverTimestamp:()=>Timestamp.fromDate(new Date('2026-09-24T00:00:00.000Z')), requireAdmin:()=>{},recoveryPending:c=>Boolean(c?.accessRotation||c?.archiveState||c?.purgeState||Object.values(c?.trash||{}).some(entry=>entry?.restoreState||entry?.purgeState)), now:()=> '2026-09-24T00:00:00.000Z',MAX_SAVE_OPERATIONS:498,
     uid:()=> 'save-unique',newToken:()=> 'new-token',db:{},notify:()=>{},
     doc:(_db,...path)=>path.join('/'),
     runTransaction:async(_db,callback)=>{

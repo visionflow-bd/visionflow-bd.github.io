@@ -24,6 +24,8 @@ const sources = [
   { path: 'portal/data.js', label: 'data-helpers', extractOnly: ['sameRecord', 'currentMaster', 'projectAcknowledged'] },
   { path: 'backend/review-engine.mjs', label: 'review-engine' },
   { path: 'portal/notification-events.js', label: 'notification-events' },
+  { path: 'portal/payment-notification.js', label: 'payment-notification' },
+  { path: 'backend/apps-script/payment-document.mjs', label: 'payment-document' },
   { path: 'backend/apps-script/review-context.mjs', label: 'review-context' },
   { path: 'backend/apps-script/source-binding.mjs', label: 'source-binding' },
   { path: 'backend/apps-script/review-worker.mjs', label: 'review-worker' },
@@ -182,8 +184,11 @@ function createFirestoreAdapter_runtime() {
 }
 
 function createMailAdapter_runtime(firestore) {
-  var adapter = createMailAdapter({ mailApp: MailApp });
+  var adapter = createMailAdapter({ mailApp: MailApp, session: typeof Session === 'undefined' ? null : Session, expectedSender: loadConfig_runtime().expectedSender,
+    paymentAttachment: function(document) { firestore.checkBudget(); return createPaymentAttachment(document, {urlFetch: UrlFetchApp, utilities: Utilities, htmlService: HtmlService}); }
+  });
   return {
+    readiness: adapter.readiness,
     remainingQuota: adapter.remainingQuota,
     send: async function(message) { firestore.checkBudget(); return await adapter.send(message); }
   };

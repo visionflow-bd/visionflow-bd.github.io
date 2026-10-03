@@ -46,7 +46,8 @@ service cloud.firestore {
         // Accept a bounded legacy client hash during the cache rollout, but
         // never use it as evidence: the full captured terms map is the
         // authoritative, rule-checked contract record.
-        && data.keys().hasOnly(['id', 'projectKey', 'name', 'image', 'signedAt', 'userAgent', 'termsSnapshot', 'termsDigest'])
+        && data.keys().hasOnly(['id', 'projectKey', 'name', 'image', 'signedAt', 'userAgent', 'termsSnapshot', 'termsDigest', 'reviewPolicy'])
+        && (!('reviewPolicy' in data) || data.reviewPolicy == get(/databases/$(database)/documents/portal_public/$(token)).data.masterAgreement.reviewPolicy)
         && data.get('id', sigId) == sigId
         && knownProject(token, data.projectKey)
         && boundedString(data.name, 1, 200)
@@ -92,6 +93,27 @@ service cloud.firestore {
       return consentComplete(token) && exists(path)
         && get(path).data.get('revoked', false) == false
         && get(path).data.termsSnapshot == p.masterAgreement;
+    }
+    function projectSignatureComplete(token, key) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      let project = p.projects[key];
+      let id = project.get('signatureId','missing');
+      let path = /databases/$(database)/documents/portal_public/$(token)/sigs/$(id);
+      return consentComplete(token) && (project.get('signatureRequired',true) == false || (
+        exists(path) && get(path).data.projectKey == key
+        && get(path).data.get('revoked',false) == false
+        && !(p.get('signatureReviews',{}).get(id,{}).get('state','pending') in ['void','deleted'])
+        && get(path).data.termsSnapshot == p.projectTerms[key]));
+    }
+    function agreementComplete(token, key) {
+      let mode = get(/databases/$(database)/documents/portal_public/$(token)).data.get('agreementMode','agency-partner');
+      return mode == 'project' ? projectSignatureComplete(token,key)
+        : mode == 'agency-partner' && masterComplete(token) && acknowledgedProject(token,key);
+    }
+    function projectSignatureRoute(token, id, data) {
+      let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
+      return p.get('agreementMode','agency-partner') != 'project'
+        || (consentComplete(token) && id == p.projects[data.projectKey].signatureId);
     }
     function validMaster(token, id, data) {
       let p = get(/databases/$(database)/documents/portal_public/$(token)).data;
@@ -272,11 +294,13 @@ service cloud.firestore {
       let root = 'portal_public/' + token + '/';
       let kind = data.sourceCollection == root + 'consent' ? 'consent'
         : data.sourceCollection == root + 'agreements' ? 'agreements'
+        : data.sourceCollection == root + 'sigs' ? 'sigs'
         : data.sourceCollection == root + 'acknowledgements' ? 'acknowledgements'
         : data.sourceCollection == root + 'confirms' ? 'confirms' : 'feedback';
       let source = /databases/$(database)/documents/portal_public/$(token)/$(kind)/$(data.sourceId);
       let record = getAfter(source).data;
       let eventType = kind == 'consent' ? 'consent-complete' : kind == 'agreements' ? 'master-signed'
+        : kind == 'sigs' ? 'project-signed'
         : kind == 'acknowledgements' ? 'project-acknowledged'
         : kind == 'feedback' || record.get('kind','') in ['feedback','rejected','rejection-pending'] ? 'objection-received' : 'confirmation-received';
       return data.keys().hasOnly(['id','eventType','clientSlug','portalToken','reviewEpoch','projectKey','sourceCollection','sourceId','sourceVersion','status','createdAt','retryCount'])
@@ -355,14 +379,16 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.portalVersion == 7
         && request.resource.data.enabled is bool
+        && request.resource.data.get('agreementMode','agency-partner') in ['agency-partner','project']
         && (request.resource.data.get('eventQueueVersion',0) != 1
           || (request.resource.data.reviewEpoch is int && request.resource.data.reviewEpoch >= 0))
         && (resource == null || resource.data.get('eventQueueVersion',0) != 1 || request.resource.data.get('eventQueueVersion',0) == 1)
-        && request.resource.data.keys().hasOnly(['clientSlug', 'name', 'enabled', 'projects', 'feedbackReviews', 'signatureReviews', 'approvalIds', 'approvalProjects', 'lastUpdated', 'portalVersion', 'consentTerms', 'masterAgreement', 'projectTerms', 'eventQueueVersion', 'reviewEpoch']);
+        && request.resource.data.keys().hasOnly(['clientSlug', 'name', 'enabled', 'agreementMode', 'projects', 'feedbackReviews', 'signatureReviews', 'approvalIds', 'approvalProjects', 'lastUpdated', 'portalVersion', 'consentTerms', 'masterAgreement', 'projectTerms', 'eventQueueVersion', 'reviewEpoch']);
 
       match /sigs/{sigId} {
         allow read: if isAdmin() || portalActive(token);
-        allow create: if isAdmin() || (portalActive(token) && validSignature(token, sigId, request.resource.data));
+        allow create: if isAdmin() || (portalActive(token) && validSignature(token, sigId, request.resource.data)
+          && projectSignatureRoute(token,sigId,request.resource.data) && queuedClientEvidence(token,'sigs',sigId));
         allow update, delete: if isAdmin();
       }
 
@@ -392,7 +418,7 @@ service cloud.firestore {
         allow get: if isAdmin() || (portalActive(token) && knownProject(token,deliveryId)
           && resource.data.projectKey == deliveryId
           && resource.data.version == get(/databases/$(database)/documents/portal_public/$(token)).data.projects[deliveryId].deliveryVersion
-          && masterComplete(token) && acknowledgedProject(token,deliveryId));
+          && agreementComplete(token,deliveryId));
         allow list: if isAdmin();
         allow write: if isAdmin();
       }

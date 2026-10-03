@@ -8,8 +8,8 @@ import {processOutbox} from '../../backend/apps-script/worker.mjs';
 import {createFakeFirestore} from './fake-firestore.mjs';
 
 const created='2026-10-01T12:00:00.000Z',root='portal_public/token',reviewId='save-new-p';
-function fixture(){
-  const client=normalizeClient({name:'Synthetic',email:'synthetic@example.invalid',accessToken:'token',reviewEpoch:0,_lastMutationId:'save-new',projects:{p:{name:'Demo',rate:400,budget:400,items:[]}}},'client');
+function fixture(agreementMode='agency-partner'){
+  const client=normalizeClient({name:'Synthetic',email:'synthetic@example.invalid',accessToken:'token',reviewEpoch:0,agreementMode,_lastMutationId:'save-new',projects:{p:{name:'Demo',rate:400,budget:400,items:[]}}},'client');
   prepareSecureSave(client);const publication=prepareNotificationSave(client,{},{timestamp:created}),portal=publicSnapshot(client,'client');
   const db=createFakeFirestore({'portal_settings/notifications':{enabled:true},[root]:portal,'portal_clients/client':client,[`${root}/review_guards/p`]:{revision:0},...Object.fromEntries(publication.writes.map(w=>[w.path,w.data]))});
   let now=created;const messages=[];
@@ -27,6 +27,37 @@ test('recovery maintenance prevents claims and reviews, including a lock acquire
   const transaction=f.db.runTransaction.bind(f.db);
   f.db.runTransaction=async fn=>{await f.db.set('portal_settings/recovery',{active:true});return transaction(fn);};
   await f.tick();assert.equal((await f.read()).status,'awaiting-notification');
+});
+
+test('owner client scope leaves other-client review records untouched',async()=>{
+  const f=fixture();
+  f.adapters.config.clientScopeSlug='other-client';
+  await f.tick();
+  assert.equal((await f.read()).status,'awaiting-notification');
+  assert.ok(await f.db.get('portal_backend_state/review-scan-other-client'));
+  assert.equal(await f.db.get('portal_backend_state/review-scan'),null);
+});
+
+test('project-only signing activates and settles its own72h window without a master',async()=>{
+  const f=fixture('project');
+  await f.db.set(`${root}/consent/${f.portal.consentTerms.version}`,{termsSnapshot:f.portal.consentTerms,agreedAt:created});
+  await f.db.set(`${root}/sigs/${f.portal.projects.p.signatureId}`,{projectKey:'p',termsSnapshot:f.portal.projectTerms.p,reviewPolicy:f.portal.masterAgreement.reviewPolicy,signedAt:created});
+  await f.send();await f.tick();assert.equal((await f.read()).status,'awaiting-review-notification');
+  await f.send();await f.tick();assert.equal((await f.read()).status,'pending');
+  f.setNow((await f.read()).deadline);await f.tick();assert.equal((await f.read()).status,'deemed-accepted');
+  assert.equal(await f.db.get(`${root}/agreements/${f.portal.masterAgreement.version}`),null);
+});
+
+test('project signatures without captured policy, void signatures and route changes cannot start timers',async()=>{
+  for(const kind of ['missing-policy','void','wrong-project','wrong-policy','optional-unsigned','changed-route']){
+    const f=fixture('project'),id=f.portal.projects.p.signatureId;
+    await f.db.set(`${root}/consent/${f.portal.consentTerms.version}`,{termsSnapshot:f.portal.consentTerms,agreedAt:created});
+    if(kind!=='optional-unsigned')await f.db.set(`${root}/sigs/${id}`,{projectKey:kind==='wrong-project'?'another':'p',termsSnapshot:f.portal.projectTerms.p,signedAt:created,...(kind==='missing-policy'?{}:{reviewPolicy:{...f.portal.masterAgreement.reviewPolicy,...(kind==='wrong-policy'?{hours:48}:{})}})});
+    if(kind==='void')await f.db.set(root,{signatureReviews:{[id]:{state:'void'}}},{merge:true});
+    if(kind==='changed-route')await f.db.set('portal_reviews/'+reviewId,{agreementMode:'agency-partner',agreementVersion:f.portal.masterAgreement.version},{merge:true});
+    if(kind==='optional-unsigned')await f.db.set(root,{projects:{p:{...f.portal.projects.p,signatureRequired:false}}},{merge:true});
+    await f.send();await f.tick();assert.equal((await f.read()).publishedAt,undefined,kind);assert.equal((await f.read()).status,'awaiting-notification',kind);
+  }
 });
 
 test('real portal publication -> mail -> late signing -> review email -> fresh full72h -> one deemed outcome',async()=>{
@@ -74,7 +105,9 @@ test('supersession, pause and rotation cancel a waiting review',async()=>{
 test('objection after preparation prevents review-start email and acceptance',async()=>{
   const f=fixture();await f.sign();await f.send();await f.tick();
   await submitReviewEvidence({transaction:f.db.runTransaction,root,collection:'feedback',id:'fb1',data:{projectKey:'p',message:'Please revise before acceptance.',submittedAt:created},timestamp:created});
-  await f.send();assert.equal(f.messages.length,1);await f.tick();assert.equal((await f.read()).status,'objected');
+  await f.send();assert.equal(f.messages.length,2);assert.equal(f.messages[1].subject,'Feedback received');
+  assert.ok(!f.messages.some(m=>m.subject==='Your 72-hour review window'));
+  await f.tick();assert.equal((await f.read()).status,'objected');
 });
 test('explicit review confirmation commits source, guard, shared state and queue without pretending signature/payment',async()=>{
   const f=fixture();const r=await f.read();

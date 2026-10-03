@@ -1,5 +1,6 @@
 const clientEventCollections = Object.freeze({
   'consent-complete':'consent', 'master-signed':'agreements',
+  'project-signed':'sigs',
   'project-acknowledged':'acknowledgements',
   'confirmation-received':'confirms', 'objection-received':null,
 });
@@ -17,7 +18,7 @@ export function notificationEventId(event) {
 
 export function clientSourceEvent({portal,token,collection,id,data,timestamp}) {
   if (![token,id,portal?.clientSlug].every(eventPart)) throw Error('Invalid notification source identity.');
-  const eventType = {consent:'consent-complete',agreements:'master-signed',acknowledgements:'project-acknowledged'}[collection]
+  const eventType = {consent:'consent-complete',agreements:'master-signed',sigs:'project-signed',acknowledgements:'project-acknowledged'}[collection]
     || (collection==='feedback'||collection==='confirms'&&['feedback','rejected','rejection-pending'].includes(data.kind)?'objection-received':collection==='confirms'?'confirmation-received':null);
   if (!eventType) throw Error('Unsupported notification source.');
   const event = {

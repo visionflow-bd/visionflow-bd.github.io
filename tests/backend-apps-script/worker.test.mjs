@@ -9,6 +9,7 @@ import {
   EVENT_TYPES, MAX_RETRIES, LEASE_DURATION_MS, esc,
 } from '../../backend/apps-script/worker.mjs';
 import { notificationEventId } from '../../backend/apps-script/source-binding.mjs';
+import {createMailAdapter} from '../../backend/apps-script/runtime/adapters.mjs';
 
 // ── Mock Factories ────────────────────────────────────────────────
 import {createFakeFirestore as mockFirestore} from './fake-firestore.mjs';
@@ -244,7 +245,9 @@ describe('HTML escaping', () => {
     const messages = buildEmail(event, { client: 'test@example.com' }, { config: DEFAULT_CONFIG });
     for (const msg of messages) {
       assert.equal(msg.htmlBody.includes('<script>'), false);
-      assert.equal(msg.htmlBody.includes('"><img'), false);
+      assert.equal(msg.htmlBody.includes('<img src=x>'), false);
+      assert.equal(msg.htmlBody.includes('alert(1)'), false);
+      assert.equal((msg.htmlBody.match(/<img\b/g)||[]).length,1); // Only the fixed agency logo.
     }
   });
 });
@@ -365,6 +368,26 @@ describe('concurrent worker lease', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('transient error and backoff', () => {
+  test('unsupported payment proof blocks before any provider handoff',async()=>{
+    const event=boundEvent({eventType:'payment-notification',projectKey:'k9'}),data=boundStore(event);
+    data[`portal_public/${TOKEN}`].projects.k9.payments=[{id:'payment-one',amount:300,proofUrl:'https://example.invalid/private'}];
+    data[`${event.sourceCollection}/${event.sourceId}`].paymentChanges={identified:true,count:1,items:[{kind:'added',after:{id:'payment-one',amount:300}}]};
+    const firestore=mockFirestore(data),mail=mockMail();
+    const result=await processEvent(event,{firestore,mail,clock:mockClock(),config:DEFAULT_CONFIG});
+    assert.equal(result.status,'attachment-blocked');assert.equal(mail.sent.length,0);
+    assert.equal((await firestore.get(`portal_outbox/${event.id}`)).status,'attachment-blocked');
+  });
+
+  test('PDF preparation failure retries safely without calling the provider or marking an uncertain send',async()=>{
+    const event=boundEvent({eventType:'payment-notification',projectKey:'k9'}),firestore=mockFirestore(boundStore(event));
+    const mail=createMailAdapter({expectedSender:'sender@example.invalid',session:{getEffectiveUser:()=>({getEmail:()=> 'sender@example.invalid'})},
+      mailApp:{getRemainingDailyQuota:()=>100,sendEmail:()=>assert.fail('PDF preparation must finish first')},
+      paymentAttachment:()=>{throw Error('Synthetic conversion failure');}});
+    const result=await processEvent(event,{firestore,mail,clock:mockClock(),config:DEFAULT_CONFIG});
+    assert.equal(result.status,'retry');assert.ok(result.results.every(r=>r.status==='failed'));
+    assert.equal((await firestore.get(`portal_outbox/${event.id}`)).retryCount,1);
+  });
+
   test('mail failure increments retryCount with backoff', async () => {
     const event = boundEvent({ eventType: 'payment-notification', projectKey: 'k9' });
     const fs = mockFirestore(boundStore(event));
@@ -704,6 +727,25 @@ describe('pagination and limits', () => {
 
     assert.ok(result.processed <= 20, `Processed ${result.processed} but max is 20`);
   });
+
+  test('owner client scope claims only the selected client and uses a scoped cursor', async () => {
+    const store = { 'portal_settings/notifications': { enabled:true, adminEmail: 'a@a.com' } };
+    for (const [id, clientSlug] of [['jashory-event','jashory'], ['other-event','other-client']]) {
+      store[`portal_outbox/${id}`] = {
+        id, eventType:'update-notification', status:'queued', retryCount:0,
+        createdAt:'2026-10-01T12:00:00Z', clientSlug, sourceCollection:'test', sourceId:id,
+        activationBoundary:'2026-09-28T00:00:00Z', _updateTime:id,
+      };
+      store[`portal_clients/${clientSlug}`] = { email: `${clientSlug}@example.com` };
+    }
+    const fs = mockFirestore(store);
+    const claimed = await claimEvents({
+      firestore:fs, clock:mockClock(), workerId:'scoped-worker', config:{clientScopeSlug:'jashory'}, limit:20,
+    });
+    assert.deepEqual(claimed.map(event=>event.clientSlug), ['jashory']);
+    assert.ok(await fs.get('portal_backend_state/outbox-scan-jashory'));
+    assert.equal(await fs.get('portal_backend_state/outbox-scan'), null);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -725,6 +767,11 @@ describe('configuration validation', () => {
 
   test('valid config passes', () => {
     assert.equal(validateConfig(DEFAULT_CONFIG).valid, true);
+  });
+
+  test('invalid client scope fails closed', () => {
+    assert.equal(validateConfig({...DEFAULT_CONFIG, clientScopeSlug:'bad/scope'}).valid, false);
+    assert.equal(validateConfig({...DEFAULT_CONFIG, clientScopeSlug:'jashory'}).valid, true);
   });
 
   test('incomplete config stops worker', async () => {

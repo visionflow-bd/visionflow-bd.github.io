@@ -19,7 +19,7 @@ export function reviewDeadline(request) {
 // The caller supplies ONLY server timestamps and rule-validated source records.
 // A feedback record arriving while the worker commits must invalidate its
 // transaction/precondition, so rejection can never lose a race to a worker.
-export function assessReview({request,now,portalActive,master,consentValid,projectAcknowledged,objections=[],decision=null,notificationReady=false}) {
+export function assessReview({request,now,portalActive,master,agreement=master,consentValid,projectAcknowledged,objections=[],decision=null,notificationReady=false}) {
   const deadline=reviewDeadline(request);
   if(!deadline)return {status:'manual-review',reason:'No valid, newly published 72-hour review request.'};
   if(decision)return {status:decision.status,terminal:true,deadline};
@@ -27,8 +27,9 @@ export function assessReview({request,now,portalActive,master,consentValid,proje
   if(!Number.isFinite(clock)||clock<published)return {status:'blocked',reason:'Invalid server time.',deadline};
   if(!portalActive)return {status:'blocked',reason:'Workspace is paused or archived.',deadline};
   if(request.cancelledAt)return {status:'cancelled',deadline};
-  if(!master||master.revoked||!consentValid||!projectAcknowledged||master.termsSnapshot?.reviewPolicy?.version!==REVIEW_POLICY.version||master.termsSnapshot.reviewPolicy.hours!==72||master.id!==request.masterVersion)return {status:'blocked',reason:'Current consent, signed review policy and project acknowledgement are required.',deadline};
-  if(!Number.isFinite(reviewTimestamp(master.signedAt))||reviewTimestamp(master.signedAt)>published)return {status:'blocked',reason:'Signing after publication cannot authorize a retroactive review window.',deadline};
+  const policy=request.agreementMode==='project'?agreement?.reviewPolicy:agreement?.termsSnapshot?.reviewPolicy;
+  if(!agreement||agreement.revoked||!consentValid||!projectAcknowledged||policy?.version!==REVIEW_POLICY.version||policy.hours!==72||agreement.id!==(request.agreementVersion||request.masterVersion))return {status:'blocked',reason:'Current consent, signed review policy and project acknowledgement are required.',deadline};
+  if(!Number.isFinite(reviewTimestamp(agreement.signedAt))||reviewTimestamp(agreement.signedAt)>published)return {status:'blocked',reason:'Signing after publication cannot authorize a retroactive review window.',deadline};
   // Any unresolved project objection is conservative evidence to stop expiry.
   // Do not infer that a client's objection is irrelevant from its free text.
   const objection=objections.find(o=>o.projectKey===request.projectKey&&!o.resolvedAt);

@@ -114,10 +114,14 @@ export function publicSnapshot(client, slug) {
     projects[key].deliveryVersion = Number(p.deliveryVersion)||0;
     projects[key].notificationRevision = Number(p.notificationRevision)||0;
     projects[key].ackId = `${key}-${Number(p.agreementRevision)||1}-${Number(client.masterRevision)||1}`;
+    if(client.agreementMode === 'project') {
+      projects[key].signatureRequired = p.signatureRequired !== false;
+      projects[key].signatureId = `project-${projects[key].ackId}-${Number(p.signatureRevision)||1}`;
+    }
     projects[key].itemNumbers = projects[key].items.map(item => Number(item.n)).filter(Number.isInteger);
     projects[key].totalItems = projects[key].items.length;
     projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt']));
-    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt']));
+    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt','kind','itemNumber']));
     for (const approval of p.approvals || []) { approvalIds.push(approval.id); approvalProjects[approval.id] = key; }
   }
   // Archived payloads live in the admin-only archive collection. The parent
@@ -126,7 +130,10 @@ export function publicSnapshot(client, slug) {
   // document.
   const hiddenIds = new Set(Object.values(client.trash || {}).flatMap(entry => [entry.value?.id, ...(entry.records || []).map(r=>r.id)]).filter(Boolean));
   const visibleReviews = reviews => Object.fromEntries(Object.entries(reviews || {}).filter(([id])=>!hiddenIds.has(id)).map(([id,value])=>[id,clone(value)]));
-  const snapshot = { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false, projects,
+  const snapshot = { clientSlug:slug, name:client.name || slug, enabled:!client._deleted && client.accessEnabled !== false,
+    // Legacy clients keep the existing master-agreement route until an administrator
+    // explicitly selects project-by-project signing in the client editor.
+    agreementMode:client.agreementMode === 'project' ? 'project' : 'agency-partner', projects,
     feedbackReviews:visibleReviews(client.feedbackReviews), signatureReviews:visibleReviews(client.signatureReviews),
     approvalIds, approvalProjects, lastUpdated:client.lastUpdated || new Date().toISOString(), portalVersion:PORTAL_VERSION,
     consentTerms:clone(PORTAL_TERMS), masterAgreement:masterAgreementTerms(client), eventQueueVersion:1, reviewEpoch:Number(client.reviewEpoch)||0 };

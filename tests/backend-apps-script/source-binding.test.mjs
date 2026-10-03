@@ -14,6 +14,7 @@ function makeFixture(eventType, overrides = {}) {
     reviewEpoch: 0,
     projects: { k9: { name: 'Project K9', budget: 400, rate: 400, items: [] } },
   }, 'shishir');
+  if(eventType==='project-signed')client.agreementMode='project';
   prepareSecureSave(client);
   const portal = publicSnapshot(client, 'shishir');
   const root = 'portal_public/tok1';
@@ -46,6 +47,10 @@ function makeFixture(eventType, overrides = {}) {
       sourceId = project.ackId;
       sourceVersion = sourceId;
       sourceDoc = { projectKey: 'k9', masterVersion: portal.masterAgreement.version, acknowledgedAt: ts, termsSnapshot: portal.projectTerms?.k9 };
+      break;
+    case 'project-signed':
+      sourceCollection=`${root}/sigs`;sourceId=project.signatureId;sourceVersion=sourceId;
+      sourceDoc={projectKey:'k9',signedAt:ts,termsSnapshot:portal.projectTerms.k9,reviewPolicy:portal.masterAgreement.reviewPolicy};
       break;
     case 'confirmation-received':
       sourceCollection = `${root}/confirms`;
@@ -116,6 +121,15 @@ function makeFixture(eventType, overrides = {}) {
 
 const clock = { now: () => '2026-10-01T12:00:00Z' };
 const config = { activationBoundary: '2026-09-28T00:00:00Z' };
+
+test('switching to project agreements stops queued master and acknowledgement messages',async()=>{
+  for(const type of ['master-signed','project-acknowledged']){
+    const {event,data,root}=makeFixture(type);
+    data[root].agreementMode='project';
+    const result=await resolveEventSource(event,{firestore:createFakeFirestore(data),clock,config});
+    assert.equal(result.ok,false);assert.equal(result.status,'source-version-mismatch');
+  }
+});
 
 // -------------------------------------------------------------------
 // All valid event types

@@ -2,6 +2,8 @@
 import {settleReviewTimers} from './review-worker.mjs';
 import {resolveEventSource,notificationEventId} from './source-binding.mjs';
 import {reviewTimestamp} from '../review-engine.mjs';
+import {paymentMoney,paymentTotals} from '../../portal/payment-notification.js';
+import {paymentDocument} from './payment-document.mjs';
 // NOT DEPLOYED. Injectable adapters for Node.js testing.
 // Reuses review-engine.mjs policy; does not weaken gates.
 
@@ -37,10 +39,12 @@ const MAX_EVENTS_PER_RUN = 20;
 const MAX_RETRIES = 3;
 const BACKOFF_BASE_MS = 30000;
 const PORTAL_HOST = 'https://visionflow-bd.github.io';
+const EMAIL_LOGO_URL = `${PORTAL_HOST}/logo.png`;
 
 const EVENT_TYPES = Object.freeze([
   'consent-complete',
   'master-signed',
+  'project-signed',
   'project-acknowledged',
   'project-notification',
   'payment-notification',
@@ -140,26 +144,38 @@ export function createOutboxEvent({
 }
 
 // ── Lease Acquisition (atomic) ────────────────────────────────────
-export async function claimEvents({ firestore, clock, workerId, limit = MAX_EVENTS_PER_RUN }) {
+function workerClientScope(config) {
+  const value = typeof config?.clientScopeSlug === 'string' ? config.clientScopeSlug.trim() : '';
+  return value || null;
+}
+
+function scopeCursor(base, scope) {
+  return scope ? `${base}-${scope}` : base;
+}
+
+export async function claimEvents({ firestore, clock, workerId, limit = MAX_EVENTS_PER_RUN, config }) {
   if((await firestore.get('portal_settings/recovery'))?.active===true)return [];
   const now = clock.now();
   const nowMs = Date.parse(now);
+  const scope = workerClientScope(config);
 
   // Sending is recovered only into reconciliation; terminal handoffs are never
   // candidates for another send even if their secondary dedup log is missing.
   //        (leasedUntil is null OR leasedUntil < now) AND
   //        retryCount < MAX_RETRIES
-  const scan='portal_backend_state/outbox-scan',cursor=await firestore.get(scan);
+  const scan=scopeCursor('portal_backend_state/outbox-scan',scope),cursor=await firestore.get(scan);
   const cursorValid=typeof cursor?.lastId==='string'&&cursor.lastId.length>0&&cursor.lastId.length<=1400&&!cursor.lastId.includes('/');
   const options={orderBy:['__name__','asc'],limit:limit*2};
-  let candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...(cursorValid?{startAfterId:cursor.lastId}:{})});
-  if(!candidates.length&&cursorValid)candidates=await firestore.query(OUTBOX_COLLECTION,options);
+  const scopedWhere=scope ? {where:[['clientSlug','==',scope]]} : {};
+  let candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...scopedWhere,...(cursorValid?{startAfterId:cursor.lastId}:{})});
+  if(!candidates.length&&cursorValid)candidates=await firestore.query(OUTBOX_COLLECTION,{...options,...scopedWhere});
 
   const claimed = [];
   let lastId=null;
   for (const event of candidates) {
     if (claimed.length >= limit) break;
     lastId=event.id;
+    if(scope && event.clientSlug!==scope)continue;
     if(!['queued','retry','processing','sending','quota-exhausted','settings-paused'].includes(event.status)||event.retryCount>=MAX_RETRIES)continue;
 
     // Skip events with active leases
@@ -230,7 +246,7 @@ function validRecipient(value) { return typeof value==='string'&&value.length<=2
 // - Arbitrary external CTAs
 // Only the canonical portal host is used for action links.
 export function buildEmail(event, recipients, { config, context }) {
-  const subject = emailSubject(event);
+  const subject = emailSubject(event, context);
 
   const messages = [];
 
@@ -260,21 +276,31 @@ export function buildEmail(event, recipients, { config, context }) {
     });
   }
 
+  if(event.eventType==='payment-notification'&&context?.ok){
+    for(const message of messages)message.paymentDocument=paymentDocument(context,paymentSummary(context),emailLinks(event,context,message.targetType).action);
+  }
   return messages;
 }
 
 function isClientEvent(type) {
   return [
-    'consent-complete', 'master-signed', 'project-acknowledged',
+    'consent-complete', 'master-signed', 'project-signed', 'project-acknowledged',
     'project-notification', 'payment-notification', 'delivery-notification',
     'update-notification', 'deemed-accepted', 'review-window',
+    'confirmation-received', 'objection-received',
   ].includes(type);
 }
 
-function emailSubject(event) {
+function emailSubject(event, context) {
+  const source=context?.source;
+  if(context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType&&['project-notification','payment-notification','delivery-notification','update-notification'].includes(event.eventType)){
+    const title=String(source.title||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,200);
+    if(title)return title;
+  }
   const subjects = {
     'consent-complete': 'Welcome to Vision Flow',
     'master-signed': 'Master agreement signed',
+    'project-signed': 'Project agreement signed',
     'project-acknowledged': 'Project acknowledgement recorded',
     'project-notification': 'Project update',
     'payment-notification': 'Payment update',
@@ -296,60 +322,108 @@ export function emailLinks(event, context, targetType='client') {
   const overview=targetType==='admin'?`${base}?c=${encodeURIComponent(context.portal.clientSlug)}`:`${base}?access=${encodeURIComponent(context.portalToken)}`;
   const project=event.projectKey?`${overview}&p=${encodeURIComponent(event.projectKey)}`:overview;
   let hash='review-updates',label='Review this update',destination=project;
-  if(event.eventType==='consent-complete'){hash='master-agreement';label=targetType==='admin'?'View client onboarding':'Review & sign master agreement';destination=overview;}
+  if(event.eventType==='consent-complete'){hash=context.portal.agreementMode==='project'?'':'master-agreement';label=targetType==='admin'?'View client onboarding':context.portal.agreementMode==='project'?'Choose your project':'Review & sign master agreement';destination=overview;}
   else if(event.eventType==='master-signed'){hash='master-agreement';label='View signed master agreement';destination=overview;}
   else if(event.eventType==='project-acknowledged'){hash='agreement';label='View acknowledged project';}
+  else if(event.eventType==='project-signed'){hash='agreement';label='View signed project agreement';}
   else if(event.eventType==='deemed-accepted'){hash=`review-${event.sourceId}`;label='View review outcome';}
   else if(event.eventType==='review-window'){hash=`review-${event.sourceId}`;label='Review, confirm or object';}
-  else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label='Review client response';}
+  else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label=targetType==='admin'?'Review client response':'View your saved response';}
+  else if(context.source?.responseTarget&&['review','evidence'].includes(context.source.responseTarget.kind)&&/^[A-Za-z0-9_-]{1,200}$/.test(context.source.responseTarget.id)){hash=`${context.source.responseTarget.kind}-${context.source.responseTarget.id}`;label='Read our response';}
   else {hash=`notice-${event.sourceId}`;}
-  return {overview,project,action:`${destination}#${encodeURIComponent(hash)}`,label};
+  return {overview,project,action:hash?`${destination}#${encodeURIComponent(hash)}`:destination,label};
 }
 
 function emailCopy(event, context, targetType) {
   // Names are short labels, not a channel for arbitrary URLs or private notes.
   const label=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\r\n]/g,' ').slice(0,200);
   const name=label(context?.portal?.name)||'there',project=label(context?.project?.name);
-  const intro={
-    'consent-complete':'Your Terms and Privacy acceptance is saved. Review and sign your Master Partner Agreement once for this workspace.',
+  const clientIntro={
+    'consent-complete':context?.portal?.agreementMode==='project'?'Your Terms and Privacy acceptance is saved. Choose a project to review its details and any applicable project agreement.':'Your Terms and Privacy acceptance is saved. Review and sign your Master Partner Agreement once for this workspace.',
     'master-signed':'Your signed master agreement is saved. Project particulars remain available in your workspace; material changes require a separate acknowledgement, not another signature drawing.',
+    'project-signed':'Your signed agreement for this project is saved. You can view the captured terms in your workspace.',
     'project-acknowledged':'Your acknowledgement of the current project particulars is saved.',
     'project-notification':'A project is ready for your review. Open the exact update to read the current details.',
     'payment-notification':'A payment record was updated. Please review the record and raise any discrepancy. This notification does not verify payment.',
     'delivery-notification':'A delivery was updated. Please review it in your workspace. Final download access remains subject to the current agreement requirements.',
     'update-notification':'Your project workspace was updated. Please review the current details and send any questions or objections through the portal.',
-    'confirmation-received':'The client has explicitly confirmed an update. View the saved response in the administrator workspace.',
-    'objection-received':'The client submitted feedback or an objection. Review their exact response before proceeding.',
+    'confirmation-received':'Your confirmation is saved. You can view the recorded response in your private workspace.',
+    'objection-received':'Your feedback or objection is saved for the Vision Flow team to review. An unresolved objection stops automatic acceptance. We will notify you when we respond.',
     'deemed-accepted':'The trusted server recorded deemed acceptance after the review period. This is not an explicit client confirmation, signature, payment verification or download authorization.',
     'review-window':`Your signed review policy is in place. You have at least until ${context?.earliestDeadline||'the deadline displayed in your workspace'} to review this update. The portal records the full 72-hour window after the notification handoff; a delayed handoff may extend, never shorten, this deadline. Confirm or object in the portal. An unresolved objection stops automatic acceptance.`,
   }[event.eventType]||'Open your workspace to review this update.';
-  return {greeting:targetType==='admin'?`Team update for ${name}`:`Hello ${name}`,project,intro};
+  const adminIntro={
+    'consent-complete':`Client ${name} completed Terms and Privacy consent. Review the onboarding record and applicable agreement status.`,
+    'master-signed':`Client ${name} signed the Master Partner Agreement. Review the saved signature and covered project particulars.`,
+    'project-signed':`Client ${name} signed the project agreement. Review the captured project terms and signature.`,
+    'project-acknowledged':`Client ${name} acknowledged the current project particulars.`,
+    'project-notification':`A project update for ${name} is ready for your review.`,
+    'payment-notification':`A payment record for ${name} was updated. Review the saved record; this notification does not verify payment.`,
+    'delivery-notification':`A delivery record for ${name} was updated. Review the current delivery state before releasing access.`,
+    'update-notification':`The ${name} workspace was updated. Review the exact project change.`,
+    'confirmation-received':`Client ${name} explicitly confirmed an update. Review the immutable response record.`,
+    'objection-received':`Client ${name} submitted feedback or an objection. Review the exact response before proceeding.`,
+    'deemed-accepted':`The trusted server recorded a deemed outcome for ${name} after the disclosed review period.`,
+    'review-window':`A fresh 72-hour review window is ready for ${name}. Review the current project response and deadline.`,
+  }[event.eventType]||'Open the administrator workspace to review this notification.';
+  const source=context?.source;
+  const note=context?.ok&&source?.schemaVersion===1&&source.eventType===event.eventType?String(source.message||'').replace(/https?:\/\/\S+/gi,'[view workspace]').slice(0,4000):'';
+  return {greeting:targetType==='admin'?'Dear Sir':`Hello ${name}`,project,note,intro:targetType==='admin'?adminIntro:clientIntro};
+}
+
+function paymentSummary(context) {
+  const totals=paymentTotals(context?.project),changes=context?.source?.paymentChanges;
+  const label=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[view workspace]').replace(/[\r\n]/g,' ').slice(0,80);
+  const rows=[];
+  for(const change of (changes?.identified&&Array.isArray(changes.items)?changes.items:[]).slice(0,20)){
+    if(!['added','updated','removed'].includes(change.kind))continue;
+    const payment=change.after||change.before;
+    const date=/^\d{4}-\d{2}-\d{2}$/.test(payment?.date)?payment.date:'Date not recorded';
+    rows.push([`Record ${change.kind}: ${date}${payment?.type?' / '+label(payment.type):''}`,paymentMoney(payment?.amount)]);
+    if(change.kind==='updated')rows.push(['Previously recorded',paymentMoney(change.before?.amount)]);
+  }
+  if(changes?.count>(changes?.items?.length||0))rows.push(['Additional changed records',`${changes.count-(changes.items?.length||0)} - view workspace`]);
+  rows.push(['Project budget',paymentMoney(totals.budget)],['Total recorded',paymentMoney(totals.paid)],
+    [totals.credit?'Credit balance':'Recorded balance',paymentMoney(totals.balance===null?null:Math.abs(totals.balance))]);
+  return rows;
 }
 
 function emailHtml(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
-  return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#17233a;">
-<div style="background:#10263c;padding:20px;text-align:center;">
-  <h1 style="color:white;margin:0;">Vision Flow</h1>
-  <p style="color:#aaa;margin:4px 0 0;">Creative Production Agency</p>
-  <p><a href="${esc(links.overview)}" style="color:white;">${targetType==='admin'?'Client administration':'All your projects'}</a></p>
-</div>
-<div style="padding:24px;max-width:600px;margin:0 auto;">
-  <h2>${esc(emailSubject(event))}</h2>
-  <p>${esc(copy.greeting)},</p>${copy.project?`<p><strong>${esc(copy.project)}</strong></p>`:''}
-  <p>${esc(copy.intro)}</p>
-  <p><a href="${esc(links.action)}" style="display:inline-block;padding:12px 24px;background:#f36b4e;color:white;text-decoration:none;border-radius:6px;">${esc(links.label)}</a></p>
-  ${event.projectKey?`<p><a href="${esc(links.project)}">Open this project</a></p>`:''}
-  <p style="font-size:12px;color:#65718a;">When a 72-hour review is active, its server-recorded deadline and live countdown appear in the workspace. This message alone does not start or complete a review.</p>
-  <hr style="border:none;border-top:1px solid #dce3ec;margin:24px 0;">
-  <p style="font-size:11px;color:#65718a;">This is an automated notification from Vision Flow. Keep your private workspace links confidential. Use the portal to preserve your response in the shared project record.</p>
-</div>
-</body></html>`;
+  const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
+  const paymentRows=payment?`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;background:#f7fafc;border:1px solid #e2e8f0;">${payment.map(([label,value])=>`<tr><td style="padding:9px 12px;color:#475569;border-bottom:1px solid #e2e8f0;">${esc(label)}</td><td style="padding:9px 12px;text-align:right;font-weight:700;border-bottom:1px solid #e2e8f0;">${esc(value)}</td></tr>`).join('')}</table>`:'';
+  return `<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#17233a;">
+<div style="padding:24px 12px;background:#f4f7fb;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dbe4ee;border-radius:12px;overflow:hidden;">
+    <tr><td style="padding:22px 28px;border-bottom:4px solid #0f9f9a;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="vertical-align:middle;"><img src="${EMAIL_LOGO_URL}" alt="Vision Flow" width="52" height="52" style="display:block;width:52px;height:52px;object-fit:contain;border-radius:10px;"></td>
+        <td style="padding-left:14px;vertical-align:middle;"><a href="${esc(links.overview)}" style="font-size:20px;color:#12304a;font-weight:700;text-decoration:none;">Vision Flow</a><br><span style="font-size:12px;color:#64748b;">Creative Production Agency</span></td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:28px;">
+      <p style="margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700;">${esc(emailSubject(event))}</p>
+      <h1 style="margin:0 0 18px;font-size:25px;line-height:1.25;color:#12304a;overflow-wrap:anywhere;">${esc(emailSubject(event,context))}</h1>
+      <p style="margin:0 0 14px;">${esc(copy.greeting)},</p>${copy.project?`<p style="margin:0 0 14px;font-weight:700;">${esc(copy.project)}</p>`:''}
+      <p style="margin:0 0 18px;line-height:1.65;">${esc(copy.intro)}</p>
+      ${copy.note?`<p style="padding:14px;background:#f7fafc;border-left:3px solid #0f766e;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(copy.note)}</p>`:''}
+      ${paymentRows}
+      <p style="margin:22px 0;"><a href="${esc(links.action)}" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:7px;font-weight:700;">${esc(links.label)}</a></p>
+      ${event.projectKey?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
+      <p style="margin:0 0 14px;"><a href="${esc(links.overview)}" style="color:#0f766e;">All projects</a></p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">When a 72-hour review is active, the server-recorded deadline and live countdown appear in the workspace. This email alone does not start or complete a review.</p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">If this is your first message from Vision Flow, please check Spam or Promotions and mark it as trusted so future updates are not missed.</p>
+    </td></tr>
+    <tr><td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.55;color:#64748b;">Automated notification from Vision Flow. Keep private workspace links confidential and use the portal to preserve your response in the shared project record.</td></tr>
+  </table>
+</div></body></html>`;
 }
 
 function emailPlain(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
-  return `${emailSubject(event)}\n\n${copy.greeting},\n${copy.project}\n\n${copy.intro}\n\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nThe workspace shows the server-recorded deadline when a 72-hour review is active. This notification is not payment verification or download authorization. Keep private links confidential.`;
+  const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
+  const paymentText=payment?`\nPayment summary\n${payment.map(([label,value])=>`${label}: ${value}`).join('\n')}\n`:'';
+  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nThe workspace shows the server-recorded deadline when a 72-hour review is active. This notification is not payment verification or download authorization. If this is your first message, check Spam or Promotions and mark it trusted. Keep private links confidential.`;
 }
 
 // ── Process Single Event ──────────────────────────────────────────
@@ -432,7 +506,9 @@ async function processOwnedEvent(event, { firestore, mail, clock, config }) {
 
   // 7. Check remaining mail quota
   const remaining = await mail.remainingQuota();
-  let messages = buildEmail(event, recipients, { config, context:binding });
+  let messages;
+  try{messages=buildEmail(event, recipients, { config, context:binding });}
+  catch{await firestore.set(`${OUTBOX_COLLECTION}/${event.id}`,{status:'attachment-blocked',processedAt:now},{merge:true});return {status:'attachment-blocked'};}
   if(!messages.length)return {status:'no-recipients'};
   if (remaining < messages.length) {
     await firestore.set(`${OUTBOX_COLLECTION}/${event.id}`, {
@@ -461,7 +537,8 @@ async function processOwnedEvent(event, { firestore, mail, clock, config }) {
     const targets=await resolveRecipients(event,{firestore:tx,config,boundClient:fresh.client});
     if(!targets.enabled){authorization={ok:false,status:'settings-paused'};return;}
     if(event.eventType==='review-window')fresh.earliestDeadline=new Date(reviewTimestamp(clock.now())+72*3600000).toISOString();
-    const prepared=buildEmail(event,targets,{config,context:fresh});
+    let prepared;
+    try{prepared=buildEmail(event,targets,{config,context:fresh});}catch{authorization={ok:false,status:'attachment-blocked'};return;}
     if(!prepared.length){authorization={ok:false,status:'no-recipients'};return;}
     if(prepared.length>remaining){authorization={ok:false,status:'quota-exhausted'};return;}
     tx.set(`${OUTBOX_COLLECTION}/${event.id}`,{status:'sending',processedAt:clock.now(),...(fresh.earliestDeadline?{earliestDeadline:fresh.earliestDeadline}:{}),recipientClient:targets.client||null},{merge:true});
@@ -546,6 +623,8 @@ export async function processOutbox({ firestore, mail, clock, config }) {
 
   // 2. Check remaining quota before starting
   if(config.enabled!==true)return {ok:false,error:'Worker is disabled until runtime and rules integration are verified.',processed:0};
+  const sender=await mail.readiness?.();
+  if(sender&&sender.ok!==true)return {ok:false,error:'The authenticated sender does not match the configured agency account.',code:sender.code,processed:0};
   const quota = await mail.remainingQuota();
   if (quota <= 0) {
     return { ok: false, error: 'Daily email quota exhausted.', processed: 0 };
@@ -554,7 +633,7 @@ export async function processOutbox({ firestore, mail, clock, config }) {
 
   // 3. Claim events with atomic leases
   const events = await claimEvents({
-    firestore, clock, workerId,
+    firestore, clock, workerId, config,
     limit: Math.min(MAX_EVENTS_PER_RUN, quota,config.eventBatchLimit||MAX_EVENTS_PER_RUN),
   });
 
@@ -597,6 +676,11 @@ export function validateConfig(config) {
     if (!config.activationBoundary||!Number.isFinite(Date.parse(config.activationBoundary))) errors.push('Missing or invalid activationBoundary.');
     if (config.portalHost && config.portalHost!==PORTAL_HOST) {
       errors.push('portalHost must be the canonical VisionFlow origin.');
+    }
+    if (config.clientScopeSlug !== undefined && config.clientScopeSlug !== null &&
+        (typeof config.clientScopeSlug !== 'string' ||
+         (config.clientScopeSlug.trim() && (config.clientScopeSlug.trim().length > 200 || config.clientScopeSlug.includes('/'))))) {
+      errors.push('clientScopeSlug must be a bounded client id without slash.');
     }
   }
   return { valid: errors.length === 0, errors };

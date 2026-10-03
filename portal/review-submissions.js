@@ -1,4 +1,4 @@
-import {clientSourceEvent} from './notification-events.js?v=20260930-r1';
+import {clientSourceEvent} from './notification-events.js?v=20261002-r2';
 import {validateAttachmentSubmission} from './feedback-attachments.js?v=20260930-r1';
 
 // One project guard serializes client submissions with trusted timer decisions.
