@@ -121,9 +121,9 @@ function actionCenter() {
     if(state.projectKey&&key!==state.projectKey)continue;
     const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');waiting+=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='rejection-pending').length;
     const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
-    // A delivery also publishes a review card; while its delivery item is listed, don't ask twice.
+    // Delivery review cards mirror the delivery item (verify/reject + 72h auto-accept); never ask twice.
     const deliveryNotice=new Set((arts.notices||[]).filter(n=>n.eventType==='delivery-notification').map(n=>n.id));
-    const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)&&!(deliveries&&deliveryNotice.has(r.id||r.requestId))).length;
+    const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)&&!deliveryNotice.has(r.id||r.requestId)).length;
     if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});
     if(updates)items.push({text:`${p.name}: ${updates} update${updates>1?'s':''} awaiting your confirmation`,project:key,hash:'approvals'});
