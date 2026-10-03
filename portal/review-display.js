@@ -4,7 +4,7 @@ const time=value=>typeof value?.toMillis==='function'?value.toMillis():value&&Nu
 
 // Display only. Expiry NEVER mutates a record or implies verification.
 export function reviewPresentation(record,now=Date.now()) {
-  const labels={'client-confirmed':'Client confirmed','objected':'Objection received','deemed-accepted':'Deemed accepted — not explicitly confirmed','cancelled':'Review cancelled','blocked':'Review paused — agreement step pending','awaiting-notification':'Update recorded — the 72-hour review window starts when the email notification is sent','awaiting-review-notification':'Preparing your full 72-hour review window','manual-review':'Manual review required'};
+  const labels={'client-confirmed':'Client confirmed','objected':'Objection received','deemed-accepted':'Deemed accepted — not explicitly confirmed','cancelled':'Closed - replaced by a newer update. No action needed.','blocked':'Review paused — agreement step pending','awaiting-notification':'Update recorded — the 72-hour review window starts when the email notification is sent','awaiting-review-notification':'Preparing your full 72-hour review window','manual-review':'Manual review required'};
   if(labels[record?.status])return {label:labels[record.status],countdown:null};
   const published=time(record?.publishedAt),deadline=published+72*3600000;
   if(record?.status!=='pending'||record.policyVersion!==REVIEW_POLICY.version||record.reviewHours!==72||!Number.isFinite(published)||!Number.isFinite(now)||

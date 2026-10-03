@@ -6,7 +6,7 @@ import { buildProjectReport, buildProjectAgreement, buildMasterAgreement } from 
 import { createOnboarding } from './onboarding.js?v=20261003-a1';
 import { submitReviewEvidence } from './review-submissions.js?v=20261002-r2';
 import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from './review-lifecycle.js?v=20260928-r1';
-import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a1';
+import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a9';
 import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a4';
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
 import { prepareNotificationSave } from './notification-publication.js?v=20261003-a8';
@@ -119,10 +119,12 @@ function actionCenter() {
   const arts=artifacts(state.clientKey)||{},answered=new Set((arts.confirms||[]).map(x=>x.requestId));
   for(const [key,p] of projectsOf(c)){
     if(state.projectKey&&key!==state.projectKey)continue;
-    const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)).length;
-    if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');waiting+=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='rejection-pending').length;
     const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
+    // A delivery also publishes a review card; while its delivery item is listed, don't ask twice.
+    const deliveryNotice=new Set((arts.notices||[]).filter(n=>n.eventType==='delivery-notification').map(n=>n.id));
+    const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)&&!(deliveries&&deliveryNotice.has(r.id||r.requestId))).length;
+    if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});
     if(updates)items.push({text:`${p.name}: ${updates} update${updates>1?'s':''} awaiting your confirmation`,project:key,hash:'approvals'});
     if(deliveries)items.push({text:`${p.name}: ${deliveries} deliver${deliveries>1?'ies':'y'} ready to verify & download`,project:key,hash:'approvals'});
