@@ -6,6 +6,8 @@ export {notificationEventId};
 
 const sourceIdValid=value=>typeof value==='string'&&value.length>0&&value.length<=200&&!value.includes('/')&&!['.','..'].includes(value);
 const sourceProjectEvents=new Set(['project-notification','payment-notification','delivery-notification','update-notification']);
+// Must equal the automatic message in portal/notification-publication.js (asserted by tests).
+export const AUTO_UPDATE_MESSAGE='Please review the current project details. You can confirm, object, or send feedback in this workspace.';
 
 // The outbox carries identities, never recipients or trusted email text. Resolve
 // ONLY allowlisted, current, same-client records. Also used inside the final
@@ -69,10 +71,11 @@ export async function resolveEventSource(event,{firestore,clock,config}) {
       sourceTime=source.notificationPreparedAt;break;
     }
     default:
-      // Payment records and replies to client feedback are point-in-time records: a later
-      // save must not silently drop them. Other project updates collapse to the latest.
-      {const record=source?.eventType==='payment-notification'||(source?.eventType==='update-notification'&&typeof source?.title==='string'&&source.title.startsWith('Your feedback on "'));
-      if(!project||source.schemaVersion!==1||source.eventType!==event.eventType||source.clientSlug!==event.clientSlug||source.projectKey!==event.projectKey||source.version!==event.sourceVersion||source.reviewEpoch!==event.reviewEpoch||!Number.isSafeInteger(source.projectRevision)||source.projectRevision<1||(record?source.projectRevision>project.notificationRevision:source.projectRevision!==project.notificationRevision)||source.cancelledAt)return failure('source-version-mismatch');}
+      // Only the automatic generic "Project update" collapses to the latest revision. Explicit
+      // notices (new project, delivery, payment, approval request, feedback reply, custom email)
+      // are point-in-time records: a later save must not silently drop their email.
+      {const collapsible=source?.eventType==='update-notification'&&source?.title==='Project update'&&source?.message===AUTO_UPDATE_MESSAGE;
+      if(!project||source.schemaVersion!==1||source.eventType!==event.eventType||source.clientSlug!==event.clientSlug||source.projectKey!==event.projectKey||source.version!==event.sourceVersion||source.reviewEpoch!==event.reviewEpoch||!Number.isSafeInteger(source.projectRevision)||source.projectRevision<1||(collapsible?source.projectRevision!==project.notificationRevision:source.projectRevision>project.notificationRevision)||source.cancelledAt)return failure('source-version-mismatch');}
       sourceTime=source.createdAt;
   }
   const sourceMs=reviewTimestamp(sourceTime),eventMs=reviewTimestamp(event.createdAt),nowMs=reviewTimestamp(clock.now()),boundary=reviewTimestamp(config.activationBoundary);

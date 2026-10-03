@@ -126,3 +126,9 @@ test('payment records stay sendable after a later save; plain updates collapse t
   const stale=await resolveEventSource(outbox(second.plan),{firestore:db,clock,config});
   assert.equal(stale.ok,false);assert.equal(stale.status,'source-version-mismatch');
 });
+test('automatic update message matches the worker collapse rule',async()=>{
+  const {AUTO_UPDATE_MESSAGE}=await import('../backend/apps-script/source-binding.mjs');
+  const previous=fixture(),{plan}=savePlan(previous,c=>{c.projects.p.items[0].s='in-progress';});
+  const notice=plan.writes.find(w=>w.path.includes('/notices/')).data;
+  assert.equal(notice.title,'Project update');assert.equal(notice.message,AUTO_UPDATE_MESSAGE);
+});
