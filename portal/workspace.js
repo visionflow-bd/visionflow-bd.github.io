@@ -9,7 +9,7 @@ import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from '.
 import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a9';
 import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a4';
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
-import { prepareNotificationSave } from './notification-publication.js?v=20261003-a8';
+import { prepareNotificationSave, APPROVAL_PREFIX } from './notification-publication.js?v=20261003-b2';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
 import { notificationStatusHtml } from './notification-status.js?v=20261003-a7';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';
@@ -121,8 +121,8 @@ function actionCenter() {
     if(state.projectKey&&key!==state.projectKey)continue;
     const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');waiting+=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='rejection-pending').length;
     const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
-    // Delivery review cards mirror the delivery item (verify/reject + 72h auto-accept); never ask twice.
-    const deliveryNotice=new Set((arts.notices||[]).filter(n=>n.eventType==='delivery-notification').map(n=>n.id));
+    // Delivery and approval-request review cards mirror their Approvals item (confirm/reject + 72h auto-accept); never ask twice.
+    const deliveryNotice=new Set((arts.notices||[]).filter(n=>n.eventType==='delivery-notification'||String(n.title||'').startsWith(APPROVAL_PREFIX)).map(n=>n.id));
     const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)&&!deliveryNotice.has(r.id||r.requestId)).length;
     if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});

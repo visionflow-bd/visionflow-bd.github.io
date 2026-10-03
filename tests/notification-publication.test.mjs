@@ -100,3 +100,17 @@ test('project signature queues a current source-bound event atomically and rejec
   await db.set(root,{signatureReviews:{[id]:{state:'void'}}},{merge:true});
   assert.equal((await resolveEventSource(event,{firestore:db,clock,config})).ok,false);
 });
+test('approval request publishes a named notice with its description',()=>{
+  const previous=fixture(),{plan}=savePlan(previous,c=>{c.projects.p.approvals=[{id:'ap1',title:'Approve storyboard',desc:'Check scenes 1-3.',createdAt:stamp}];});
+  const notice=plan.writes.find(w=>w.path.includes('/notices/'));
+  assert.ok(notice,'notice written');
+  assert.equal(notice.data.eventType,'update-notification');
+  assert.equal(notice.data.title,'Please confirm: Approve storyboard');
+  assert.ok(notice.data.message.startsWith('Check scenes 1-3.'));
+});
+test('new project notice names the project',()=>{
+  const previous=fixture(),{plan}=savePlan(previous,c=>{c.projects.q={name:'Launch Reel',items:[{n:1,s:'pending'}],rate:100,budget:100};});
+  const notice=plan.writes.find(w=>w.path.includes('/notices/')&&w.data.projectKey==='q');
+  assert.equal(notice.data.eventType,'project-notification');
+  assert.equal(notice.data.title,'New project: Launch Reel');
+});

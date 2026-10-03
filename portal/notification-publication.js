@@ -6,6 +6,7 @@ import {paymentChanges} from './payment-notification.js?v=20261003-a1';
 const visibleProject = project => Object.fromEntries(Object.entries(project||{}).filter(([key])=>!['lastUpdated','notificationRevision','deliveryVersion','ackId'].includes(key)));
 const readyItems = (old,project) => {const a=deliveryLinks(old),b=deliveryLinks(project);return Object.keys(b).filter(n=>a[n]!==b[n]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);};
 const deliveryTitle = ready => ready.length===1?`Deliverable ${ready[0]} is ready for your review`:ready.length>1?`${ready.length} deliverables are ready for your review`:'Delivery updated';
+export const APPROVAL_PREFIX = 'Please confirm: ';
 const DELIVERY_MESSAGE = 'Open the Production log in your workspace and use the button next to the deliverable to confirm receipt and open the file. You have 72 hours to report any problem; after that the delivery counts as accepted.';
 
 // Returned writes join the same transaction as private/public data + manifests.
@@ -27,6 +28,9 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
     if(!next._lastMutationId||id.length>200||id.includes('/'))throw Error('Invalid publication identity.');
     const paymentsChanged=!sameRecord(before.projects[key]?.payments||[],after.projects[key]?.payments||[]);
     const deliveryChanged=!sameRecord(deliveryLinks(old),deliveryLinks(project));
+    const oldApprovalIds=new Set((old?.approvals||[]).map(a=>a.id)),askedApprovals=(project.approvals||[]).filter(a=>a&&a.kind!=='delivery'&&a.id&&!oldApprovalIds.has(a.id));
+    const approvalTitle=askedApprovals.length===1?`${APPROVAL_PREFIX}${String(askedApprovals[0].title||'Project approval').replace(/[\r\n]/g,' ').slice(0,170)}`:`${APPROVAL_PREFIX}${askedApprovals.length} approvals`;
+    const approvalMessage=askedApprovals.length===1&&askedApprovals[0].desc?`${String(askedApprovals[0].desc).slice(0,3800)}\n\nOpen Approvals in your workspace to confirm or reject. No response within 72 hours counts as accepted.`:'Open Approvals in your workspace to confirm or reject. No response within 72 hours counts as accepted.';
     const eventType=!old?'project-notification':paymentsChanged?'payment-notification':deliveryChanged?'delivery-notification':'update-notification';
     const root=`portal_public/${next.accessToken}`,version=`revision-${project.notificationRevision}`;
     const notice={schemaVersion:1,eventType,clientSlug:next.slug,projectKey:key,
@@ -34,8 +38,8 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
       ...(paymentsChanged?{paymentChanges:paymentChanges(before.projects[key]?.payments||[],after.projects[key]?.payments||[])}:{}),
       ...(requested&&manualNotice.responseTarget?{responseTarget:manualNotice.responseTarget}:{}),
       ...redactDeliverySecrets({
-      title:requested?String(manualNotice.title||'Project update').slice(0,200):!old?`New project: ${String(project.name||'Your project').replace(/[\r\n]/g,' ').slice(0,180)}`:paymentsChanged?'Payment record updated':deliveryChanged?deliveryTitle(readyItems(old,project)):'Project update',
-      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):!old?'Please check the scope, payment terms and timeline. You can confirm, object, or send feedback in this workspace.':deliveryChanged&&!paymentsChanged&&readyItems(old,project).length?DELIVERY_MESSAGE:'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
+      title:requested?String(manualNotice.title||'Project update').slice(0,200):!old?`New project: ${String(project.name||'Your project').replace(/[\r\n]/g,' ').slice(0,180)}`:paymentsChanged?'Payment record updated':deliveryChanged?deliveryTitle(readyItems(old,project)):askedApprovals.length?approvalTitle:'Project update',
+      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):!old?'Please check the scope, payment terms and timeline. You can confirm, object, or send feedback in this workspace.':deliveryChanged&&!paymentsChanged&&readyItems(old,project).length?DELIVERY_MESSAGE:!paymentsChanged&&!deliveryChanged&&askedApprovals.length?approvalMessage:'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
       },next)};
     const event={eventType,clientSlug:next.slug,portalToken:next.accessToken,reviewEpoch:next.reviewEpoch||0,
       projectKey:key,sourceCollection:`${root}/notices`,sourceId:id,sourceVersion:version,status:'queued',createdAt:timestamp,retryCount:0};
