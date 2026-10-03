@@ -1,4 +1,4 @@
-import {esc, clone, publicSnapshot, sameRecord, currentMaster, projectAcknowledged, signatureImage} from './data.js?v=20261003-a4';
+import {esc, clone, publicSnapshot, sameRecord, currentMaster, projectAcknowledged, signatureImage} from './data.js?v=20261004-d1';
 
 // The UI reads the same captured records checked by Firestore rules.
 // No localStorage flag grants consent or delivery authorization.

@@ -1,4 +1,5 @@
 import {REVIEW_POLICY,REVIEW_POLICY_TEXT} from './review-policy.js?v=20260928-r1';
+import {deliveredLink,deliveryAccessDocs} from './approval-state.js?v=20261004-d1';
 export const ADMIN_UID = 'm1PGSw7ViEb1xOJoj8INQllra3p1';
 export const STATUS = ['pending', 'progress', 'completed', 'delivered', 'revision'];
 export const LABEL = { pending: 'Pending', progress: 'In progress', completed: 'Completed', delivered: 'Delivered', revision: 'Revision', active: 'Active', paused: 'Paused' };
@@ -110,7 +111,7 @@ export function publicSnapshot(client, slug) {
   const projects = {}; const approvalIds = []; const approvalProjects = {};
   for (const [key,p] of projectsOf(client)) {
     projects[key] = pick(p,['slug','name','rate','budget','status','createdAt','lastUpdated','scope','terms','deadline','weeklyTarget','milestoneText','sourceScriptUrl','avatarFolderUrl','itemLabel','titleLabel','showItemField']);
-    projects[key].items = itemsOf(p).map(item => { const pub = pick(item,['n','b','t','s','sd','dd','dur','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']); if (safeUrl(item.dl)) pub.hasDelivery = true; return pub; });
+    projects[key].items = itemsOf(p).map(item => { const pub = pick(item,['n','b','t','s','sd','dd','dur','clientNote','scriptUrl','avatarUrl','referenceUrl','batch']); if (deliveredLink(item)) pub.hasDelivery = true; return pub; });
     projects[key].deliveryVersion = Number(p.deliveryVersion)||0;
     projects[key].notificationRevision = Number(p.notificationRevision)||0;
     projects[key].ackId = `${key}-${Number(p.agreementRevision)||1}-${Number(client.masterRevision)||1}`;
@@ -204,26 +205,42 @@ export function redactDeliverySecrets(value,client) {
     return x;
   };return scrub(value);
 }
-export const deliveryLinks = project => Object.fromEntries(itemsOf(project).filter(i=>safeUrl(i.dl)).map(i=>[String(i.n),safeUrl(i.dl)]));
-// One manifest per project supports 1,000 deliverables without 1,000 writes.
-// Private client, public summary and changed manifests commit atomically.
+export const deliveryLinks = project => Object.fromEntries(itemsOf(project).filter(i=>deliveredLink(i)).map(i=>[String(i.n),deliveredLink(i)]));
+// Per-item access records (deliveries/{projectKey}~{n}) replace the old
+// all-links manifest: Firestore rules release each link separately. Only
+// changed records are written, so 1,000 deliverables stay within one save.
+export const DELIVERY_SAVE_LIMIT = 150;
 export function prepareSecureSave(next,previous={}) {
   // Private redaction-only denylist: replacing/removing a final link must not
   // reveal its old copies in descriptions or reports. It is never published
   // and never grants access; final file bytes are not retained here.
   next.deliverySecretUrls=[...new Set([...deliverySecretUrls(previous),...deliverySecretUrls(next)])];
-  const writes=[],oldPublic=publicSnapshot(previous,previous.slug||next.slug);
+  const writes=[],oldPublic=publicSnapshot(previous,previous.slug||next.slug),tokenChanged=previous.accessToken!==next.accessToken;
   if(previous.name&&previous.name!==next.name)next.masterRevision=Math.max(Number(next.masterRevision)||1,(Number(previous.masterRevision)||1)+1);
   const proposed=publicSnapshot(next,next.slug);
   for(const [key,p] of projectsOf(next)) {
     const old=previous.projects?.[key];
     const termsChanged=!sameRecord(proposed.projectTerms[key],oldPublic.projectTerms[key]);
     p.agreementRevision=old?(Number(old.agreementRevision)||1)+(termsChanged?1:0):(Number(p.agreementRevision)||1);
-    const links=deliveryLinks(p),changed=!old?.deliveryVersion||!sameRecord(links,deliveryLinks(old))||previous.accessToken!==next.accessToken;
+    const links=deliveryLinks(p),changed=!old?.deliveryVersion||!sameRecord(links,deliveryLinks(old))||tokenChanged;
     p.deliveryVersion=changed?(Number(old?.deliveryVersion)||Number(p.deliveryVersion)||0)+1:Number(old.deliveryVersion);
-    if(changed)writes.push({path:['deliveries',key],data:{projectKey:key,version:p.deliveryVersion,links}});
+    const nextDocs=deliveryAccessDocs(p,key),oldDocs=tokenChanged||!old||old.deleted?[]:deliveryAccessDocs(old,key);
+    const before=new Map(oldDocs.map(d=>[d.id,d.data])),keep=new Set(nextDocs.map(d=>d.id));
+    const sets=nextDocs.filter(d=>!sameRecord(before.get(d.id),d.data));
+    // Revocations always commit atomically with the save. Very large batches of
+    // new records are completed by the admin delivery-access sync instead, so a
+    // save never exceeds Firestore's 500-write transaction limit.
+    if(sets.length<=DELIVERY_SAVE_LIMIT)for(const d of sets)writes.push({path:['deliveries',d.id],data:d.data});
+    for(const d of oldDocs)if(!keep.has(d.id))writes.push({path:['deliveries',d.id],delete:true});
+    // Retire the legacy all-links manifest whenever this project's links move.
+    if(changed)writes.push({path:['deliveries',key],delete:true});
   }
-  for(const [key] of projectsOf(previous))if(!next.projects?.[key]||next.projects[key].deleted)writes.push({path:['deliveries',key],delete:true});
+  for(const [key,p] of projectsOf(previous))if(!next.projects?.[key]||next.projects[key].deleted){
+    writes.push({path:['deliveries',key],delete:true});
+    // An unpublished project's records are already unreadable (knownProject).
+    const stale=tokenChanged?[]:deliveryAccessDocs(p,key);
+    if(stale.length<=DELIVERY_SAVE_LIMIT)for(const d of stale)writes.push({path:['deliveries',d.id],delete:true});
+  }
   return writes;
 }
 export function currentMaster(portal,records=[]) {

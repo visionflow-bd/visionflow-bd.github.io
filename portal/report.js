@@ -1,4 +1,4 @@
-import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION, asValidDate } from './data.js?v=20261003-a4';
+import { esc, money, safeUrl, signatureImage, metrics, itemsOf, LABEL, deliveryColumns, agreementTerms, STANDARD_AGREEMENT_CLAUSES, AGREEMENT_VERSION, asValidDate } from './data.js?v=20261004-d1';
 
 const date = value => { const d=asValidDate(value); return d?d.toLocaleString('en-GB'):String(value||'—'); };
 const url = (value,label) => safeUrl(value)?`<a href="${esc(safeUrl(value))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`:'';

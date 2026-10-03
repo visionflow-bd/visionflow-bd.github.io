@@ -5,7 +5,7 @@ import {clone} from '../portal/data.js';
 const encode=x=>x===null?{nullValue:null}:typeof x==='string'?{stringValue:x}:typeof x==='boolean'?{booleanValue:x}:typeof x==='number'?{integerValue:String(x)}:Array.isArray(x)?{arrayValue:{values:x.map(encode)}}:{mapValue:{fields:Object.fromEntries(Object.entries(x).map(([k,v])=>[k,encode(v)]))}};
 const decode=x=>x.mapValue?Object.fromEntries(Object.entries(x.mapValue.fields||{}).map(([k,v])=>[k,decode(v)])):x.arrayValue?(x.arrayValue.values||[]).map(decode):x.integerValue!==undefined?Number(x.integerValue):x.stringValue!==undefined?x.stringValue:x.booleanValue!==undefined?x.booleanValue:null;
 const base='projects/demo-visionflow-migration/databases/(default)/documents';
-const fixture=()=>({name:base+'/portal_clients/shishir',updateTime:'2026-09-28T00:00:00.000Z',fields:encode({name:'Synthetic client',accessToken:'synthetic-token',_revision:8,projects:{k9:{name:'K9',rate:400,budget:40000,items:[{n:1,dl:'https://example.invalid/final'}],payments:[{id:'p',amount:7000}],approvals:[]}}}).mapValue.fields});
+const fixture=()=>({name:base+'/portal_clients/shishir',updateTime:'2026-09-28T00:00:00.000Z',fields:encode({name:'Synthetic client',accessToken:'synthetic-token',_revision:8,projects:{k9:{name:'K9',rate:400,budget:40000,items:[{n:1,s:'delivered',dl:'https://example.invalid/final'}],payments:[{id:'p',amount:7000}],approvals:[]}}}).mapValue.fields});
 const options={decode,encode,now:'2026-09-28T01:00:00.000Z',deliveryDocuments:[]};
 test('migration preserves raw financial/history fields and requires source updateTime',()=>{
   const source=fixture(),copy=clone(source),plan=planSecureMigration(source,null,options);

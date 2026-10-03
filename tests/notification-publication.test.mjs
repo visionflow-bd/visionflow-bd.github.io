@@ -42,7 +42,7 @@ test('no-op, legacy migration and private-note edits do not create review window
   }
 });
 test('replaced final URL republishes without disclosing either secret',()=>{
-  const previous=fixture();previous.projects.p.items[0].dl='https://example.invalid/old-final';prepareSecureSave(previous);
+  const previous=fixture();previous.projects.p.items[0].s='delivered';previous.projects.p.items[0].dl='https://example.invalid/old-final';prepareSecureSave(previous);
   const {next,plan}=savePlan(previous,c=>{c.projects.p.items[0].dl='https://example.invalid/new-final';},{manualNotice:{projectKey:'p',message:'See https://example.invalid/old-final and https://example.invalid/new-final'}});
   assert.equal(plan.writes[0].data.eventType,'delivery-notification');
   assert.equal(plan.writes.length,4);

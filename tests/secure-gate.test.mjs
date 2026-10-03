@@ -50,25 +50,44 @@ test('new projects get acknowledgement without changing the signed master', () =
   assert.equal(projectAcknowledged(p2,'newProject',s),false);
 });
 
-test('1000 deliveries use one manifest; ordinary edits do not rewrite it', () => {
-  const c=gateFixture();c.projects.k9.items=Array.from({length:1000},(_,n)=>({n:n+1,dl:`https://example.invalid/final/${n}`}));
+test('each delivered file gets its own access record; ordinary edits do not rewrite them', () => {
+  const c=gateFixture();c.projects.k9.items.push({n:4,s:'revision',dl:'https://example.invalid/not-yet'});
   const initial=prepareSecureSave(c);
-  assert.equal(initial.length,1);assert.equal(Object.keys(initial[0].data.links).length,1000);
+  assert.deepEqual(initial.filter(w=>w.data).map(w=>w.path),[['deliveries','k9~1'],['deliveries','k9~2']]);
+  assert.deepEqual(initial.find(w=>w.path[1]==='k9').delete,true,'legacy all-links manifest is retired');
+  assert.equal(initial[0].data.link,'https://drive.google.com/file/d/abc123/view');
+  assert.ok(!JSON.stringify(initial).includes('not-yet'),'a revision item never publishes its attached link');
+  assert.ok(!JSON.stringify(initial).includes('links'));
   const next=clone(c);next.projects.k9.items[0].clientNote='Progress';
   assert.equal(prepareSecureSave(next,c).length,0);
-  const removed=clone(c);removed.projects.k9.items[0].deleted=true;
-  const delta=prepareSecureSave(removed,c);assert.equal(delta.length,1);
-  assert.equal(delta[0].data.links['1'],undefined);assert.equal(delta[0].data.version,2);
+  const back=clone(c);back.projects.k9.items[0].s='revision';
+  const revoke=prepareSecureSave(back,c);
+  assert.deepEqual(revoke.filter(w=>w.delete).map(w=>w.path[1]).sort(),['k9','k9~1']);
   const archived=clone(c);archived.projects.k9.deleted=true;
-  assert.deepEqual(prepareSecureSave(archived,c),[{path:['deliveries','k9'],delete:true}]);
+  assert.deepEqual(prepareSecureSave(archived,c).map(w=>w.path[1]).sort(),['k9','k9~1','k9~2']);
 });
 
-test('link rotation regenerates a current manifest under the new token', () => {
+test('1000 delivered files never overflow one save; the admin sync completes them', () => {
+  const c=gateFixture();c.projects.k9.items=Array.from({length:1000},(_,n)=>({n:n+1,s:'delivered',dl:`https://example.invalid/final/${n}`}));
+  const initial=prepareSecureSave(c);
+  assert.ok(initial.length<=2);
+  const one=clone(c);one.projects.k9.items[5].dl='https://example.invalid/replaced';
+  const delta=prepareSecureSave(one,c);
+  assert.deepEqual(delta.filter(w=>w.data).map(w=>w.path[1]),['k9~6']);
+});
+
+test('link rotation writes current access records under the new token', () => {
   const c=gateFixture();c.accessToken='old';prepareSecureSave(c);
   const next=clone(c);next.accessToken='new';const writes=prepareSecureSave(next,c);
-  assert.equal(writes.length,1);
-  assert.equal(writes[0].data.version,next.projects.k9.deliveryVersion);
+  assert.deepEqual(writes.filter(w=>w.data).map(w=>w.path[1]),['k9~1','k9~2']);
+  assert.equal(writes.filter(w=>w.delete).length,1);
   assert.equal(next.projects.k9.deliveryVersion,c.projects.k9.deliveryVersion+1);
+});
+
+test('only Delivered items are published as downloadable', () => {
+  const c=gateFixture();c.projects.k9.items.push({n:4,s:'completed',dl:'https://example.invalid/done'},{n:5,s:'revision',dl:'https://example.invalid/rev'});
+  const items=publicSnapshot(c,c.slug).projects.k9.items;
+  assert.deepEqual(items.filter(i=>i.hasDelivery).map(i=>i.n),[1,2]);
 });
 
 test('replaced and removed final links stay redacted without hiding unrelated source files',()=>{

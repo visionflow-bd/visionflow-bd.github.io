@@ -340,9 +340,14 @@ async function signMaster(portal = portalFixture()) {
   await acceptTerms(portal);
   await assertSucceeds(setDoc(record(visitor, 'agreements', portal.masterAgreement.version), master(portal)));
 }
+// Per-item access records. approvalId '' = published before delivery
+// verification existed, so only the agreement gate applies.
+function access(key, patch = {}) {
+  return { projectKey: key, itemNumber: 1, link: `https://drive.google.com/file/d/test-${key}/view`, approvalId: '', releaseAtMs: 253402300799000, released: false, ...patch };
+}
 async function seedDeliveries(portal = portalFixture()) {
-  for (const [key, project] of Object.entries(portal.projects)) {
-    await assertSucceeds(setDoc(record(admin, 'deliveries', key), { projectKey: key, version: project.deliveryVersion, links: { 1: `https://drive.google.com/file/d/test-${key}/view` } }));
+  for (const key of Object.keys(portal.projects)) {
+    await assertSucceeds(setDoc(record(admin, 'deliveries', key), access(key)));
   }
 }
 function signature(id = 'signature-one', patch = {}) {
@@ -420,9 +425,7 @@ test('project-by-project signing uses the published deterministic signature rout
   portal.projects['project-one'].signatureRequired = true;
   portal.projects['project-one'].signatureId = 'project-project-one-1-1-1';
   await setDoc(doc(admin, portalPath), portal);
-  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one'), {
-    projectKey: 'project-one', version: 1, links: { 1: 'https://drive.google.com/file/d/project-one/view' },
-  }));
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one'), access('project-one')));
   await acceptTerms(portal);
   const expected = signature(portal.projects['project-one'].signatureId);
   await assertSucceeds(setDoc(record(visitor, 'sigs', portal.projects['project-one'].signatureId), expected));
@@ -694,34 +697,64 @@ test('new master version invalidates older master and cannot reuse its acknowled
   assert.equal((await getDocs(collection(visitor, `${portalPath}/agreements`))).size, 2);
 });
 
-test('stale manifest version, wrong project binding and removed project deny delivery access', async () => {
+test('legacy all-links manifests, wrong project binding and removed projects deny delivery access', async () => {
   await seedDeliveries();
   await signMaster();
-  const portal = portalFixture();
-  portal.projects['project-one'].deliveryVersion = 2;
-  await assertSucceeds(setDoc(doc(admin, portalPath), portal));
-  await assertFails(getDoc(record(visitor, 'deliveries', 'project-one')));
-  await assertSucceeds(updateDoc(record(admin, 'deliveries', 'project-one'), { version: 2, projectKey: 'project-two' }));
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'legacy'), { projectKey: 'project-one', version: 1, links: { 1: 'https://example.invalid/all-links' } }));
+  await assertFails(getDoc(record(visitor, 'deliveries', 'legacy')));
+  await assertSucceeds(updateDoc(record(admin, 'deliveries', 'project-one'), { projectKey: 'missing-project' }));
   await assertFails(getDoc(record(visitor, 'deliveries', 'project-one')));
   await assertSucceeds(updateDoc(record(admin, 'deliveries', 'project-one'), { projectKey: 'project-one' }));
   await assertSucceeds(getDoc(record(visitor, 'deliveries', 'project-one')));
+  const portal = portalFixture();
   delete portal.projects['project-one']; delete portal.projectTerms['project-one'];
   await assertSucceeds(setDoc(doc(admin, portalPath), portal));
   await assertFails(getDoc(record(visitor, 'deliveries', 'project-one')));
   await assertSucceeds(getDoc(record(admin, 'deliveries', 'project-one')));
 });
 
-test('atomic snapshot and manifest version update admits only the newly committed manifest', async () => {
-  await seedDeliveries();
+function receipt(patch = {}) {
+  return { projectKey: 'project-one', itemNumber: 1, receivedAt: serverTimestamp(), userAgent: 'rules-tests', ...patch };
+}
+test('RT-01: a signed client cannot read a file link until THIS item is received, confirmed, released or past 72h', async () => {
   await signMaster();
-  const portal = portalFixture();
-  portal.projects['project-one'].deliveryVersion = 2;
-  const batch = writeBatch(admin);
-  batch.set(doc(admin, portalPath), portal);
-  batch.set(record(admin, 'deliveries', 'project-one'), { projectKey: 'project-one', version: 2, links: { 1: 'https://example.invalid/current' } });
-  await assertSucceeds(batch.commit());
-  const result = await assertSucceeds(getDoc(record(visitor, 'deliveries', 'project-one')));
-  assert.equal(result.data().links[1], 'https://example.invalid/current');
+  const id = 'project-one~1', future = Date.now() + 72 * 3600000;
+  await assertSucceeds(setDoc(record(admin, 'deliveries', id), access('project-one', { approvalId: 'approval-one', releaseAtMs: future })));
+  await assertFails(getDoc(record(visitor, 'deliveries', id)));
+  await assertSucceeds(setDoc(record(visitor, 'receipts', 'approval-one'), receipt()));
+  const opened = await assertSucceeds(getDoc(record(visitor, 'deliveries', id)));
+  assert.equal(opened.data().link, 'https://drive.google.com/file/d/test-project-one/view');
+  await assertFails(setDoc(record(visitor, 'receipts', 'approval-one'), receipt({ userAgent: 'rewritten' })));
+  await assertFails(deleteDoc(record(visitor, 'receipts', 'approval-one')));
+  await assertSucceeds(setDoc(record(admin, 'confirms', 'approval-one'), { projectKey: 'project-one', confirmedAt: new Date(), kind: 'rejection-pending', rejectReason: 'The colour grade is wrong.' }));
+  await assertFails(getDoc(record(visitor, 'deliveries', id)), 'a reported problem locks the file again');
+  await assertSucceeds(updateDoc(record(admin, 'deliveries', id), { released: true }));
+  await assertSucceeds(getDoc(record(visitor, 'deliveries', id)), 'an administrator closure releases it');
+});
+
+test('RT-01: explicit confirmation or an elapsed 72h window releases only that item', async () => {
+  await signMaster();
+  const future = Date.now() + 72 * 3600000;
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one~1'), access('project-one', { approvalId: 'approval-one', releaseAtMs: future })));
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one~2'), access('project-one', { itemNumber: 2, approvalId: 'approval-two', releaseAtMs: future })));
+  await assertSucceeds(setDoc(record(admin, 'deliveries', 'project-one~3'), access('project-one', { itemNumber: 3, approvalId: 'approval-three', releaseAtMs: Date.now() - 3600000 })));
+  await assertSucceeds(setDoc(record(admin, 'confirms', 'approval-one'), { projectKey: 'project-one', confirmedAt: new Date() }));
+  await assertSucceeds(getDoc(record(visitor, 'deliveries', 'project-one~1')));
+  await assertFails(getDoc(record(visitor, 'deliveries', 'project-one~2')));
+  await assertSucceeds(getDoc(record(visitor, 'deliveries', 'project-one~3')));
+  await assertSucceeds(setDoc(record(admin, 'confirms', 'approval-two'), { projectKey: 'project-one', confirmedAt: new Date(), kind: 'rejected', rejectReason: 'Confirmed rejection.' }));
+  await assertFails(getDoc(record(visitor, 'deliveries', 'project-one~2')));
+});
+
+test('receipts require the agreement, a published approval of that project and server time', async () => {
+  await assertFails(setDoc(record(visitor, 'receipts', 'approval-one'), receipt()), 'no receipt before the agreement');
+  await signMaster();
+  await assertFails(setDoc(record(visitor, 'receipts', 'unknown-approval'), receipt()));
+  await assertFails(setDoc(record(visitor, 'receipts', 'approval-one'), receipt({ projectKey: 'project-two' })));
+  await assertFails(setDoc(record(visitor, 'receipts', 'approval-one'), receipt({ receivedAt: new Date('2026-01-01T00:00:00Z') })));
+  await assertFails(setDoc(record(visitor, 'receipts', 'approval-one'), receipt({ note: 'extra field' })));
+  await assertSucceeds(setDoc(record(visitor, 'receipts', 'approval-one'), receipt()));
+  await assertSucceeds(getDoc(record(visitor, 'receipts', 'approval-one')));
 });
 
 test('delivery enumeration and all client writes remain denied even after valid signing', async () => {

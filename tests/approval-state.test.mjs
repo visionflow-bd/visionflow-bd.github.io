@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {approvalState,approvalDeadline,deliveryApprovalFor,ensureDeliveryApprovals,downloadDecision,linkFingerprint,REVIEW_WINDOW_MS} from '../portal/approval-state.js';
+import {approvalState,approvalDeadline,deliveryApprovalFor,ensureDeliveryApprovals,downloadDecision,linkFingerprint,REVIEW_WINDOW_MS,deliveryAccessDocs,deliveryDocId} from '../portal/approval-state.js';
 import {normalizeClient,publicSnapshot} from '../portal/data.js';
 import {renderReviewPanel,countdownHtml,refreshReviewCountdowns} from '../portal/review-display.js';
 
@@ -114,4 +114,33 @@ test('a confirmed rejection stays closed and keeps the download locked',()=>{
   const c=client();ensureDeliveryApprovals(c,T0);
   const d=downloadDecision(c.projects.k9,{n:1,hasDelivery:true},()=>({kind:'rejected',rejectReason:'r'}),t0+5*REVIEW_WINDOW_MS);
   assert.equal(d.allowed,false);assert.equal(d.reason,'rejected');
+});
+
+test('download click is a receipt: link opens and a fresh 72h issue window starts from the receipt',()=>{
+  const c=client();ensureDeliveryApprovals(c,T0);const p=c.projects.k9,a=deliveryApprovalFor(p,1);
+  const received={id:a.id,receivedAt:'2026-10-04T10:00:00.000Z'},recv=Date.parse(received.receivedAt);
+  const item={n:1,hasDelivery:true},none=()=>null;
+  assert.equal(downloadDecision(p,item,none,t0+1000).reason,'pending');
+  const d=downloadDecision(p,item,none,recv+1000,()=>received);
+  assert.equal(d.allowed,true);assert.equal(d.reason,'received');
+  assert.equal(approvalDeadline(a,received),recv+REVIEW_WINDOW_MS,'window runs 72h from the receipt');
+  assert.equal(approvalState(a,null,recv+REVIEW_WINDOW_MS-1,received).state,'pending');
+  assert.equal(approvalState(a,null,recv+REVIEW_WINDOW_MS,received).state,'deemed');
+  const rejected=downloadDecision(p,item,()=>({kind:'rejection-pending',rejectReason:'Wrong colour grade'}),recv+2000,()=>received);
+  assert.equal(rejected.allowed,false,'a reported problem locks the file again');
+  assert.equal(approvalDeadline({kind:'update',createdAt:T0},received),t0+REVIEW_WINDOW_MS,'receipts never move non-delivery windows');
+});
+
+test('only Delivered items get a delivery request and an access record',()=>{
+  const c=client();c.projects.k9.items.push({n:4,s:'revision',dl:'https://drive.google.com/file/d/secretD/view'},{n:5,s:'completed',dl:'https://drive.google.com/file/d/secretE/view'});
+  ensureDeliveryApprovals(c,T0);const p=c.projects.k9;
+  assert.deepEqual(p.approvals.map(a=>a.itemNumber),[1,3]);
+  const docs=deliveryAccessDocs(p,'k9');
+  assert.deepEqual(docs.map(d=>d.id),[deliveryDocId('k9',1),deliveryDocId('k9',3)]);
+  assert.equal(docs[0].data.approvalId,deliveryApprovalFor(p,1).id);
+  assert.equal(docs[0].data.releaseAtMs,t0+REVIEW_WINDOW_MS);
+  assert.equal(docs[0].data.released,false);
+  deliveryApprovalFor(p,1).closure='dismissed';
+  assert.equal(deliveryAccessDocs(p,'k9')[0].data.released,true);
+  assert.ok(!JSON.stringify(docs).includes('secretD')&&!JSON.stringify(docs).includes('secretE'));
 });

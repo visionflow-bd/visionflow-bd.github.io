@@ -20,7 +20,7 @@ const REVIEW_POLICY_TEXT = 'Each new review request gives you 72 hours from its 
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: portal/data.js (SHA-256: c8dd893f89984c5730cc037b5d2e84799d17150e438a1c3da6fa75231c340b04)
+// Source: portal/data.js (SHA-256: 58c15a815b7aff7afc781441ef7033c847b246064032b6a7868210998b02ff8f)
 // ═══════════════════════════════════════════════════════════════════
 
 function sameRecord(a,b) {
@@ -141,7 +141,7 @@ async function writeClientRecord({transaction,root,collection,id,data,timestamp}
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: portal/payment-notification.js (SHA-256: e11050336fb6755aacbf9d0d2e3a5ad788d0996e2d65994e0bafbfd067e7057e)
+// Source: portal/payment-notification.js (SHA-256: dc48f1819740149cddb2bc1eb15aa1f9539673f0ba56d84e375ce57a5de88621)
 // ═══════════════════════════════════════════════════════════════════
 
 

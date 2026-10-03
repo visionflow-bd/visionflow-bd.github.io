@@ -251,6 +251,37 @@ service cloud.firestore {
         && optionalUserAgent(data);
     }
 
+    // Delivery access (RT-01). One record per delivered file. The link is
+    // released only for THIS item: after its receipt or explicit confirmation,
+    // after its 72-hour window, or once the administrator closed it. A client
+    // rejection (or an admin-confirmed rejection) keeps the file locked.
+    function deliveryResponseAllows(token, d) {
+      let c = /databases/$(database)/documents/portal_public/$(token)/confirms/$(d.approvalId);
+      let r = /databases/$(database)/documents/portal_public/$(token)/receipts/$(d.approvalId);
+      return exists(c) ? get(c).data.get('kind', '') == ''
+        : (exists(r) || request.time >= timestamp.value(d.releaseAtMs));
+    }
+    function deliveryReleased(token, d) {
+      return d.get('itemNumber', null) is int && d.get('approvalId', null) is string
+        && d.get('link', null) is string && d.get('releaseAtMs', null) is int
+        && knownProject(token, d.projectKey)
+        && agreementComplete(token, d.projectKey)
+        && (d.approvalId == '' || d.get('released', false) == true || deliveryResponseAllows(token, d));
+    }
+    // A receipt is the client's server-timed download click. It is accepted
+    // only after the applicable agreement is complete (the same gate as the
+    // file itself) and only for a published approval of that project.
+    function validReceipt(token, id, data) {
+      let approvals = get(/databases/$(database)/documents/portal_public/$(token)).data.get('approvalProjects', {});
+      return data.keys().hasAll(['projectKey', 'itemNumber', 'receivedAt'])
+        && data.keys().hasOnly(['projectKey', 'itemNumber', 'receivedAt', 'userAgent'])
+        && id in approvals && approvals[id] == data.projectKey
+        && knownProject(token, data.projectKey)
+        && data.itemNumber is int && data.itemNumber >= 0 && data.itemNumber <= 100000
+        && serverTime(data.receivedAt) && optionalUserAgent(data)
+        && agreementComplete(token, data.projectKey);
+    }
+
     function queuedClientEvidence(token, kind, id) {
       let portal = get(/databases/$(database)/documents/portal_public/$(token)).data;
       let eventId = 'client:' + token + ':' + kind + ':' + id;
@@ -413,14 +444,16 @@ service cloud.firestore {
         allow create: if isAdmin() || (portalActive(token) && validAcknowledgement(token,id,request.resource.data) && queuedClientEvidence(token,'acknowledgements',id));
         allow update, delete: if isAdmin();
       }
-      // Fetch only the requested project's current manifest after signing.
+      // Each delivered file has its own access record; see deliveryReleased.
       match /deliveries/{deliveryId} {
-        allow get: if isAdmin() || (portalActive(token) && knownProject(token,deliveryId)
-          && resource.data.projectKey == deliveryId
-          && resource.data.version == get(/databases/$(database)/documents/portal_public/$(token)).data.projects[deliveryId].deliveryVersion
-          && agreementComplete(token,deliveryId));
+        allow get: if isAdmin() || (portalActive(token) && deliveryReleased(token, resource.data));
         allow list: if isAdmin();
         allow write: if isAdmin();
+      }
+      match /receipts/{approvalId} {
+        allow read: if isAdmin() || portalActive(token);
+        allow create: if isAdmin() || (portalActive(token) && validReceipt(token, approvalId, request.resource.data));
+        allow update, delete: if isAdmin();
       }
 
       match /review_guards/{projectKey} {

@@ -1,7 +1,7 @@
-import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20261003-a4';
+import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20261004-d1';
 import {notificationEventId} from './notification-events.js?v=20261002-r2';
 import {REVIEW_POLICY} from './review-policy.js?v=20260928-r1';
-import {paymentChanges} from './payment-notification.js?v=20261003-a1';
+import {paymentChanges} from './payment-notification.js?v=20261004-d1';
 
 const visibleProject = project => Object.fromEntries(Object.entries(project||{}).filter(([key])=>!['lastUpdated','notificationRevision','deliveryVersion','ackId'].includes(key)));
 const readyItems = (old,project) => {const a=deliveryLinks(old),b=deliveryLinks(project);return Object.keys(b).filter(n=>a[n]!==b[n]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);};

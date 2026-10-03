@@ -1,20 +1,20 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocFromServer, getDocs, onSnapshot, runTransaction, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, query, orderBy, limit, startAfter, documentId } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { ADMIN_UID, STATUS, LABEL, clone, esc, text, asValidDate, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns, prepareSecureSave, redactDeliverySecrets, sameRecord } from './data.js?v=20261003-a4';
-import { buildProjectReport, buildProjectAgreement, buildMasterAgreement } from './report.js?v=20261003-a4';
-import { createOnboarding } from './onboarding.js?v=20261003-a1';
+import { ADMIN_UID, STATUS, LABEL, clone, esc, text, asValidDate, money, safeUrl, signatureImage, uid, newToken, itemsOf, projectsOf, metrics, normalizeClient, publicSnapshot, agreementTerms, signatureOutdated, validateAmount, resizeItems, isDone, deliveryColumns, prepareSecureSave, redactDeliverySecrets, sameRecord } from './data.js?v=20261004-d1';
+import { buildProjectReport, buildProjectAgreement, buildMasterAgreement } from './report.js?v=20261004-d1';
+import { createOnboarding } from './onboarding.js?v=20261004-d1';
 import { submitReviewEvidence } from './review-submissions.js?v=20261002-r2';
 import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from './review-lifecycle.js?v=20260928-r1';
 import { renderReviewPanel, refreshReviewCountdowns, countdownHtml, isFeedbackReply } from './review-display.js?v=20261004-c1';
-import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a4';
+import { approvalState, downloadDecision, ensureDeliveryApprovals, deliveryDocId, deliveryAccessDocs } from './approval-state.js?v=20261004-d1';
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
-import { prepareNotificationSave } from './notification-publication.js?v=20261004-c1';
+import { prepareNotificationSave } from './notification-publication.js?v=20261004-d1';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
-import { notificationStatusHtml } from './notification-status.js?v=20261003-a7';
+import { notificationStatusHtml } from './notification-status.js?v=20261004-d1';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';
 import {uploadPortalImage} from './image-upload.js?v=20261001-r1';
-import {founderBranding,saveFounderBranding} from './founder-branding.js?v=20261001-r1';
+import {founderBranding,saveFounderBranding} from './founder-branding.js?v=20261004-d1';
 import {REVIEW_POLICY,REVIEW_POLICY_TEXT} from './review-policy.js?v=20260928-r1';
 
 const initialAccess = new URLSearchParams(location.search).get('access');
@@ -77,14 +77,16 @@ const dateValue = value => asValidDate(value)?.valueOf()||0;
 // portal therefore records only an explicit client action; no timer may turn a
 // pending request into a verified record.
 const responseFor = (approval, projectKey) => artifacts(state.clientKey).confirms.find(c => c.kind !== 'feedback' && c.id === approval.id && (!c.projectKey || c.projectKey === projectKey));
-const approvalInfo = (approval, projectKey = state.projectKey) => approvalState(approval, responseFor(approval, projectKey));
+// A receipt is the client's server-timed download click (delivery approvals only).
+const receiptFor = (approval, projectKey = state.projectKey) => (artifacts(state.clientKey).receipts || []).find(r => r.id === approval?.id && (!r.projectKey || r.projectKey === projectKey)) || null;
+const approvalInfo = (approval, projectKey = state.projectKey) => approvalState(approval, responseFor(approval, projectKey), Date.now(), receiptFor(approval, projectKey));
 const isoText = ms => Number.isFinite(ms) ? dateText(new Date(ms).toISOString()) : '—';
 const client = () => state.mode === 'client' ? state.publicClient : state.clients[state.clientKey];
 const project = () => client()?.projects?.[state.projectKey];
 const deliveryLabels = p => ({ item:text(p?.itemLabel)||'Item / subject', title:text(p?.titleLabel)||'Deliverable title', showItem:p?.showItemField!==false });
 const admin = () => state.mode === 'admin' && state.user?.uid === ADMIN_UID;
 const requireAdmin = () => { if (!admin()) throw new Error('Administrator sign-in is required.'); };
-const artifacts = key => state.artifacts[key] || { sigs:[], confirms:[], feedback:[] };
+const artifacts = key => state.artifacts[key] || { sigs:[], confirms:[], feedback:[], receipts:[] };
 const projectSigs = () => artifacts(state.clientKey).sigs.filter(s => s.projectKey === state.projectKey || (!s.projectKey && s.id === state.projectKey));
 const requests = (key = state.clientKey, projectKey = state.projectKey) => [...artifacts(key).confirms.filter(a => a.kind === 'feedback'||a.requestId&&['rejection-pending','rejected'].includes(a.kind)), ...artifacts(key).feedback].filter(a => !projectKey || a.projectKey === projectKey).map(a=>({...a,message:a.message||a.rejectReason||'',submittedAt:a.submittedAt||a.confirmedAt,requestType:a.requestType||(a.requestId?'Review objection':'feedback')})).sort((a,b) => dateValue(b.submittedAt)-dateValue(a.submittedAt));
 const reviewOf = entry => client()?.feedbackReviews?.[entry.id] || {};
@@ -120,17 +122,17 @@ function actionCenter() {
   for(const [key,p] of projectsOf(c)){
     if(state.projectKey&&key!==state.projectKey)continue;
     const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');waiting+=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='rejection-pending').length;
-    const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
+    const deliveries=open.filter(a=>a.kind==='delivery'&&!receiptFor(a,key)).length,updates=open.filter(a=>a.kind!=='delivery').length;
     // Delivery and approval-request review cards mirror their Approvals item (confirm/reject + 72h auto-accept); never ask twice.
     const deliveryNotice=new Set((arts.notices||[]).filter(n=>n.eventType==='delivery-notification'||n.noticeKind==='approval-request'||isFeedbackReply(n)).map(n=>n.id));
     const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)&&!deliveryNotice.has(r.id||r.requestId)).length;
     if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});
     if(updates)items.push({text:`${p.name}: ${updates} update${updates>1?'s':''} awaiting your confirmation`,project:key,hash:'approvals'});
-    if(deliveries)items.push({text:`${p.name}: ${deliveries} deliver${deliveries>1?'ies':'y'} ready to verify & download`,project:key,hash:'approvals'});
+    if(deliveries)items.push({text:`${p.name}: ${deliveries} deliver${deliveries>1?'ies':'y'} ready to download`,project:key,hash:'approvals'});
   }
   const list=items.map(it=>`<li class="action-item${it.urgent?' urgent':''}"><span>${esc(it.text)}</span>${button('Open','go-action',`data-project="${esc(it.project)}" data-hash="${esc(it.hash)}"`,'small'+(it.urgent?' primary':''))}</li>`).join('');
-  return `<section class="action-center" id="action-center" aria-label="Your next steps"><div class="action-head"><div><p class="eyebrow">Welcome, ${esc(c.name)}</p><h2>${items.length?`${items.length} thing${items.length>1?'s':''} need${items.length>1?'':'s'} your attention`:waiting?'Nothing needs your action right now':'You are all caught up'}</h2></div></div>${items.length?`<ul class="action-list">${list}</ul>`:waiting?`<p class="muted">We are reviewing your feedback on ${waiting} item${waiting>1?'s':''} and will reply by email.</p>`:'<p class="muted">Every update and delivery is confirmed. New items will appear here.</p>'}<p class="small muted action-mail">We also email you every important update with a direct link. Our emails come from <strong>visionflow.agency.bd@gmail.com</strong> - please add it to your contacts. If you cannot find an email, check Spam or Promotions and mark it “Not spam”.</p></section>`;
+  return `<section class="action-center" id="action-center" aria-label="Your next steps"><div class="action-head"><div><p class="eyebrow">Welcome, ${esc(c.name)}</p><h2>${items.length?`${items.length} thing${items.length>1?'s':''} need${items.length>1?'':'s'} your attention`:waiting?'Nothing needs your action right now':'You are all caught up'}</h2></div></div>${items.length?`<ul class="action-list">${list}</ul>`:waiting?`<p class="muted">We are reviewing your feedback on ${waiting} item${waiting>1?'s':''} and will reply by email.</p>`:'<p class="muted">Every update and delivery is confirmed. New items will appear here.</p>'}<p class="small muted action-mail">We also email you every important update with a direct link. Our emails come from <strong>visionflow.agency.bd@gmail.com</strong> - please add it to your contacts. If you cannot find an email, check Spam or Promotions and mark it “Not spam”.</p><p class="small action-tour">${button('Take the quick tour','welcome-tour','','small')}</p></section>`;
 }
 
 function hashScroll(){if(location.hash){let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}let el=document.getElementById(id);if(!el&&id.startsWith('notice-'))el=document.getElementById(`review-${id.slice(7)}`);if(!el&&id.startsWith('review-'))el=document.getElementById(`notice-${id.slice(7)}`);if(el){const fold=el.closest('details');if(fold)fold.open=true;el.scrollIntoView({behavior:'smooth',block:'start'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',2000);}}}
@@ -155,6 +157,7 @@ function render() {
   $('view').querySelectorAll('[data-id]').forEach(control=>{const row=control.closest('.list-row');if(row&&!row.id)row.id=`evidence-${control.dataset.id}`;});
   if(state.tab==='log') applyFilters();
   setTimeout(hashScroll,500);
+  if(state.mode==='client')setTimeout(maybeWelcome,800);
 }
 setInterval(()=>{if(!document.hidden)refreshReviewCountdowns(document);},1000);
 // Consent is a current server record, not a browser flag.
@@ -192,9 +195,10 @@ function approvalCard(a){
     :v.state==='rejection-pending'?rejection(' rejection-pending','Rejection submitted',admin()?'Client’s reason:':'Your reason:')+`<p class="small muted">${admin()?'Timer paused. Confirm the rejection (a revision will follow as a new update) or dismiss it with a reason (the item closes).':'The review timer is paused while Vision Flow reviews your feedback.'}</p>`
     :v.state==='confirmed'?`<p>${badge('delivered',delivery?'Verified':'Confirmed')} <span class="small muted">${esc(dateText(c.confirmedAt))}</span></p>`
     :v.state==='deemed'?`<p>${badge('completed','Deemed accepted')} <span class="small muted">No response within 72 hours · window ended ${esc(isoText(v.deadline))}</span></p>`
-    :`<p>${badge('pending',admin()?'Awaiting client confirmation':delivery?'Ready for your verification':'Awaiting your confirmation')}</p>${countdownHtml(v.deadline,Date.now(),'Review window ended — counted as accepted')}${v.deadline?`<p class="small muted">${admin()?'No client response by':'Please respond by'} ${esc(isoText(v.deadline))}${admin()?' counts as accepted.':'. No response within 72 hours counts as accepted.'}</p>`:''}`;
+    :`<p>${badge('pending',delivery&&v.receipt?(admin()?'Downloaded by client':'Received'):admin()?(delivery?'Awaiting client download':'Awaiting client confirmation'):delivery?'Ready to download':'Awaiting your confirmation')}${delivery&&v.receipt?` <span class="small muted">${esc(dateText(v.receipt.receivedAt))}</span>`:''}</p>${countdownHtml(v.deadline,Date.now(),'Review window ended — counted as accepted')}${v.deadline?`<p class="small muted">${delivery&&v.receipt?(admin()?`The client may report a problem until ${esc(isoText(v.deadline))}. After that it counts as accepted.`:`Report any problem by ${esc(isoText(v.deadline))}. After that the delivery counts as accepted.`):`${admin()?'No client response by':'Please respond by'} ${esc(isoText(v.deadline))}${admin()?' counts as accepted.':'. No response within 72 hours counts as accepted.'}`}</p>`:''}`;
   const actions=admin()?(v.state==='pending'?button('Edit','edit-approval',id):'')+(v.state==='rejection-pending'?button('Confirm rejection','confirm-rejection',id,'danger')+button('Dismiss rejection','reset-approval',id):c&&v.state!=='dismissed'?button('Reset response','reset-approval',id):'')+button('Bin','archive-approval',id,'danger')
-    :v.state==='pending'?button(delivery?'Verify delivery':'Confirm update','confirm-approval',id,'primary')+button('Reject','reject-approval',id,'danger'):'';
+    :(delivery&&itemsOf(project()).some(i=>Number(i.n)===Number(a.itemNumber)&&i.hasDelivery)&&['pending','confirmed','deemed','dismissed'].includes(v.state)?button('Download','gated-download',`data-delivery="${esc(String(a.itemNumber))}"`,v.state==='pending'&&!v.receipt?'primary':''):'')
+      +(v.state==='pending'?(delivery?button('Confirm received','confirm-approval',id)+button('Report a problem','reject-approval',id,'danger'):button('Confirm update','confirm-approval',id,'primary')+button('Reject','reject-approval',id,'danger')):'');
   return `<div class="list-row approval-row" id="approval-${esc(a.id)}"><strong>${esc(a.title)}</strong>${a.createdAt?`<p class="small muted">Requested ${esc(dateText(a.createdAt))}</p>`:''}<p class="prewrap">${linkify(a.desc)}</p>${status}${actions?`<div class="actions wrap">${actions}</div>`:''}</div>`;
 }
 function approvalView(p){
@@ -216,16 +220,18 @@ function productionView(){
     if(column.type==='link'){
       // Gated delivery: client dl requires active signature
       if(column.key==='dl' && !admin()) {
-        if(!item.hasDelivery && !item.dl) return '—';
-        if(!onboarding.projectReady(state.projectKey)) return '<button class="button small primary" type="button" data-action="sign-required">Review agreement to download</button>';
-        const d=downloadDecision(p,item,confirmation),attr=`type="button" data-action="gated-download" data-delivery="${esc(String(item.n))}"`;
-        if(d.allowed)return `<button class="button small" ${attr}>Download</button>${d.reason==='deemed'?'<span class="small muted cell-note">Auto-verified</span>':''}`;
-        if(d.reason==='pending')return `<button class="button small primary" ${attr}>Verify &amp; download</button>`;
+        if(!item.hasDelivery) return item.s==='revision'?'<span class="small muted cell-note" title="We will email you as soon as the revised file is delivered.">Revision in progress</span>':item.s&&item.s!=='delivered'?'<span class="small muted cell-note" title="The file appears here once this item is delivered. We will notify you by email.">After delivery</span>':'—';
+        const attr=`type="button" data-action="gated-download" data-delivery="${esc(String(item.n))}"`;
+        // Agreement pending: the same Download button opens a guide to the missing step.
+        if(!onboarding.projectReady(state.projectKey)) return `<button class="button small primary" ${attr}>Download</button><span class="small muted cell-note">Agreement step needed</span>`;
+        const d=downloadDecision(p,item,confirmation,Date.now(),receiptFor);
+        if(d.allowed)return `<button class="button small" ${attr}>Download</button>${d.reason==='deemed'?'<span class="small muted cell-note">Auto-approved</span>':d.reason==='received'?'<span class="small muted cell-note">Received - 72h review open</span>':''}`;
+        if(d.reason==='pending')return `<button class="button small primary" ${attr}>Download</button>`;
         return `<button class="button small" ${attr}>${d.reason==='rejection-pending'?'Rejection under review':'Revision in progress'}</button>`;
       }
       const url = safeUrl(item[column.key]);
       if(!url) return '—';
-      if(column.key==='dl'&&admin()){const d=downloadDecision(p,{...item,hasDelivery:true},confirmation);const note=d.reason==='legacy'?'':{confirmed:'Verified',deemed:'Auto-verified (72h)',pending:'Awaiting verification','rejection-pending':'Rejection submitted',rejected:'Rejected',dismissed:'Closed - delivery stands'}[d.reason]||'';return link(url,'Open')+(note?`<span class="small muted cell-note">${esc(note)}</span>`:'');}
+      if(column.key==='dl'&&admin()){if(item.s!=='delivered')return link(url,'Open')+'<span class="small muted cell-note">Hidden from client until status is Delivered</span>';const d=downloadDecision(p,{...item,hasDelivery:true},confirmation,Date.now(),receiptFor);const note=d.reason==='legacy'?'':{confirmed:'Verified',deemed:'Auto-approved (72h)',pending:'Awaiting client download',received:`Downloaded ${dateText(d.view?.receipt?.receivedAt)} - 72h review open`,'rejection-pending':'Rejection submitted',rejected:'Rejected',dismissed:'Closed - delivery stands'}[d.reason]||'';return link(url,'Open')+(note?`<span class="small muted cell-note">${esc(note)}</span>`:'');}
       return link(url, 'Open');
     }
     return column.type==='date'&&item[column.key]?fmtDate(item[column.key]):esc(item[column.key]||'—');
@@ -237,7 +243,7 @@ function clearSubscriptions(){rootStop?.();rootStop=null;brandingStop?.();brandi
 function watchBranding(){brandingStop=onSnapshot(doc(db,'site','main'),snap=>{state.founder=founderBranding(snap.data()?.site?.agency,DEFAULT_FOUNDER);if(state.loaded)render();},fail);}
 function watchArtifacts(key,c){
   if(artifactStops[key]?.token===c.accessToken)return;artifactStops[key]?.stop();
-  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices'];
+  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices','receipts'];
   state.artifacts[key]=Object.fromEntries(names.map(name=>[name,[]]));state.artifacts[key].ready={};if(!c.accessToken)return;
   const stops=names.map(name=>onSnapshot(collection(db,'portal_public',c.accessToken,name),{includeMetadataChanges:true},snap=>{
     // Local optimistic writes are not evidence of stored consent or signatures.
@@ -249,7 +255,7 @@ function watchArtifacts(key,c){
 }
 function startAdmin(){
   clearSubscriptions();watchBranding();state.mode='admin';const q=new URLSearchParams(location.search);state.clientKey=q.get('c');state.projectKey=q.get('p');state.tab=q.get('tab')==='log'?'log':'overview';state.page=q.get('v')==='trash'?'trash':'workspace';
-  rootStop=onSnapshot(collection(db,'portal_clients'),snap=>{state.clients={};snap.forEach(d=>state.clients[d.id]=normalizeClient(d.data(),d.id));for(const [key,c] of Object.entries(state.clients)){if(!c._deleted)watchArtifacts(key,c);}for(const key of Object.keys(artifactStops)){if(!state.clients[key]||state.clients[key]._deleted){artifactStops[key].stop();delete artifactStops[key];delete state.artifacts[key];}}if(state.clientKey&&(!client()||client()._deleted)){state.clientKey=null;state.projectKey=null;}render();},error=>{state.mode='error';state.error=errorMessage(error);render();});
+  rootStop=onSnapshot(collection(db,'portal_clients'),snap=>{state.clients={};snap.forEach(d=>state.clients[d.id]=normalizeClient(d.data(),d.id));for(const [key,c] of Object.entries(state.clients)){if(!c._deleted){watchArtifacts(key,c);syncDeliveryAccess(key,c);}}for(const key of Object.keys(artifactStops)){if(!state.clients[key]||state.clients[key]._deleted){artifactStops[key].stop();delete artifactStops[key];delete state.artifacts[key];}}if(state.clientKey&&(!client()||client()._deleted)){state.clientKey=null;state.projectKey=null;}render();},error=>{state.mode='error';state.error=errorMessage(error);render();});
 }
 function startClient(access){
   clearSubscriptions();watchBranding();state.mode='client';state.token=access;const q=new URLSearchParams(location.search);state.projectKey=q.get('p');state.tab=q.get('tab')==='log'?'log':'overview';
@@ -257,7 +263,7 @@ function startClient(access){
 }
 async function saveClient(draft,notice='Saved',operations=[],{allowRecovery=false,manualNotice=null}={}){
   requireAdmin();const next=normalizeClient(draft,draft.slug);const expected=Number(draft._revision)||0;next.lastUpdated=now();
-  if(!allowRecovery&&!next._deleted)operations=[...operations,...ensureDeliveryApprovals(next,next.lastUpdated).map(id=>({path:['confirms',id],delete:true}))];next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
+  if(!allowRecovery&&!next._deleted)operations=[...operations,...ensureDeliveryApprovals(next,next.lastUpdated).flatMap(id=>[{path:['confirms',id],delete:true},{path:['receipts',id],delete:true}])];next._revision=expected+1;next._lastMutationId=uid('save');next.accessToken ||= newToken();
   if(operations.length>MAX_SAVE_OPERATIONS)throw new Error('This operation is too large for one save. Export a backup and process records in smaller groups.');
   await runTransaction(db,async tx=>{
     const ref=doc(db,'portal_clients',next.slug),current=await tx.get(ref),persisted=current.data();
@@ -638,7 +644,7 @@ function openArchivedRows(){requireAdmin();const p=project(),rows=p.items.filter
 function openArchivedRowPreview(number){requireAdmin();const item=project()?.items.find(row=>Number(row.n)===Number(number));if(!item?.deleted)throw new Error('Archived production row not found.');modal('Archived production-row details','Review every stored field before restoring or permanently deleting this row.',trashDetails({kind:'item',label:`Deliverable ${item.n}`,value:item,projectKey:state.projectKey,deletedAt:item.deletedAt}),null);}
 function linkSettings(){requireAdmin();const c=client(),pending=c.accessRotation?.from,archiving=Boolean(c.archiveState);modal('Private link settings','Anyone with this private link can view this client workspace. Pause sharing or replace a leaked link.',`<p>Sharing is ${c.accessEnabled===false?'paused':'active'}.</p>${archiving?'<p class="notice">A protected archive is in progress. Sharing remains paused until every submitted record is safely moved.</p>':pending?'<p class="notice">A previous replacement safely disabled the old link. Resume the protected record transfer to finish it.</p>':''}${archiving?button('Resume protected archive','resume-archive','','danger'):button(c.accessEnabled===false?'Enable sharing':'Pause sharing','toggle-sharing')+button(pending?'Resume protected record transfer':'Replace private link','rotate-link','','danger')}`,null);}
 async function allRecords(accessToken,{includeDeliveries=true,includeInternal=true,includeAttachments=true}={}){
-  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices',...(includeInternal?['review_guards']:[]),...(includeDeliveries?['deliveries']:[]),...(includeAttachments?['attachments']:[])];
+  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices','receipts',...(includeInternal?['review_guards']:[]),...(includeDeliveries?['deliveries']:[]),...(includeAttachments?['attachments']:[])];
   const groups=await Promise.all(names.map(async name=>(await getDocs(collection(db,'portal_public',accessToken,name))).docs.map(d=>({...d.data(),id:d.id,collection:name}))));
   return groups.flat();
 }
@@ -697,7 +703,7 @@ function download(name,content,type){const a=document.createElement('a'),u=URL.c
 function exportCsv(){const p=project(),columns=deliveryColumns(p,{includeInternal:admin()}).filter(c => admin() || c.key !== 'dl'),headers=['Number',...columns.map(column=>column.label),'Status'],keys=['n',...columns.map(column=>column.key),'s'];const safe=v=>{let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};download(`${state.projectKey}-deliveries.csv`,'\uFEFF'+[headers,...itemsOf(p).map(i=>keys.map(k=>i[k]))].map(row=>row.map(safe).join(',')).join('\r\n'),'text/csv;charset=utf-8');notify('Delivery CSV downloaded');}
 async function loadProjectArtifacts({includeHistoricalSignature=false}={}){
   const freshRecords=await allRecords(state.mode==='client'?state.token:client().accessToken,{includeDeliveries:false,includeInternal:admin(),includeAttachments:false});
-  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices'];
+  const names=['sigs','confirms','feedback','consent','agreements','acknowledgements','reviews','notices','receipts'];
   state.artifacts[state.clientKey]=Object.fromEntries(names.map(col=>[col,freshRecords.filter(r=>r.collection===col)]));
   state.artifacts[state.clientKey].ready=Object.fromEntries(names.map(name=>[name,true]));
   const current=activeSignature(),historical=projectSigs().sort((a,b)=>dateValue(b.signedAt)-dateValue(a.signedAt))[0],s=current||(includeHistoricalSignature?historical:null),r=s?sigReview(s):{};
@@ -709,30 +715,82 @@ async function agreement(){notify('Loading agreement…');const signature=await 
 
 async function downloadDelivery(source){
   if(admin())throw new Error('Open the private client view to use this action.');
-  if(!onboarding.projectReady(state.projectKey))return onboarding.isAgencyPartner()&&onboarding.master()?onboarding.acknowledge():onboarding.sign();
   const p=project(),item=itemsOf(p).find(i=>String(i.n)===source.dataset.delivery);
-  if(!item?.hasDelivery)throw new Error('This deliverable is no longer available. Refresh the workspace.');
-  const decision=downloadDecision(p,item,confirmation);
+  if(!item?.hasDelivery)return modal('Not delivered yet',`Deliverable ${source.dataset.delivery}`,`<p>${esc(item?.s==='revision'?'This item is being revised. We will email you as soon as the corrected file is delivered.':'This file becomes available once the item is marked Delivered. We will notify you by email.')}</p>`,null);
+  // Owner gate: only steps the client must do personally (agreement/signature)
+  // block a download. Payments and 72h approvals never block it.
+  if(!onboarding.projectReady(state.projectKey))return deliveryGate(item);
+  const decision=downloadDecision(p,item,confirmation,Date.now(),receiptFor);
   if(decision.allowed)return openDeliveryLink(item,true);
-  if(decision.reason==='pending')return verifyDelivery(decision.approval,item);
-  const message=decision.reason==='rejection-pending'?'You reported a problem with this deliverable. Vision Flow is reviewing your reason. The download unlocks after the revised file is ready and verified.':'This deliverable was rejected and is being revised. You will be notified when the corrected file is ready to verify.';
+  if(decision.reason==='pending')return receiveDelivery(decision.approval,item);
+  const message=decision.reason==='rejection-pending'?'You reported a problem with this deliverable. Vision Flow is reviewing your reason. The download unlocks after the revised file is ready.':'This deliverable was rejected and is being revised. You will be notified when the corrected file is ready.';
   return modal('Download locked',`Deliverable ${item.n}${item.t?` · ${item.t}`:''}`,`<p>${esc(message)}</p>`,null);
 }
-async function openDeliveryLink(item,usePopup){
-  const popup=usePopup?window.open('about:blank','_blank'):null;if(popup)popup.opener=null;
+function deliveryGate(item){
+  const agency=onboarding.isAgencyPartner(),acknowledge=agency&&Boolean(onboarding.master());
+  const [title,detail,action]=acknowledge?['Acknowledge this project’s particulars','Your master signature is already on record. Confirm this project’s scope, price and timeline - it takes a few seconds.','Review & acknowledge']
+    :agency?['Sign your master partner agreement','Sign once with your finger, mouse or trackpad. It covers every project you run with Vision Flow.','Open signature pad']
+    :['Sign this project’s agreement','Review the scope, price and timeline, then sign with your finger, mouse or trackpad.','Open signature pad'];
+  modal('One step before your download',`Deliverable ${item.n}${item.t?` · ${item.t}`:''} is ready`,`<div class="gate-guide full"><p>Your file is ready. Final files unlock once this step is complete:</p><ol class="gate-steps"><li class="gate-step"><strong>${esc(title)}</strong><span class="small muted">${esc(detail)}</span></li></ol><p class="small muted">Payments never block a download. When the step is done, press Download again and the file opens straight away.</p></div>`,
+    async()=>{finishModal();acknowledge?onboarding.acknowledge():onboarding.sign();},action);
+}
+// Silent verification: with nothing personal pending, the Download click is
+// recorded as a server-timed receipt and the file opens. The client then has
+// 72 hours to report a problem; silence counts as accepted.
+async function receiveDelivery(approval,item){
+  const popup=window.open('about:blank','_blank');if(popup)popup.opener=null;
   try{
-    const snap=await getDocFromServer(doc(db,'portal_public',state.token,'deliveries',state.projectKey));
-    const target=safeUrl(snap.data()?.links?.[String(item.n)]);
-    if(!target)throw new Error('This delivery is unavailable. Contact Vision Flow.');
-    if(popup)popup.location.replace(target);else modal('Your delivery is ready',`Deliverable ${item.n} is verified. Open the authorized file below.`,`<p>${link(target,'Open delivery file')}</p>`,null);
+    try{await setDoc(doc(db,'portal_public',state.token,'receipts',approval.id),{projectKey:state.projectKey,itemNumber:Number(item.n),receivedAt:serverTimestamp(),userAgent:navigator.userAgent.slice(0,2048)});}
+    catch(error){if(!(receiptFor(approval)||error?.code==='permission-denied'))throw error;}
+    await openDeliveryLink(item,false,popup);
+    notify('Download opened. You have 72 hours to report any problem; after that the delivery counts as accepted.');
   }catch(error){popup?.close();throw error;}
 }
-function verifyDelivery(approval,item){
-  const v=approvalState(approval,null);
-  modal('Verify & download',`Deliverable ${item.n}${item.t?` · ${item.t}`:''}`,`<p>Please confirm you have reviewed this deliverable. Your confirmation is saved with the date and time, and the final file unlocks immediately.</p>${countdownHtml(v.deadline,Date.now(),'Review window ended — counted as accepted')}<p class="small muted">No response within 72 hours counts as accepted. If something is wrong, cancel and use “Reject” in Approvals or “Feedback / revision” on this row.</p><label class="check-field"><input type="checkbox" name="verified" required> I have reviewed Deliverable ${esc(String(item.n))} and confirm it is acceptable.</label>`,async()=>{
-    await submitClientEvidence(approval.id,{projectKey:state.projectKey,confirmedAt:serverTimestamp(),userAgent:navigator.userAgent});
-    finishModal();notify('Delivery verified. Preparing your download…');await openDeliveryLink(item,false);
-  },'Verify & unlock download');
+async function openDeliveryLink(item,usePopup,existingPopup=null){
+  const popup=existingPopup||(usePopup?window.open('about:blank','_blank'):null);if(popup&&!existingPopup)popup.opener=null;
+  try{
+    const snap=await getDocFromServer(doc(db,'portal_public',state.token,'deliveries',deliveryDocId(state.projectKey,item.n)));
+    const target=safeUrl(snap.data()?.link);
+    if(!target)throw new Error('This delivery is unavailable. Contact Vision Flow.');
+    if(popup)popup.location.replace(target);else modal('Your delivery is ready',`Deliverable ${item.n} is ready. Open the authorized file below.`,`<p>${link(target,'Open delivery file')}</p>`,null);
+  }catch(error){popup?.close();throw error?.code==='permission-denied'?new Error('This download is not available yet. Refresh the page and try again, or contact Vision Flow.'):error;}
+}
+// Admin-only: keep per-item delivery access records in step with the private
+// client record (first run also retires the legacy all-links manifests).
+const deliverySyncs={};
+async function syncDeliveryAccess(key,c){
+  if(!admin()||!c?.accessToken||c._deleted||recoveryPending(c))return;
+  const mark=`${c.accessToken}:${c._revision||0}`;if(deliverySyncs[key]===mark)return;deliverySyncs[key]=mark;
+  try{
+    const snap=await getDocs(collection(db,'portal_public',c.accessToken,'deliveries'));
+    const current=new Map(snap.docs.map(d=>[d.id,d.data()]));
+    const expected=new Map(projectsOf(c).flatMap(([k,p])=>deliveryAccessDocs(p,k)).map(d=>[d.id,d.data]));
+    const ops=[...[...expected].filter(([id,data])=>!sameRecord(current.get(id),data)).map(([id,data])=>({id,data})),...[...current.keys()].filter(id=>!expected.has(id)).map(id=>({id}))];
+    if(!ops.length)return;
+    for(let i=0;i<ops.length;i+=400){const batch=writeBatch(db);for(const op of ops.slice(i,i+400)){const ref=doc(db,'portal_public',c.accessToken,'deliveries',op.id);op.data?batch.set(ref,op.data):batch.delete(ref);}await batch.commit();}
+  }catch(error){delete deliverySyncs[key];console.warn('Delivery access sync failed',error);}
+}
+// First visit: a short, skippable welcome tour (stored per private link).
+const SENDER_EMAIL='visionflow.agency.bd@gmail.com';
+const TOUR=[
+  ['Your next steps','The panel at the top lists anything that needs you: signing an agreement, confirming an update or downloading a delivery. When it says “You are all caught up”, nothing is waiting.'],
+  ['Projects & production log','Open a project to see its scope, payments and every deliverable. A file appears in the Production log as soon as its item is marked Delivered.'],
+  ['One click to download','Press Download and the file opens. The click is saved as your receipt; you then have 72 hours to report any problem, after which the delivery counts as accepted.'],
+  ['Approvals & feedback','Updates that need your answer show a 72-hour timer. Confirm, reject with a reason, or send feedback and revision requests from the same page.'],
+  ['We keep you posted',`Every important update is also sent by email and WhatsApp. Our emails come from ${SENDER_EMAIL} - please add it to your contacts and check Spam or Promotions if a message seems missing.`]
+];
+function welcomeTour(step=-1){
+  const intro=step<0,last=step===TOUR.length-1,name=client()?.name||'';
+  const body=intro?`<div class="welcome-hero full"><img class="welcome-logo" src="../logo.png" alt="Vision Flow"><p class="welcome-tagline">Crafted with vision. Delivered in flow.</p><p>This private workspace keeps your projects, agreements, approvals and final files in one place. Take a 30-second tour, or skip it and explore - you can reopen the tour any time.</p><p class="small muted">We will also send every important update by email and WhatsApp. Emails come from <strong>${esc(SENDER_EMAIL)}</strong>; please check Spam or Promotions if you do not see them.</p></div>`
+    :`<div class="tour-step full"><p class="eyebrow">Step ${step+1} of ${TOUR.length}</p><h3>${esc(TOUR[step][0])}</h3><p>${esc(TOUR[step][1])}</p><div class="tour-dots" aria-hidden="true">${TOUR.map((_,i)=>`<span class="${i===step?'on':''}"></span>`).join('')}</div></div>`;
+  modal(intro?`Welcome to Vision Flow${name?`, ${name}`:''}`:'Quick tour',intro?'Your private client workspace':'A quick look around',body+`<div class="full actions">${button(intro?'Take the quick tour':last?'Get started':'Next','tour-next',`data-step="${step+1}"`,'primary')}</div>`,null);
+  const skip=$('modalContent').querySelector('.form-actions [data-action="close-modal"]');if(skip)skip.textContent=intro||!last?'Skip tour':'Close';
+}
+function maybeWelcome(){
+  if(state.mode!=='client'||!client()||!onboarding.consent()||!$('modalLayer').hidden||state.busy)return;
+  const key=`vf-welcome-v1-${state.token}`;
+  try{if(localStorage.getItem(key))return;localStorage.setItem(key,new Date().toISOString());}catch{return;}
+  welcomeTour(-1);
 }
 async function masterPdf(){
   await loadProjectArtifacts();const p=onboarding.portal(),s=onboarding.master(),f=state.founder;
@@ -768,6 +826,8 @@ async function action(name,source){
   if(name==='legacy-signatures')return modal('Historical project signatures','These original records are separate from the master agreement.',legacySignatureView(project()),null);
   if(name==='sign-required')return onboarding.isAgencyPartner()&&onboarding.master()?onboarding.acknowledge():onboarding.sign();
   if(name==='gated-download')return downloadDelivery(source);
+  if(name==='welcome-tour')return welcomeTour(-1);
+  if(name==='tour-next'){closeModal();const step=Number(source.dataset.step);if(step<TOUR.length)welcomeTour(step);return;}
   if(name==='go-action'){state.projectKey=source.dataset.project||null;state.tab='overview';render();const target=source.dataset.hash;setTimeout(()=>{history.replaceState(null,'',`${location.pathname}${location.search}#${target}`);hashScroll();},60);return;}
   if(name==='all-records'){
     requireAdmin();const records=(await allRecords(client().accessToken)).filter(record=>record.collection!=='deliveries');
