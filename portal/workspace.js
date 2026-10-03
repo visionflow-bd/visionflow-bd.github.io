@@ -297,10 +297,10 @@ function confirmAction(message){
     document.body.append(dialog);dialog.showModal();dialog.querySelector('button').focus();
   });
 }
-function waLink(){const c=client(),phone=(c.phone||'').replace(/[^0-9]/g,'');if(!phone){notify('No phone number saved for this client.');return;}const msg=encodeURIComponent('Hello '+c.name+', please check your project portal for updates: '+clientUrl(c,state.projectKey));window.open('https://wa.me/'+phone+'?text='+msg,'_blank');}
+function waLink(){const c=client();let phone=(c.phone||'').replace(/[^0-9]/g,'');if(/^01[3-9][0-9]{8}$/.test(phone))phone='88'+phone;else if(/^00/.test(phone))phone=phone.slice(2);if(!phone){notify('No phone number saved for this client.');return;}const msg=encodeURIComponent('Hello '+c.name+', please check your project portal for updates: '+clientUrl(c,state.projectKey));window.open('https://wa.me/'+phone+'?text='+msg,'_blank');}
 function mailLink(){
   requireAdmin();const c=client();if(!c.email){notify('Save this client\'s email before sending.');return;}
-  modal('Email this project','The agency worker sends this message to the saved client address. This creates a new reviewable update; the old history stays intact.',`${field('Update title','title','Project update','text','required maxlength="200"')}${area('Message visible to the client','message','','required minlength="10" maxlength="4000"')}<p class="small muted">The email includes this project\'s private action link. Queued does not mean sent. If notifications or the worker are paused, it waits in the queue.</p>`,async data=>{
+  modal('Email this project','The agency worker sends this message to the saved client address. This creates a new reviewable update; the old history stays intact.',`${field('Update title','title','Project update','text','required maxlength="200"')}${area('Message visible to the client','message','','required minlength="10" maxlength="4000"')}<p class="small muted">The email includes this project\'s private action link. It is emailed within about 5 minutes.</p>`,async data=>{
     await saveClient(clone(c),'Email queued; open Notification queue to check its status.',[],{manualNotice:{projectKey:state.projectKey,title:text(data.get('title')),message:text(data.get('message'))}});finishModal();
   },'Queue agency email');
 }
