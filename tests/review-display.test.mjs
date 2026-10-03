@@ -40,3 +40,9 @@ test('review keeps original objection visible beside admin response without unsa
   assert.ok(html.includes('Original &lt;script&gt;objection'));assert.ok(html.includes('We will correct &lt;img&gt;'));assert.ok(html.includes('in-progress'));
   assert.ok(!html.includes('<script>'));assert.ok(!html.includes('data-action="confirm-review"'));
 });
+test('feedback replies are informational and never ask the client to confirm or object',()=>{
+  const r={...pending,requestId:'rep1',id:'rep1',projectKey:'p',title:'Your feedback on "Storyboard" was reviewed'};
+  const html=renderReviewPanel({reviews:[r],notices:[{id:'rep1',projectKey:'p',title:r.title,message:'Closed.'}],canRespond:true});
+  assert.ok(html.includes('no action needed'));
+  assert.ok(!html.includes('confirm-review'));assert.ok(!html.includes('reject-review'));
+});
