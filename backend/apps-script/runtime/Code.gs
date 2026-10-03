@@ -278,7 +278,7 @@ function clientMailHandedOff(event) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/source-binding.mjs (SHA-256: ac1d75b00118889e9ec04b0d86507ca981fb83f693a3c866423abf54df6a6db2)
+// Source: backend/apps-script/source-binding.mjs (SHA-256: b15c9401b5823de2685135f6c1d90f00e75de0dd3860a2c40de75e3fea192361)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -351,7 +351,10 @@ async function resolveEventSource(event,{firestore,clock,config}) {
       sourceTime=source.notificationPreparedAt;break;
     }
     default:
-      if(!project||source.schemaVersion!==1||source.eventType!==event.eventType||source.clientSlug!==event.clientSlug||source.projectKey!==event.projectKey||source.version!==event.sourceVersion||source.reviewEpoch!==event.reviewEpoch||!Number.isSafeInteger(source.projectRevision)||source.projectRevision<1||source.projectRevision!==project.notificationRevision||source.cancelledAt)return failure('source-version-mismatch');
+      // Payment records and replies to client feedback are point-in-time records: a later
+      // save must not silently drop them. Other project updates collapse to the latest.
+      {const record=source?.eventType==='payment-notification'||(source?.eventType==='update-notification'&&typeof source?.title==='string'&&source.title.startsWith('Your feedback on "'));
+      if(!project||source.schemaVersion!==1||source.eventType!==event.eventType||source.clientSlug!==event.clientSlug||source.projectKey!==event.projectKey||source.version!==event.sourceVersion||source.reviewEpoch!==event.reviewEpoch||!Number.isSafeInteger(source.projectRevision)||source.projectRevision<1||(record?source.projectRevision>project.notificationRevision:source.projectRevision!==project.notificationRevision)||source.cancelledAt)return failure('source-version-mismatch');}
       sourceTime=source.createdAt;
   }
   const sourceMs=reviewTimestamp(sourceTime),eventMs=reviewTimestamp(event.createdAt),nowMs=reviewTimestamp(clock.now()),boundary=reviewTimestamp(config.activationBoundary);

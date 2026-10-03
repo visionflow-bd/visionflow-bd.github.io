@@ -114,3 +114,15 @@ test('new project notice names the project',()=>{
   assert.equal(notice.data.eventType,'project-notification');
   assert.equal(notice.data.title,'New project: Launch Reel');
 });
+test('payment records stay sendable after a later save; plain updates collapse to the latest',async()=>{
+  const previous=fixture();
+  const first=savePlan(previous,c=>c.projects.p.payments.push({id:'pay1',amount:100,date:'2026-09-30'}));
+  const second=(()=>{const next=clone(first.next);next._lastMutationId='save-two';next.projects.p.items[0].s='in-progress';prepareSecureSave(next,first.next);return {next,plan:prepareNotificationSave(next,first.next,{timestamp:stamp})};})();
+  const third=(()=>{const next=clone(second.next);next._lastMutationId='save-three';next.projects.p.items[0].t='Renamed';prepareSecureSave(next,second.next);return {next,plan:prepareNotificationSave(next,second.next,{timestamp:stamp})};})();
+  const records=Object.fromEntries([...first.plan.writes,...second.plan.writes,...third.plan.writes].map(w=>[w.path,w.data]));
+  const db=createFakeFirestore({...records,[root]:publicSnapshot(third.next,third.next.slug),'portal_clients/test':third.next});
+  const outbox=plan=>plan.writes.find(w=>w.path.startsWith('portal_outbox/')).data;
+  assert.equal((await resolveEventSource(outbox(first.plan),{firestore:db,clock,config})).ok,true);
+  const stale=await resolveEventSource(outbox(second.plan),{firestore:db,clock,config});
+  assert.equal(stale.ok,false);assert.equal(stale.status,'source-version-mismatch');
+});
