@@ -227,7 +227,7 @@ function createPaymentAttachment(document,{urlFetch,utilities,htmlService}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/review-context.mjs (SHA-256: 6918c1e41c1f275987312c8b875c929de0d5aa6128a01db03522f112281549f9)
+// Source: backend/apps-script/review-context.mjs (SHA-256: 521177301012001619357ce3e3105b2eeb236022c4d2b7f931ef34dbd5bb263f)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -246,8 +246,24 @@ async function loadReviewContext(request,{firestore,portal,clock}) {
     valid(request.sourceId)?firestore.get(`${root}/confirms/${request.sourceId}`):null,
   ]);
   const existing=[...confirms,...(direct?[{...direct,id:request.sourceId}]:[])];
-  const decision=existing.find(r=>(r.id===request.sourceId||r.requestId===request.id)&&r.kind!=='feedback');
-  const objections=[...feedback,...existing.filter(r=>['feedback','rejection-pending','rejected'].includes(r.kind))]
+  // Legacy approval responses live at confirms/{approvalId} without a requestId.
+  const approvalById=new Map((portal.projects?.[key]?.approvals||[]).filter(a=>a&&valid(a.id)).map(a=>[a.id,a]));
+  const approvalResponse=r=>approvalById.has(r.id)&&!r.requestId;
+  const bridged=Array.isArray(request.approvalIds);
+  let decision=existing.find(r=>(r.id===request.sourceId||r.requestId===request.id)&&r.kind!=='feedback');
+  // A review that published approvals follows the client's answer to those approvals.
+  const linked=bridged?request.approvalIds.filter(id=>approvalById.has(id)):[];
+  if(!decision&&linked.length){
+    const responses=linked.map(id=>existing.find(r=>r.id===id&&approvalResponse(r)));
+    const objection=responses.find(r=>r&&['rejection-pending','rejected'].includes(r.kind));
+    if(objection)decision=objection;
+    else if(responses.every(r=>r&&['',undefined,'confirmed','verified'].includes(r.kind)))
+      decision=responses.slice().sort((a,b)=>(reviewTimestamp(b.confirmedAt)||0)-(reviewTimestamp(a.confirmedAt)||0))[0];
+  }
+  // An approval rejection is item-specific: it never objects to unrelated reviews, and a
+  // closed one (dismissed, or rejection confirmed by the admin) is no longer unresolved.
+  const itemOnly=r=>approvalResponse(r)&&(bridged||r.kind==='rejected'||approvalById.get(r.id)?.closure==='dismissed');
+  const objections=[...feedback,...existing.filter(r=>['feedback','rejection-pending','rejected'].includes(r.kind)&&!itemOnly(r))]
     .filter(r=>!['resolved','closed'].includes(portal.feedbackReviews?.[r.id]?.status))
     .map(r=>({...r,projectKey:key}));
   const master=projectMode?null:currentMaster(portal,masterRecord?[{...masterRecord,id:masterId}]:[]);
@@ -504,7 +520,7 @@ async function settleReviewTimers({firestore,clock,config}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/worker.mjs (SHA-256: dc69c4ba34686758625d6d3191f0fe8e61884ad6692b4789c2b43e1088df0214)
+// Source: backend/apps-script/worker.mjs (SHA-256: 70aab0ea34807173c41885a8cd12c57a0806fd170f4e053c02a34b34c5a79c24)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Apps Script V8 Module
@@ -863,7 +879,7 @@ function emailCopy(event, context, targetType) {
     'project-acknowledged':'Your acknowledgement of the current project details is saved.',
     'project-notification':'A new project is ready for you. Open it to read the details.',
     'payment-notification':'A payment record on your project was updated. Please check the amounts below and tell us through the portal if anything looks wrong. This email is a record update, not a payment receipt.',
-    'delivery-notification':'Good news - a delivery is ready for you.',
+    'delivery-notification':'A delivery is ready for your review.',
     'update-notification':'Your project was updated. Please check the latest details and send any questions through the portal.',
     'confirmation-received':'Your confirmation is saved - thank you. You can see it in your workspace at any time.',
     'objection-received':'Your feedback was received. Automatic acceptance is paused until we review it and reply. We will email you when we respond.',
@@ -916,7 +932,7 @@ function emailHtml(event, context, targetType) {
     <tr><td style="padding:22px 28px;border-bottom:4px solid #0f9f9a;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="vertical-align:middle;"><img src="${EMAIL_LOGO_URL}" alt="Vision Flow" width="52" height="52" style="display:block;width:52px;height:52px;object-fit:contain;border-radius:10px;"></td>
-        <td style="padding-left:14px;vertical-align:middle;"><a href="${esc(links.overview)}" style="font-size:20px;color:#12304a;font-weight:700;text-decoration:none;">Vision Flow</a><br><span style="font-size:12px;color:#64748b;">Creative Production Agency</span></td>
+        <td style="padding-left:14px;vertical-align:middle;">${targetType==='admin'?`<a href="${esc(links.overview)}" style="font-size:20px;color:#12304a;font-weight:700;text-decoration:none;">Vision Flow</a>`:'<span style="font-size:20px;color:#12304a;font-weight:700;">Vision Flow</span>'}<br><span style="font-size:12px;color:#64748b;">Creative Production Agency</span></td>
       </tr></table>
     </td></tr>
     <tr><td style="padding:28px;">
@@ -927,7 +943,7 @@ function emailHtml(event, context, targetType) {
       ${copy.note?`<p style="padding:14px;background:#f7fafc;border-left:3px solid #0f766e;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(copy.note)}</p>`:''}
       ${paymentRows}
       <p style="margin:22px 0;"><a href="${esc(links.action)}" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:7px;font-weight:700;">${esc(links.label)}</a></p>
-      ${event.projectKey?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
+      ${event.projectKey&&targetType==='admin'?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
       <p style="margin:0 0 14px;"><a href="${esc(links.overview)}" style="color:#0f766e;">All projects</a></p>
       <p style="font-size:12px;line-height:1.55;color:#64748b;">Updates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends.</p>
       <p style="font-size:12px;line-height:1.55;color:#64748b;">Tip: add this sender to your contacts so every project update reaches your inbox.</p>
@@ -941,7 +957,7 @@ function emailPlain(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
   const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
   const paymentText=payment?`\nPayment summary\n${payment.map(([label,value])=>`${label}: ${value}`).join('\n')}\n`:'';
-  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nUpdates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends. Tip: add this sender to your contacts so every project update reaches your inbox. Keep your private link confidential.`;
+  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\n${targetType==='admin'?`Project: ${links.project}\n`:''}All projects: ${links.overview}\n\nUpdates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends. Tip: add this sender to your contacts so every project update reaches your inbox. Keep your private link confidential.`;
 }
 
 // ── Process Single Event ──────────────────────────────────────────

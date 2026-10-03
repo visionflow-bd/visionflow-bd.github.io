@@ -15,8 +15,24 @@ export async function loadReviewContext(request,{firestore,portal,clock}) {
     valid(request.sourceId)?firestore.get(`${root}/confirms/${request.sourceId}`):null,
   ]);
   const existing=[...confirms,...(direct?[{...direct,id:request.sourceId}]:[])];
-  const decision=existing.find(r=>(r.id===request.sourceId||r.requestId===request.id)&&r.kind!=='feedback');
-  const objections=[...feedback,...existing.filter(r=>['feedback','rejection-pending','rejected'].includes(r.kind))]
+  // Legacy approval responses live at confirms/{approvalId} without a requestId.
+  const approvalById=new Map((portal.projects?.[key]?.approvals||[]).filter(a=>a&&valid(a.id)).map(a=>[a.id,a]));
+  const approvalResponse=r=>approvalById.has(r.id)&&!r.requestId;
+  const bridged=Array.isArray(request.approvalIds);
+  let decision=existing.find(r=>(r.id===request.sourceId||r.requestId===request.id)&&r.kind!=='feedback');
+  // A review that published approvals follows the client's answer to those approvals.
+  const linked=bridged?request.approvalIds.filter(id=>approvalById.has(id)):[];
+  if(!decision&&linked.length){
+    const responses=linked.map(id=>existing.find(r=>r.id===id&&approvalResponse(r)));
+    const objection=responses.find(r=>r&&['rejection-pending','rejected'].includes(r.kind));
+    if(objection)decision=objection;
+    else if(responses.every(r=>r&&['',undefined,'confirmed','verified'].includes(r.kind)))
+      decision=responses.slice().sort((a,b)=>(reviewTimestamp(b.confirmedAt)||0)-(reviewTimestamp(a.confirmedAt)||0))[0];
+  }
+  // An approval rejection is item-specific: it never objects to unrelated reviews, and a
+  // closed one (dismissed, or rejection confirmed by the admin) is no longer unresolved.
+  const itemOnly=r=>approvalResponse(r)&&(bridged||r.kind==='rejected'||approvalById.get(r.id)?.closure==='dismissed');
+  const objections=[...feedback,...existing.filter(r=>['feedback','rejection-pending','rejected'].includes(r.kind)&&!itemOnly(r))]
     .filter(r=>!['resolved','closed'].includes(portal.feedbackReviews?.[r.id]?.status))
     .map(r=>({...r,projectKey:key}));
   const master=projectMode?null:currentMaster(portal,masterRecord?[{...masterRecord,id:masterId}]:[]);

@@ -22,8 +22,8 @@ export function countdownHtml(deadline,now=Date.now(),expiredText='Review period
 const countdownMarkup=view=>view.countdownParts?`<div class="countdown-wrap" data-review-countdown="${view.deadline}" aria-label="${view.countdown}"><span class="countdown-label">Time remaining</span><div class="countdown-boxes"><span class="cd-box"><strong class="cd-num" data-countdown-hours>${String(view.countdownParts.hours).padStart(2,'0')}</strong><span class="cd-lbl">Hours</span></span><span class="cd-sep" aria-hidden="true">:</span><span class="cd-box"><strong class="cd-num" data-countdown-minutes>${String(view.countdownParts.minutes).padStart(2,'0')}</strong><span class="cd-lbl">Minutes</span></span><span class="cd-sep" aria-hidden="true">:</span><span class="cd-box"><strong class="cd-num" data-countdown-seconds>${String(view.countdownParts.seconds).padStart(2,'0')}</strong><span class="cd-lbl">Seconds</span></span></div></div>`:'';
 
 // Replies to client feedback (dismiss / confirm-rejection) close an item; they never ask the client to act.
-export const FEEDBACK_REPLY_PREFIX='Your feedback on "';
-export const isFeedbackReply=notice=>String(notice?.title||'').startsWith(FEEDBACK_REPLY_PREFIX);
+// Branch only on the admin-written typed kind, never on a visible title (a custom title must not hide a task).
+export const isFeedbackReply=record=>record?.noticeKind==='feedback-reply';
 export function renderReviewPanel({reviews=[],notices=[],confirms=[],feedbackReviews={},projectKey=null,projectNames={},now=Date.now(),canRespond=false,canManage=false,visible=4}={}) {
   const relevant=rows=>rows.filter(r=>!projectKey||r.projectKey===projectKey).slice().sort((a,b)=>(time(b.publishedAt||b.createdAt)||0)-(time(a.publishedAt||a.createdAt)||0));
   const rows=relevant(reviews),reviewIds=new Set(rows.map(r=>r.id||r.requestId)),noticeById=new Map(notices.map(n=>[n.id,n]));

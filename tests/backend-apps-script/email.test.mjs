@@ -21,6 +21,11 @@ test('client mail has three distinct canonical destinations and the resolved cli
   assert.ok(!mail.htmlBody.includes('#10263c'));assert.ok(!mail.htmlBody.includes('💰'));
   assert.ok(mail.body.includes(links.overview));assert.ok(mail.body.includes(links.project));assert.ok(mail.body.includes(links.action));
   for(const secret of ['untrusted-event-token','attacker.invalid','PRIVATE CONTENT','drive.google.com'])assert.ok(!JSON.stringify(mail).includes(secret));
+  // Fewer private-link copies: one main button plus one "All projects" fallback.
+  assert.equal((mail.htmlBody.match(/href="/g)||[]).length,2);assert.ok(!mail.htmlBody.includes('Open this project'));
+  assert.ok(!mail.body.includes('Project: http'));
+  const [adminMail]=buildEmail(event,{admin:'team@example.invalid'},{config:{},context});
+  assert.ok(adminMail.htmlBody.includes('Open this project'));
 });
 
 test('admin mail uses formal CEO greeting and a separate internal message',()=>{

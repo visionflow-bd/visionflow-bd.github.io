@@ -132,3 +132,32 @@ test('automatic update message matches the worker collapse rule',async()=>{
   const notice=plan.writes.find(w=>w.path.includes('/notices/')).data;
   assert.equal(notice.title,'Project update');assert.equal(notice.message,AUTO_UPDATE_MESSAGE);
 });
+test('notices and reviews carry a typed kind and the approvals they publish',()=>{
+  const previous=fixture();
+  const ask=savePlan(previous,c=>{c.projects.p.approvals=[{id:'ap1',title:'Approve storyboard',createdAt:stamp}];});
+  const byPath=part=>ask.plan.writes.find(w=>w.path.includes(part)).data;
+  assert.equal(byPath('/notices/').noticeKind,'approval-request');assert.deepEqual(byPath('/notices/').approvalIds,['ap1']);
+  assert.deepEqual(byPath('portal_reviews/').approvalIds,['ap1']);assert.equal(byPath('/reviews/').noticeKind,'approval-request');
+  const reply=savePlan(previous,()=>{},{manualNotice:{projectKey:'p',kind:'feedback-reply',title:'Your feedback on "X" was reviewed',message:'Closed.'}});
+  assert.equal(reply.plan.writes[0].data.noticeKind,'feedback-reply');assert.deepEqual(reply.plan.writes[0].data.approvalIds,[]);
+  const custom=savePlan(previous,()=>{},{manualNotice:{projectKey:'p',title:'Your feedback on "X" - please confirm',message:'Please confirm.'}});
+  assert.equal(custom.plan.writes[0].data.noticeKind,'custom');
+});
+test('server review follows the linked approval and ignores unrelated or closed rejections',async()=>{
+  const {loadReviewContext}=await import('../backend/apps-script/review-context.mjs');
+  const c=fixture();c.projects.p.approvals=[{id:'ap1',title:'A',createdAt:stamp},{id:'ap2',title:'B',createdAt:stamp,closure:'dismissed'}];prepareSecureSave(c);
+  const portal=publicSnapshot(c,c.slug),base={portalToken:token,projectKey:'p',id:'rev1',sourceId:'rev1'};
+  const run=async(request,confirms)=>loadReviewContext(request,{firestore:createFakeFirestore(Object.fromEntries(Object.entries(confirms).map(([id,d])=>[`${root}/confirms/${id}`,{projectKey:'p',...d}]))),portal,clock});
+  let ctx=await run({...base,approvalIds:['ap1']},{ap1:{kind:'rejection-pending',rejectReason:'Please change it.',confirmedAt:stamp}});
+  assert.equal(ctx.decision?.kind,'rejection-pending');assert.equal(ctx.objections.length,0);
+  ctx=await run({...base,approvalIds:['ap1']},{ap1:{kind:'',confirmedAt:stamp}});
+  assert.equal(ctx.decision?.kind,'');
+  ctx=await run({...base,approvalIds:[]},{ap1:{kind:'rejection-pending',rejectReason:'Please change it.',confirmedAt:stamp}});
+  assert.equal(ctx.decision,undefined);assert.equal(ctx.objections.length,0,'an approval rejection never objects to an unrelated payment review');
+  ctx=await run({...base,approvalIds:[]},{fb1:{kind:'feedback',message:'General concern'}});
+  assert.equal(ctx.objections.length,1,'general feedback still objects project-wide');
+  ctx=await run(base,{ap1:{kind:'rejected',rejectReason:'x'.repeat(12),confirmedAt:stamp},ap2:{kind:'rejection-pending',rejectReason:'y'.repeat(12),confirmedAt:stamp}});
+  assert.equal(ctx.objections.length,0,'legacy review: closed approvals are not unresolved objections');
+  ctx=await run(base,{ap1:{kind:'rejection-pending',rejectReason:'x'.repeat(12),confirmedAt:stamp}});
+  assert.equal(ctx.objections.length,1,'legacy review keeps the old open-objection behaviour');
+});
