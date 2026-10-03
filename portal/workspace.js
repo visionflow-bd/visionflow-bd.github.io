@@ -11,7 +11,7 @@ import { approvalState, downloadDecision, ensureDeliveryApprovals } from './appr
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
 import { prepareNotificationSave } from './notification-publication.js?v=20261003-a6';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
-import { notificationStatusHtml } from './notification-status.js?v=20261003-a2';
+import { notificationStatusHtml } from './notification-status.js?v=20261003-a7';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';
 import {uploadPortalImage} from './image-upload.js?v=20261001-r1';
 import {founderBranding,saveFounderBranding} from './founder-branding.js?v=20261001-r1';
@@ -116,8 +116,11 @@ function actionCenter() {
   if(state.mode!=='client'||!client())return '';
   let waiting=0;const c=client(),items=[],agency=onboarding.isAgencyPartner(),masterMissing=agency&&!onboarding.master();
   if(masterMissing)items.push({urgent:true,text:'Sign your master agreement once to unlock final downloads',project:'',hash:'master-agreement'});
+  const arts=artifacts(state.clientKey)||{},answered=new Set((arts.confirms||[]).map(x=>x.requestId));
   for(const [key,p] of projectsOf(c)){
     if(state.projectKey&&key!==state.projectKey)continue;
+    const reviewsOpen=(arts.reviews||[]).filter(r=>r.projectKey===key&&r.requestId&&['pending','blocked','awaiting-notification','awaiting-review-notification'].includes(r.status)&&!answered.has(r.requestId)).length;
+    if(reviewsOpen)items.push({text:`${p.name}: ${reviewsOpen} project update${reviewsOpen>1?'s':''} to review`,project:key,hash:'review-updates'});
     const open=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='pending');waiting+=(p.approvals||[]).filter(a=>approvalInfo(a,key).state==='rejection-pending').length;
     const deliveries=open.filter(a=>a.kind==='delivery').length,updates=open.length-deliveries;
     if(!masterMissing&&!onboarding.projectReady(key))items.push({urgent:true,text:agency?`${p.name}: acknowledge the project particulars`:`${p.name}: review and sign the project agreement`,project:key,hash:'agreement'});

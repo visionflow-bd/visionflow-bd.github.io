@@ -15,7 +15,7 @@ export function notificationStatus(record) {
 export const EVENT_LABELS={'project-notification':'New project shared','update-notification':'Project update','payment-notification':'Payment recorded','delivery-notification':'Delivery ready',
   'confirmation-received':'Client confirmed an update','objection-received':'Client rejection / feedback','master-signed':'Client signed the master agreement',
   'project-signed':'Client signed a project agreement','project-acknowledged':'Client acknowledged project particulars','consent-complete':'Client accepted portal terms',
-  'review-deemed-accepted':'Review window ended (deemed accepted)','manual-notice':'Message from Vision Flow'};
+  'review-deemed-accepted':'Review window ended (deemed accepted)','deemed-accepted':'Review window ended (deemed accepted)','review-window':'72-hour review window started','manual-notice':'Message from Vision Flow'};
 const tone=status=>['sent-unconfirmed','deduplicated'].includes(status)?'delivered':['failed-permanent','needs-reconciliation','attachment-blocked','no-recipients'].includes(status)?'danger':['queued','processing','sending','retry','quota-exhausted','settings-paused'].includes(status)?'pending':'active';
 const when=value=>{const d=value?.toDate?.()||(typeof value==='string'?new Date(value):null);return d&&!Number.isNaN(d.valueOf())?d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';};
 
