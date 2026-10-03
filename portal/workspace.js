@@ -9,7 +9,7 @@ import { nextReviewEpoch, retainedReviewRecord, belongsToReviewProject } from '.
 import { renderReviewPanel, refreshReviewCountdowns, countdownHtml } from './review-display.js?v=20261003-a1';
 import { approvalState, downloadDecision, ensureDeliveryApprovals } from './approval-state.js?v=20261003-a4';
 import { writeClientRecord } from './notification-events.js?v=20261002-r2';
-import { prepareNotificationSave } from './notification-publication.js?v=20261003-a2';
+import { prepareNotificationSave } from './notification-publication.js?v=20261003-a6';
 import { notificationSettings, validateNotificationSettings } from './notification-settings.js?v=20260930-r1';
 import { notificationStatusHtml } from './notification-status.js?v=20261003-a2';
 import { ATTACHMENT_ACCEPT, prepareFeedbackAttachments, attachmentMeta, attachmentSize, attachmentDownloadBytes } from './feedback-attachments.js?v=20260930-r1';

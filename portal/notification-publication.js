@@ -34,8 +34,8 @@ export function prepareNotificationSave(next,previous,{timestamp,manualNotice=nu
       ...(paymentsChanged?{paymentChanges:paymentChanges(before.projects[key]?.payments||[],after.projects[key]?.payments||[])}:{}),
       ...(requested&&manualNotice.responseTarget?{responseTarget:manualNotice.responseTarget}:{}),
       ...redactDeliverySecrets({
-      title:requested?String(manualNotice.title||'Project update').slice(0,200):paymentsChanged?'Payment record updated':deliveryChanged?deliveryTitle(readyItems(old,project)):'Project update',
-      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):deliveryChanged&&!paymentsChanged&&readyItems(old,project).length?DELIVERY_MESSAGE:'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
+      title:requested?String(manualNotice.title||'Project update').slice(0,200):!old?`New project: ${String(project.name||'Your project').replace(/[\r\n]/g,' ').slice(0,180)}`:paymentsChanged?'Payment record updated':deliveryChanged?deliveryTitle(readyItems(old,project)):'Project update',
+      message:requested?String(manualNotice.message||'Please review the current project details.').slice(0,4000):!old?'Please check the scope, payment terms and timeline. You can confirm, object, or send feedback in this workspace.':deliveryChanged&&!paymentsChanged&&readyItems(old,project).length?DELIVERY_MESSAGE:'Please review the current project details. You can confirm, object, or send feedback in this workspace.',
       },next)};
     const event={eventType,clientSlug:next.slug,portalToken:next.accessToken,reviewEpoch:next.reviewEpoch||0,
       projectKey:key,sourceCollection:`${root}/notices`,sourceId:id,sourceVersion:version,status:'queued',createdAt:timestamp,retryCount:0};

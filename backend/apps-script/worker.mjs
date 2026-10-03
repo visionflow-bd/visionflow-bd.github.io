@@ -302,7 +302,7 @@ function emailSubject(event, context) {
     'master-signed': 'Master agreement signed',
     'project-signed': 'Project agreement signed',
     'project-acknowledged': 'Project acknowledgement recorded',
-    'project-notification': 'Project update',
+    'project-notification': 'New project',
     'payment-notification': 'Payment update',
     'delivery-notification': 'Delivery update',
     'update-notification': 'Workspace update',

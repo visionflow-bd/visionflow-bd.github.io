@@ -141,7 +141,7 @@ async function writeClientRecord({transaction,root,collection,id,data,timestamp}
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: portal/payment-notification.js (SHA-256: 8d254ff20c9996f51ee817ca105713003a6a4fa07540502200780259197fffb2)
+// Source: portal/payment-notification.js (SHA-256: e11050336fb6755aacbf9d0d2e3a5ad788d0996e2d65994e0bafbfd067e7057e)
 // ═══════════════════════════════════════════════════════════════════
 
 
@@ -498,7 +498,7 @@ async function settleReviewTimers({firestore,clock,config}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/worker.mjs (SHA-256: be57c2f65629e49395099319cd3c37d859186572ffb20f84d7356ece20b91ea4)
+// Source: backend/apps-script/worker.mjs (SHA-256: 8210ec68511a757e8b090df4978ed6cee35a14d223fd5b51445d0ebbfe51d327)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Apps Script V8 Module
@@ -805,7 +805,7 @@ function emailSubject(event, context) {
     'master-signed': 'Master agreement signed',
     'project-signed': 'Project agreement signed',
     'project-acknowledged': 'Project acknowledgement recorded',
-    'project-notification': 'Project update',
+    'project-notification': 'New project',
     'payment-notification': 'Payment update',
     'delivery-notification': 'Delivery update',
     'update-notification': 'Workspace update',
