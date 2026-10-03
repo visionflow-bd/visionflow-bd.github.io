@@ -5,8 +5,8 @@ import {paymentChanges} from './payment-notification.js?v=20261003-a1';
 
 const visibleProject = project => Object.fromEntries(Object.entries(project||{}).filter(([key])=>!['lastUpdated','notificationRevision','deliveryVersion','ackId'].includes(key)));
 const readyItems = (old,project) => {const a=deliveryLinks(old),b=deliveryLinks(project);return Object.keys(b).filter(n=>a[n]!==b[n]).map(Number).filter(Number.isFinite).sort((x,y)=>x-y);};
-const deliveryTitle = ready => ready.length===1?`Deliverable ${ready[0]} is ready - verify and download`:ready.length>1?`${ready.length} deliverables are ready - verify and download`:'Delivery updated';
-const DELIVERY_MESSAGE = 'Open the Production log and press "Verify & download" next to the deliverable. Tick the confirmation box and the file opens. You have 72 hours to report any problem; after that the delivery counts as accepted.';
+const deliveryTitle = ready => ready.length===1?`Deliverable ${ready[0]} is ready for your review`:ready.length>1?`${ready.length} deliverables are ready for your review`:'Delivery updated';
+const DELIVERY_MESSAGE = 'Open the Production log in your workspace and use the button next to the deliverable to confirm receipt and open the file. You have 72 hours to report any problem; after that the delivery counts as accepted.';
 
 // Returned writes join the same transaction as private/public data + manifests.
 // A migration, private note edit, or recovery must not backdate a review window.

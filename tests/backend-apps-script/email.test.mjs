@@ -17,7 +17,7 @@ test('client mail has three distinct canonical destinations and the resolved cli
   assert.equal(links.action,`${links.project}#notice-notice-one`);
   assert.ok(mail.htmlBody.includes('Hello Test Partner'));assert.ok(mail.htmlBody.includes('Sample Project'));
   assert.ok(mail.htmlBody.includes('https://visionflow-bd.github.io/logo.png'));
-  assert.ok(mail.htmlBody.includes('check Spam or Promotions'));
+  assert.ok(mail.htmlBody.includes('add this sender to your contacts'));
   assert.ok(!mail.htmlBody.includes('#10263c'));assert.ok(!mail.htmlBody.includes('💰'));
   assert.ok(mail.body.includes(links.overview));assert.ok(mail.body.includes(links.project));assert.ok(mail.body.includes(links.action));
   for(const secret of ['untrusted-event-token','attacker.invalid','PRIVATE CONTENT','drive.google.com'])assert.ok(!JSON.stringify(mail).includes(secret));

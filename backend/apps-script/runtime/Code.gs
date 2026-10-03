@@ -498,7 +498,7 @@ async function settleReviewTimers({firestore,clock,config}) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Source: backend/apps-script/worker.mjs (SHA-256: 8210ec68511a757e8b090df4978ed6cee35a14d223fd5b51445d0ebbfe51d327)
+// Source: backend/apps-script/worker.mjs (SHA-256: dc69c4ba34686758625d6d3191f0fe8e61884ad6692b4789c2b43e1088df0214)
 // ═══════════════════════════════════════════════════════════════════
 
 // VisionFlow Trusted Backend — Apps Script V8 Module
@@ -833,7 +833,7 @@ function emailLinks(event, context, targetType='client') {
   else if(event.eventType==='review-window'){hash=`review-${event.sourceId}`;label='Review, confirm or object';}
   else if(['confirmation-received','objection-received'].includes(event.eventType)){hash=context.source?.requestId?`review-${context.source.requestId}`:`evidence-${event.sourceId}`;label=targetType==='admin'?'Review client response':'View your saved response';}
   else if(context.source?.responseTarget&&['review','evidence'].includes(context.source.responseTarget.kind)&&/^[A-Za-z0-9_-]{1,200}$/.test(context.source.responseTarget.id)){hash=`${context.source.responseTarget.kind}-${context.source.responseTarget.id}`;label='Read our response';}
-  else if(event.eventType==='delivery-notification'&&event.projectKey){hash='deliveries';label=targetType==='admin'?'Open production log':'Verify & download';destination=`${project}&tab=log`;}
+  else if(event.eventType==='delivery-notification'&&event.projectKey){hash='deliveries';label=targetType==='admin'?'Open production log':'Open your delivery';destination=`${project}&tab=log`;}
   else {hash=`notice-${event.sourceId}`;}
   return {overview,project,action:hash?`${destination}#${encodeURIComponent(hash)}`:destination,label};
 }
@@ -924,7 +924,7 @@ function emailHtml(event, context, targetType) {
       ${event.projectKey?`<p style="margin:0 0 14px;"><a href="${esc(links.project)}" style="color:#0f766e;">Open this project</a></p>`:''}
       <p style="margin:0 0 14px;"><a href="${esc(links.overview)}" style="color:#0f766e;">All projects</a></p>
       <p style="font-size:12px;line-height:1.55;color:#64748b;">Updates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends.</p>
-      <p style="font-size:12px;line-height:1.55;color:#64748b;">If this is your first message from Vision Flow, please check Spam or Promotions and mark it as trusted so future updates are not missed.</p>
+      <p style="font-size:12px;line-height:1.55;color:#64748b;">Tip: add this sender to your contacts so every project update reaches your inbox.</p>
     </td></tr>
     <tr><td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.55;color:#64748b;">Automated notification from Vision Flow. Please keep your private workspace link confidential.</td></tr>
   </table>
@@ -935,7 +935,7 @@ function emailPlain(event, context, targetType) {
   const links=emailLinks(event,context,targetType),copy=emailCopy(event,context,targetType);
   const payment=event.eventType==='payment-notification'?paymentSummary(context):null;
   const paymentText=payment?`\nPayment summary\n${payment.map(([label,value])=>`${label}: ${value}`).join('\n')}\n`:'';
-  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nUpdates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends. If this is your first message, check Spam or Promotions and mark it trusted. Keep your private link confidential.`;
+  return `${emailSubject(event,context)}\n\n${copy.greeting},\n${copy.project||''}\n\n${copy.intro}\n${copy.note||''}\n${paymentText}\n${links.label}: ${links.action}\n\nProject: ${links.project}\nAll projects: ${links.overview}\n\nUpdates that need your review show a live 72-hour countdown in your workspace. If something is not right, tell us through the portal before the timer ends. Tip: add this sender to your contacts so every project update reaches your inbox. Keep your private link confidential.`;
 }
 
 // ── Process Single Event ──────────────────────────────────────────
