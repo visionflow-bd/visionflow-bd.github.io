@@ -1,4 +1,4 @@
-import {sameRecord} from './data.js?v=20261003-a1';
+import {sameRecord} from './data.js?v=20261003-a4';
 
 export function paymentCents(value) {
   if(!['number','string'].includes(typeof value)||!/^\d+(?:\.\d{1,2})?$/.test(String(value)))return null;

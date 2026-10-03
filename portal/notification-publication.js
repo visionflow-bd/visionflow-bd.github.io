@@ -1,4 +1,4 @@
-import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20261003-a1';
+import {publicSnapshot,sameRecord,deliveryLinks,redactDeliverySecrets,projectsOf} from './data.js?v=20261003-a4';
 import {notificationEventId} from './notification-events.js?v=20261002-r2';
 import {REVIEW_POLICY} from './review-policy.js?v=20260928-r1';
 import {paymentChanges} from './payment-notification.js?v=20261003-a1';

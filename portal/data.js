@@ -121,7 +121,7 @@ export function publicSnapshot(client, slug) {
     projects[key].itemNumbers = projects[key].items.map(item => Number(item.n)).filter(Number.isInteger);
     projects[key].totalItems = projects[key].items.length;
     projects[key].payments = (p.payments || []).map(payment => pick(payment,['id','date','amount','type','note','proofUrl','recordedAt','confirmedAt']));
-    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt','kind','itemNumber']));
+    projects[key].approvals = (p.approvals || []).map(approval => pick(approval,['id','title','desc','createdAt','updatedAt','kind','itemNumber','closure','closedAt','closeReason']));
     for (const approval of p.approvals || []) { approvalIds.push(approval.id); approvalProjects[approval.id] = key; }
   }
   // Archived payloads live in the admin-only archive collection. The parent

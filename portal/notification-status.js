@@ -1,4 +1,4 @@
-import {esc} from './data.js?v=20260928-r10';
+import {esc} from './data.js?v=20261003-a4';
 
 export function notificationStatus(record) {
   const labels={queued:'Waiting to send',processing:'Preparing',sending:'Sending',retry:'Retry scheduled',

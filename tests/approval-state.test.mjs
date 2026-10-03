@@ -82,3 +82,36 @@ test('approval countdown carries its own expiry text',()=>{
   refreshReviewCountdowns({querySelectorAll:()=>[node]},t0+1);assert.equal(node.textContent,'Counted as accepted');
   assert.equal(countdownHtml(t0,t0+1),'');
 });
+
+test('a dismissed rejection closes the item for good: no timer, no pending state, delivery released',()=>{
+  const c=client();ensureDeliveryApprovals(c,T0);
+  const a=deliveryApprovalFor(c.projects.k9,1);
+  const rejection={kind:'rejection-pending',rejectReason:'wrong colour'};
+  assert.equal(approvalState(a,rejection,t0+1000).state,'rejection-pending');
+  Object.assign(a,{closure:'dismissed',closedAt:'2026-10-03T01:00:00.000Z',closeReason:'Agreed earlier.'});
+  // Long after the original 72h window it stays closed (never "deemed" or "pending").
+  assert.equal(approvalState(a,rejection,t0+5*REVIEW_WINDOW_MS).state,'dismissed');
+  assert.equal(approvalState(a,null,t0).state,'dismissed');
+  const d=downloadDecision(c.projects.k9,{n:1,hasDelivery:true},()=>rejection,t0);
+  assert.equal(d.allowed,true);assert.equal(d.reason,'dismissed');
+  // The closure is published to the client view so both sides agree.
+  const pub=publicSnapshot(c,'c').projects.k9.approvals.find(x=>x.id===a.id);
+  assert.equal(pub.closure,'dismissed');assert.equal(pub.closeReason,'Agreed earlier.');
+});
+
+test('a new delivery file after a dismissal starts a fresh item window instead of reviving the old one',()=>{
+  const c=client();ensureDeliveryApprovals(c,T0);
+  const a=deliveryApprovalFor(c.projects.k9,1);
+  Object.assign(a,{closure:'dismissed',closedAt:T0,closeReason:'x'});
+  c.projects.k9.items[0].dl='https://drive.google.com/file/d/secretA-v2/view';
+  const later='2026-10-10T00:00:00.000Z',restarted=ensureDeliveryApprovals(c,later);
+  assert.deepEqual(restarted,[a.id]);
+  assert.equal(a.closure,undefined);assert.equal(a.createdAt,later);
+  assert.equal(approvalState(a,null,Date.parse(later)+1000).state,'pending');
+});
+
+test('a confirmed rejection stays closed and keeps the download locked',()=>{
+  const c=client();ensureDeliveryApprovals(c,T0);
+  const d=downloadDecision(c.projects.k9,{n:1,hasDelivery:true},()=>({kind:'rejected',rejectReason:'r'}),t0+5*REVIEW_WINDOW_MS);
+  assert.equal(d.allowed,false);assert.equal(d.reason,'rejected');
+});

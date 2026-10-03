@@ -26,6 +26,9 @@ export function approvalDeadline(approval) {
 
 export function approvalState(approval, response, now = Date.now()) {
   const deadline = approvalDeadline(approval);
+  // Admin dismissed the client's rejection: the item is closed for good. Its
+  // timer never restarts; any later change is published as a new approval.
+  if (approval?.closure === 'dismissed') return { state: 'dismissed', deadline, response, closedAt: approval.closedAt };
   if (response) {
     if (response.kind === 'rejected') return { state: 'rejected', deadline, response };
     if (response.kind === 'rejection-pending') return { state: 'rejection-pending', deadline, response };
@@ -105,6 +108,7 @@ export function ensureDeliveryApprovals(client, nowIso = new Date().toISOString(
         approval.title = title;
         approval.createdAt = nowIso;
         approval.updatedAt = nowIso;
+        delete approval.closure; delete approval.closedAt; delete approval.closeReason;
         restarted.push(approval.id);
       }
     }
@@ -118,5 +122,6 @@ export function downloadDecision(project, item, responseFor, now = Date.now()) {
   // Published before delivery verification existed: keep the agreement gate only.
   if (!approval) return { allowed: true, reason: 'legacy', view: null, approval: null };
   const view = approvalState(approval, responseFor(approval), now);
-  return { allowed: isAccepted(view), reason: view.state, view, approval };
+  // A dismissed delivery stands as final, so its download is released.
+  return { allowed: isAccepted(view) || view.state === 'dismissed', reason: view.state, view, approval };
 }

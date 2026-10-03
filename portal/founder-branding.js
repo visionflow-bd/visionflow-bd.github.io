@@ -1,4 +1,4 @@
-import {safeUrl,text,sameRecord} from './data.js?v=20260928-r10';
+import {safeUrl,text,sameRecord} from './data.js?v=20261003-a4';
 
 export function founderBranding(agency={},fallback={}){
   return {signatureUrl:Object.hasOwn(agency,'founderSignature')?safeUrl(agency.founderSignature):fallback.signatureUrl,
