@@ -96,7 +96,7 @@
           "name": "NASA Jet Propulsion Laboratory (JPL)",
           "url": "https://www.jpl.nasa.gov/"
         },
-        "description": "Arbitrary File Write via Unvalidated Path Traversal in F´ CFDP (CCSDS File Delivery Protocol) Ground & Spacecraft File Transfer Deframer (GHSA-pq8v-c63j-wv29). Validated by NASA JPL Cybersecurity Lead Steven Doran (@bitWarrior) and patched on devel in PR #6299 (commit a4092836ad628da32211ff71299fa8e619e7be6b)."
+        "description": "Missing Os::SandboxedFile Path Containment in Svc/CmdSequencer & Svc/FpySequencer Enables Out-of-Sandbox File Access and Header/CRC Telemetry Disclosure (GHSA-pq8v-c63j-wv29). Validated by NASA JPL Cybersecurity Lead Steven Doran (@bitWarrior) and patched on devel in PR #6299 (CmdSequencer, FpySequencer: add optional file sandbox, merge commit a2b049b889ba1396b6bf9e440c7fd9c09fe172d2)."
       },
       {
         "@type": "ScholarlyArticle",
@@ -509,17 +509,17 @@
       </div>
 
       <div class="highlight-box">
-        <h3>GHSA-pq8v-c63j-wv29 — Arbitrary File Write via Unvalidated Path Traversal in F´ CFDP File Transfer Deframer</h3>
+        <h3>GHSA-pq8v-c63j-wv29 — Missing Os::SandboxedFile Path Containment in Svc/CmdSequencer &amp; Svc/FpySequencer Enables Out-of-Sandbox File Access and Header/CRC Telemetry Disclosure</h3>
         <p>
-          Reported by <strong>HM Shihabuddin Jashory (<code>@jashory</code>)</strong> on 2026-10-30T22:55:26Z. Confirmed valid by <strong>Steven Doran (<code>@bitWarrior</code>, NASA JPL Cybersecurity Engineering)</strong> on 2026-10-31T01:28:18Z (2 hours 33 minutes after submission) and officially patched across NASA JPL's F´ flight software framework via <strong>Merged Pull Request #6299</strong>.
+          Reported by <strong>HM Shihabuddin Jashory (<code>@jashory</code>)</strong> on 2026-10-30T22:55:26Z. Confirmed valid by <strong>Steven Doran (<code>@bitWarrior</code>, NASA JPL Cybersecurity Engineering)</strong> on 2026-10-31T01:28:18Z (2 hours 33 minutes after submission) and officially patched across NASA JPL's F´ flight software framework via <strong>Merged Pull Request #6299 (<code>CmdSequencer, FpySequencer: add optional file sandbox</code>)</strong> on 2026-11-02T17:01:37Z.
         </p>
         <ul class="meta-list">
           <li><strong>Official GitHub Advisory:</strong> <a href="https://github.com/nasa/fprime/security/advisories/GHSA-pq8v-c63j-wv29" target="_blank" rel="noopener">GHSA-pq8v-c63j-wv29</a></li>
           <li><strong>Official Merged NASA JPL Fix PR:</strong> <a href="https://github.com/nasa/fprime/pull/6299" target="_blank" rel="noopener">nasa/fprime#6299</a></li>
-          <li><strong>Merged Commit SHA:</strong> <code>a4092836ad628da32211ff71299fa8e619e7be6b</code></li>
+          <li><strong>Merged Commit SHA:</strong> <code>a2b049b889ba1396b6bf9e440c7fd9c09fe172d2</code></li>
           <li><strong>Reporter Credit Status:</strong> <code>@jashory (credit_accepted: true)</code></li>
-          <li><strong>NASA JPL Validator:</strong> Steven Doran (<code>@bitWarrior</code>) &amp; Thomas Boyer-Chammard (<code>@thomas-bc</code>)</li>
-          <li><strong>CWE / CVSS v3.1:</strong> <code>CWE-22 (Path Traversal)</code> · <code>CVSS 8.6 High</code></li>
+          <li><strong>NASA JPL PR Author &amp; Validator:</strong> Steven Doran (<code>@bitWarrior</code>, NASA JPL Cybersecurity Engineering)</li>
+          <li><strong>CWE / Affected Components:</strong> <code>CWE-22 (Path Containment)</code> · <code>Svc/CmdSequencer &amp; Svc/FpySequencer</code></li>
         </ul>
       </div>
 
@@ -537,7 +537,7 @@
             <tr>
               <td><code>nasa/fprime</code></td>
               <td><a href="https://github.com/nasa/fprime/security/advisories/GHSA-pq8v-c63j-wv29" target="_blank" rel="noopener">GHSA-pq8v-c63j-wv29</a> · <a href="https://github.com/nasa/fprime/pull/6299" target="_blank" rel="noopener">PR #6299</a></td>
-              <td>Arbitrary file write via unvalidated path traversal in <code>Fw::FilePacket::StartPacket</code> CFDP Ground &amp; Spacecraft File Transfer Deframer</td>
+              <td>Missing <code>Os::SandboxedFile</code> path containment in <code>Svc/CmdSequencer</code> &amp; <code>Svc/FpySequencer</code> enabling out-of-sandbox file access and Header/CRC telemetry disclosure (Patched in <code>PR #6299</code>, commit <code>a2b049b889ba1396b6bf9e440c7fd9c09fe172d2</code>)</td>
               <td><span class="badge badge-verified">VALIDATED BY JPL &amp; MERGED</span></td>
             </tr>
             <tr>
