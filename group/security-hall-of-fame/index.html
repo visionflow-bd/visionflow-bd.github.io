@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <title>HM Shihabuddin Jashory (Shihab) — Official NASA JPL F´ (GHSA-pq8v-c63j-wv29 / PR #6299), Google Cloud VRP (P1 #579166776) &amp; 39-GHSA Security Verification Dossier</title>
+  <meta name="description" content="Official cryptographic and primary-source verification dossier for HM Shihabuddin Jashory (Shihab / @jashory), Founder &amp; CEO of Vision Flow Group: NASA JPL F´ Flight Software Advisory GHSA-pq8v-c63j-wv29 &amp; Merged PR #6299, 10 Active Google Cloud/OSS VRP Vulnerabilities (including Priority P1 #579166776 &amp; P2 #580130935), 39 GitHub Security Advisories, and 4 CERN Zenodo DOIs (ORCID 0009-0003-4163-0092)." />
+  <meta name="keywords" content="HM Shihabuddin Jashory, Shihab, Jashory, @jashory, NASA JPL F Prime vulnerability, GHSA-pq8v-c63j-wv29, nasa/fprime PR 6299, Google Cloud VRP P1 579166776, Google OSS VRP, Vision Flow Group CEO, AI Red Teamer Bangladesh, ORCID 0009-0003-4163-0092" />
+  <meta name="author" content="HM Shihabuddin Jashory" />
+  <meta name="theme-color" content="#050811" />
+  <link rel="canonical" href="https://visionflowgroup.com/security-hall-of-fame/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="HM Shihabuddin Jashory — Official NASA JPL F´ &amp; Google Cloud VRP (P1) Security Verification Dossier" />
+  <meta property="og:description" content="Primary-source verification ledger: NASA JPL F´ Flight Software (GHSA-pq8v-c63j-wv29 &amp; Merged PR #6299), Google Cloud VRP P1 (#579166776) &amp; P2 (#580130935, #580032520), 39 GitHub Security Advisories, and 4 CERN Zenodo DOIs." />
+  <meta property="og:type" content="profile" />
+  <meta property="og:url" content="https://visionflowgroup.com/security-hall-of-fame/" />
+  <meta property="og:site_name" content="Vision Flow Group — Sovereign Security Ledger" />
+  <meta property="og:image" content="https://agency.visionflowgroup.com/og-image.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HM Shihabuddin Jashory — NASA JPL F´ &amp; Google Cloud VRP (P1) Verification Dossier" />
+  <meta name="twitter:description" content="Official verification of NASA JPL F´ GHSA-pq8v-c63j-wv29 (Merged PR #6299), Google Cloud VRP Priority P1 (#579166776), 39 GHSAs, and 4 CERN Zenodo DOIs." />
+  <meta name="twitter:image" content="https://agency.visionflowgroup.com/og-image.png" />
+
+  <!-- Google Knowledge Graph & Rich Results JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory",
+        "name": "HM Shihabuddin Jashory",
+        "alternateName": [
+          "Shihab",
+          "HM Shihabuddin",
+          "MD Shihabuddin Jashory",
+          "Jashory",
+          "@jashory"
+        ],
+        "jobTitle": "Founder & Chief Executive Officer (CEO) · AI, Cybersecurity & Creative Systems Architect",
+        "worksFor": {
+          "@type": "Organization",
+          "@id": "https://visionflowgroup.com/#organization",
+          "name": "Vision Flow Group",
+          "url": "https://visionflowgroup.com/"
+        },
+        "alumniOf": {
+          "@type": "CollegeOrUniversity",
+          "name": "University of the People",
+          "url": "https://www.uopeople.edu/"
+        },
+        "url": "https://visionflowgroup.com/security-hall-of-fame/",
+        "image": "https://res.cloudinary.com/dohlemsrz/image/upload/v1782849368/ymqmfw8ptgmswcvh3lfq.jpg",
+        "sameAs": [
+          "https://orcid.org/0009-0003-4163-0092",
+          "https://www.wikidata.org/wiki/Q141910532",
+          "https://github.com/jashory",
+          "https://github.com/shihabjashory",
+          "https://github.com/visionflow-bd",
+          "https://bughunters.google.com/profile/1fc2c814-7ba2-4b76-afa7-ce58597cf28d/awards",
+          "https://www.linkedin.com/in/hm-shihabuddin-jashory-972861227",
+          "https://x.com/jashory7",
+          "https://dev.to/jashory",
+          "https://medium.com/@jashory7",
+          "https://www.freelancers.gov.bd/verify/832d6e77e26ed0dbe4acef076e27c8c1a54dbe01-s-h-y-0811354830970b04624942111d7d141686a71fe6-a-m-3ca8d38d5fb05f9c9f01d4cb1e33aff80b1bac55",
+          "https://doi.org/10.5281/zenodo.23832719",
+          "https://doi.org/10.5281/zenodo.23832725",
+          "https://doi.org/10.5281/zenodo.23832731",
+          "https://doi.org/10.5281/zenodo.23832737"
+        ],
+        "award": [
+          "NASA JPL F´ Flight Software Official Security Advisory Credit (GHSA-pq8v-c63j-wv29 / Merged PR #6299)",
+          "Google Cloud Vulnerability Reward Program Priority P1 Escalation (Issue #579166776 — Google Cloud Data Fusion / CDAP)",
+          "Google Cloud Vulnerability Reward Program Priority P2 Escalations (Issues #580130935, #580032520, #577552191, #579165515, #579171447, #579179997)",
+          "Google Bug Hunters Official Awards Profile (1fc2c814-7ba2-4b76-afa7-ce58597cf28d)",
+          "Government of Bangladesh Verified Freelancer & AI Systems Architect (ID: F2617827988)"
+        ]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://github.com/nasa/fprime/security/advisories/GHSA-pq8v-c63j-wv29",
+        "name": "NASA JPL F´ (F Prime) Flight Software Security Advisory GHSA-pq8v-c63j-wv29 & Official Fix PR #6299",
+        "codeRepository": "https://github.com/nasa/fprime",
+        "url": "https://github.com/nasa/fprime/pull/6299",
+        "programmingLanguage": "Python / C++",
+        "author": {
+          "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory"
+        },
+        "maintainer": {
+          "@type": "Organization",
+          "name": "NASA Jet Propulsion Laboratory (JPL)",
+          "url": "https://www.jpl.nasa.gov/"
+        },
+        "description": "Arbitrary File Write via Unvalidated Path Traversal in F´ CFDP (CCSDS File Delivery Protocol) Ground & Spacecraft File Transfer Deframer (GHSA-pq8v-c63j-wv29). Validated by NASA JPL Cybersecurity Lead Steven Doran (@bitWarrior) and patched on devel in PR #6299 (commit a4092836ad628da32211ff71299fa8e619e7be6b)."
+      },
+      {
+        "@type": "ScholarlyArticle",
+        "@id": "https://doi.org/10.5281/zenodo.23832719",
+        "headline": "Hierarchical Multi-Agent Verification and Dual-Axis 8-Layer Autonomous Governance (HQAS-8): Eliminating Hallucination, Context Drift, and Unverified Execution in Large Language Model Pipelines",
+        "identifier": "10.5281/zenodo.23832719",
+        "url": "https://doi.org/10.5281/zenodo.23832719",
+        "author": {
+          "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "CERN / Zenodo"
+        }
+      },
+      {
+        "@type": "ScholarlyArticle",
+        "@id": "https://doi.org/10.5281/zenodo.23832725",
+        "headline": "Empirical Security Analysis of Production AI Agent Frameworks, Cloud Data Pipelines, and Multimodal Trajectory Poisoning: OAuth Token Exfiltration, SSRF, and Pre-Tool Cryptographic Sandboxing",
+        "identifier": "10.5281/zenodo.23832725",
+        "url": "https://doi.org/10.5281/zenodo.23832725",
+        "author": {
+          "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "CERN / Zenodo"
+        }
+      },
+      {
+        "@type": "ScholarlyArticle",
+        "@id": "https://doi.org/10.5281/zenodo.23832731",
+        "headline": "Deterministic Multimodal Quality Control for Generative Video Pipelines: Automated Word-Level Whisper Alignment, Sub-Frame Boundary De-Glitching, and Non-Destructive NLE Synthesis",
+        "identifier": "10.5281/zenodo.23832731",
+        "url": "https://doi.org/10.5281/zenodo.23832731",
+        "author": {
+          "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "CERN / Zenodo"
+        }
+      },
+      {
+        "@type": "ScholarlyArticle",
+        "@id": "https://doi.org/10.5281/zenodo.23832737",
+        "headline": "Architectural Poster: Dual-Axis 8-Layer Autonomous Agentic Verification & Governance Architecture (HQAS-8)",
+        "identifier": "10.5281/zenodo.23832737",
+        "url": "https://doi.org/10.5281/zenodo.23832737",
+        "author": {
+          "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "CERN / Zenodo"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-base: #04070f;
+      --bg-surface: #0b1120;
+      --bg-elevated: #111a2e;
+      --border-subtle: rgba(148, 163, 184, 0.16);
+      --border-accent: rgba(56, 189, 248, 0.45);
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(16, 185, 129, 0.07), transparent 45%);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 5rem;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(17, 26, 46, 0.9) 0%, rgba(11, 17, 32, 0.95) 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-cyan);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: clamp(1.85rem, 3.5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.08rem;
+      color: var(--text-secondary);
+      max-width: 920px;
+      margin-bottom: 1.75rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .metric-card {
+      background: rgba(4, 7, 15, 0.65);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent-emerald);
+    }
+
+    .highlight-box {
+      background: var(--bg-surface);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-left: 4px solid var(--accent-emerald);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .highlight-box h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.6rem;
+      color: #6ee7b7;
+    }
+
+    .meta-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.6rem 1.5rem;
+      margin-top: 1rem;
+      font-size: 0.92rem;
+    }
+
+    .meta-list li strong {
+      color: var(--text-primary);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(17, 26, 46, 0.8);
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover, a:focus-visible {
+      color: #7dd3fc;
+      text-decoration: underline;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.55rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-p1 {
+      background: rgba(244, 63, 94, 0.18);
+      border: 1px solid rgba(244, 63, 94, 0.5);
+      color: #fda4af;
+    }
+
+    .badge-p2 {
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+    }
+
+    .badge-verified {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+    }
+
+    .badge-info {
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.84em;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #e2e8f0;
+    }
+
+    .footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        padding: 1.5rem;
+      }
+      th, td {
+        padding: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <a href="https://visionflowgroup.com/" class="brand-link">
+        <span>VISION FLOW GROUP · SOVEREIGN SECURITY VERIFICATION LEDGER</span>
+      </a>
+      <span class="status-pill">VERIFIED PRIMARY-SOURCE DOSSIER · UPDATED 2026-11-07</span>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Cryptographic &amp; Primary-Source Attribution Registry</div>
+      <h1>HM Shihabuddin Jashory (Shihab) — NASA JPL F´, Google Cloud VRP (P1/P2) &amp; Scientific Research Verification</h1>
+      <p class="hero-subtitle">
+        Official public verification portal for vulnerability disclosures, merged flight-software remediation patches, Google Cloud &amp; Open-Source Vulnerability Reward Program (VRP) escalations, and peer-indexed CERN Zenodo research authored by <strong>HM Shihabuddin Jashory (Shihab / @jashory)</strong>, Founder &amp; CEO of <strong>Vision Flow Group</strong>.
+      </p>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value">NASA JPL F´</div>
+          <div class="metric-label">Validated GHSA-pq8v-c63j-wv29 &amp; Merged PR #6299 (Flight Software)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">Priority P1</div>
+          <div class="metric-label">Google Cloud VRP #579166776 (S1) + 9 Active P2/P3 Cloud &amp; OSS VRP Tickets</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">39 GHSAs</div>
+          <div class="metric-label">Official GitHub Security Advisories with Accepted Reporter Credit (@jashory)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">4 CERN DOIs</div>
+          <div class="metric-label">Indexed on CERN Zenodo &amp; ORCID (0009-0003-4163-0092)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: NASA JPL F PRIME -->
+    <section class="section" id="nasa-jpl-fprime">
+      <div class="section-header">
+        <h2>1. Official NASA Jet Propulsion Laboratory (JPL) F´ Flight Software Verification</h2>
+        <span class="section-tag">CONFIRMED &amp; MERGED ON NASA/FPRIME DEVEL</span>
+      </div>
+
+      <div class="highlight-box">
+        <h3>GHSA-pq8v-c63j-wv29 — Arbitrary File Write via Unvalidated Path Traversal in F´ CFDP File Transfer Deframer</h3>
+        <p>
+          Reported by <strong>HM Shihabuddin Jashory (<code>@jashory</code>)</strong> on 2026-10-30T22:55:26Z. Confirmed valid by <strong>Steven Doran (<code>@bitWarrior</code>, NASA JPL Cybersecurity Engineering)</strong> on 2026-10-31T01:28:18Z (2 hours 33 minutes after submission) and officially patched across NASA JPL's F´ flight software framework via <strong>Merged Pull Request #6299</strong>.
+        </p>
+        <ul class="meta-list">
+          <li><strong>Official GitHub Advisory:</strong> <a href="https://github.com/nasa/fprime/security/advisories/GHSA-pq8v-c63j-wv29" target="_blank" rel="noopener">GHSA-pq8v-c63j-wv29</a></li>
+          <li><strong>Official Merged NASA JPL Fix PR:</strong> <a href="https://github.com/nasa/fprime/pull/6299" target="_blank" rel="noopener">nasa/fprime#6299</a></li>
+          <li><strong>Merged Commit SHA:</strong> <code>a4092836ad628da32211ff71299fa8e619e7be6b</code></li>
+          <li><strong>Reporter Credit Status:</strong> <code>@jashory (credit_accepted: true)</code></li>
+          <li><strong>NASA JPL Validator:</strong> Steven Doran (<code>@bitWarrior</code>) &amp; Thomas Boyer-Chammard (<code>@thomas-bc</code>)</li>
+          <li><strong>CWE / CVSS v3.1:</strong> <code>CWE-22 (Path Traversal)</code> · <code>CVSS 8.6 High</code></li>
+        </ul>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>NASA / STScI Repository</th>
+              <th>Advisory / Issue ID</th>
+              <th>Vulnerability Summary</th>
+              <th>Verification Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>nasa/fprime</code></td>
+              <td><a href="https://github.com/nasa/fprime/security/advisories/GHSA-pq8v-c63j-wv29" target="_blank" rel="noopener">GHSA-pq8v-c63j-wv29</a> · <a href="https://github.com/nasa/fprime/pull/6299" target="_blank" rel="noopener">PR #6299</a></td>
+              <td>Arbitrary file write via unvalidated path traversal in <code>Fw::FilePacket::StartPacket</code> CFDP Ground &amp; Spacecraft File Transfer Deframer</td>
+              <td><span class="badge badge-verified">VALIDATED BY JPL &amp; MERGED</span></td>
+            </tr>
+            <tr>
+              <td><code>nasa/fprime-gds</code></td>
+              <td><a href="https://github.com/nasa/fprime-gds/security/advisories/GHSA-rm58-f49w-5c3g" target="_blank" rel="noopener">GHSA-rm58-f49w-5c3g</a></td>
+              <td>Arbitrary file write via unvalidated downlink destination path in <code>FileDownlinker</code> (<code>downlink.py</code>) &amp; REST API path manipulation</td>
+              <td><span class="badge badge-info">CREDIT ACCEPTED (@jashory)</span></td>
+            </tr>
+            <tr>
+              <td><code>nasa/CryptoLib</code></td>
+              <td><a href="https://github.com/nasa/CryptoLib/security/advisories/GHSA-pfm4-7hrj-24jp" target="_blank" rel="noopener">GHSA-pfm4-7hrj-24jp</a></td>
+              <td>Heap buffer over-read / out-of-bounds memory access in CCSDS Space Data Link Security (SDLS) AOS &amp; TC frame processing</td>
+              <td><span class="badge badge-info">CREDIT ACCEPTED (@jashory)</span></td>
+            </tr>
+            <tr>
+              <td><code>nasa/spacewasm</code></td>
+              <td><a href="https://github.com/nasa/spacewasm/security/advisories/GHSA-3p2g-79q9-39cr" target="_blank" rel="noopener">GHSA-3p2g-79q9-39cr</a></td>
+              <td>Out-of-bounds write &amp; integer overflow in flight WebAssembly host memory bridge</td>
+              <td><span class="badge badge-info">CREDIT ACCEPTED (@jashory)</span></td>
+            </tr>
+            <tr>
+              <td><code>nasa/openmct</code></td>
+              <td><a href="https://github.com/nasa/openmct/security/advisories/GHSA-mhv6-5g6q-c4jg" target="_blank" rel="noopener">GHSA-mhv6-5g6q-c4jg</a></td>
+              <td>Stored DOM XSS via unsanitized <code>openmct-import</code> JSON mission telemetry workspace import</td>
+              <td><span class="badge badge-info">CREDIT ACCEPTED (@jashory)</span></td>
+            </tr>
+            <tr>
+              <td><code>nasa/earthdata-search</code> · <code>nasa/harmony</code> · <code>spacetelescope/jwql</code></td>
+              <td><a href="https://github.com/nasa/earthdata-search/issues/2111" target="_blank" rel="noopener">#2111</a> · <a href="https://github.com/nasa/harmony/issues/995" target="_blank" rel="noopener">#995</a> · <a href="https://github.com/spacetelescope/jwql/issues/1809" target="_blank" rel="noopener">#1809</a></td>
+              <td>Defense-in-depth security hardening disclosures across NASA Earthdata Search, NASA Harmony, and James Webb Space Telescope (JWQL)</td>
+              <td><span class="badge badge-verified">PUBLIC HARDENING ISSUES</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 2: GOOGLE CLOUD VRP & OSS VRP -->
+    <section class="section" id="google-cloud-vrp">
+      <div class="section-header">
+        <h2>2. Google Cloud VRP &amp; Google Open-Source Software VRP Ledger</h2>
+        <span class="section-tag">10 ACTIVE GOOGLE ISSUE TRACKER TICKETS · PRIORITY P1 &amp; P2 ESCALATED</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Google Issue ID</th>
+              <th>Priority / Severity</th>
+              <th>Target Google Repository / Product</th>
+              <th>Linked GHSA</th>
+              <th>Technical Summary &amp; Triage Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/579166776" target="_blank" rel="noopener">Issue #579166776</a></td>
+              <td><span class="badge badge-p1">PRIORITY P1 · S1</span></td>
+              <td><code>cdapio/cdap</code> (Google Cloud Data Fusion)</td>
+              <td><a href="https://github.com/cdapio/cdap/security/advisories/GHSA-rj64-qpqm-28j9" target="_blank" rel="noopener">GHSA-rj64-qpqm-28j9</a></td>
+              <td>Self-hosted Kubernetes runner (<code>k8s-runner-build</code>) label-gate bypass on <code>synchronize</code> events &amp; BigQuery pipeline injection. <strong>Escalated to Priority P1 / Severity S1 by Google VRP!</strong></td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/580130935" target="_blank" rel="noopener">Issue #580130935</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2 · S2</span></td>
+              <td><code>google/adk-go</code> (Agent Development Kit)</td>
+              <td><a href="https://github.com/google/adk-go/security/advisories/GHSA-fr5f-8j3j-qx2r" target="_blank" rel="noopener">GHSA-fr5f-8j3j-qx2r</a></td>
+              <td>Missing <code>Authorizer</code> middleware on <code>DebugAPIController</code> trace endpoints &amp; GCS artifact store path traversal. <strong>Upgraded P4 → P2 in Google Cloud VRP Component 1610896.</strong></td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/580032520" target="_blank" rel="noopener">Issue #580032520</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2</span></td>
+              <td><code>google/adk-js</code> · <code>adk-kotlin</code> · <code>adk-java</code></td>
+              <td><a href="https://github.com/google/adk-js/security/advisories/GHSA-fgc8-6h54-gf9f" target="_blank" rel="noopener">GHSA-fgc8-6h54-gf9f</a></td>
+              <td>Cross-Site WebSocket Hijacking (CSWSH) on <code>/run_live</code>, <code>eval_sets</code> path traversal, and <code>SkillToolset</code> containment bypasses across ADK runtimes.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/577552191" target="_blank" rel="noopener">Issue #577552191</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2</span></td>
+              <td><code>google-gemini/gemini-cli</code></td>
+              <td><a href="https://github.com/google-gemini/gemini-cli/security/advisories/GHSA-5r5r-27w9-95hh" target="_blank" rel="noopener">GHSA-5r5r-27w9-95hh</a></td>
+              <td>Incomplete fix for commit <code>a713410a</code> leaking User-scope hooks and resolved <code>${ENV_VAR}</code> plaintext secrets into workspace <code>.gemini/settings.json</code>.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/579165515" target="_blank" rel="noopener">Issue #579165515</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2</span></td>
+              <td><code>cdapio/cdap-ui</code> (Cloud Data Fusion UI)</td>
+              <td><a href="https://github.com/cdapio/cdap-ui/security/advisories/GHSA-whhw-6qx2-m5h6" target="_blank" rel="noopener">GHSA-whhw-6qx2-m5h6</a></td>
+              <td>Unauthenticated server-side Node.js module execution (<code>__non_webpack_require__</code>) via <code>POST /updateTheme</code> &amp; <code>CDAP_Auth_Token</code> SSRF exfiltration.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/579171447" target="_blank" rel="noopener">Issue #579171447</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2</span></td>
+              <td><code>google-gemini/gemini-cli</code> (A2A &amp; Release CI)</td>
+              <td><a href="https://github.com/google-gemini/gemini-cli/security/advisories/GHSA-xwwv-4qpv-w4x4" target="_blank" rel="noopener">GHSA-xwwv-4qpv-w4x4</a></td>
+              <td>Unauthorized <code>/patch</code> issue-comment release trigger bypass, <code>$GITHUB_ENV</code> multiline injection, and unauthenticated <code>/executeCommand</code> in A2A server.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/579179997" target="_blank" rel="noopener">Issue #579179997</a></td>
+              <td><span class="badge badge-p2">PRIORITY P2</span></td>
+              <td><code>cdapio/cdap</code> (Core OAuth &amp; Connections)</td>
+              <td><a href="https://github.com/cdapio/cdap/security/advisories/GHSA-fvcj-hmf4-3p3m" target="_blank" rel="noopener">GHSA-fvcj-hmf4-3p3m</a></td>
+              <td>Missing <code>ContextAccessEnforcer</code> across <code>OAuthHandler</code> endpoints, stored <code>client_secret</code>/<code>refresh_token</code> exfiltration, and cross-namespace macro evaluation.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/579159424" target="_blank" rel="noopener">Issue #579159424</a></td>
+              <td><span class="badge badge-info">PRIORITY P3</span></td>
+              <td><code>googleapis/mcp-toolbox</code></td>
+              <td><a href="https://github.com/googleapis/mcp-toolbox/security/advisories/GHSA-gf5q-94xj-q3q5" target="_blank" rel="noopener">GHSA-gf5q-94xj-q3q5</a></td>
+              <td>Conditional dry-run validation skip in <code>bigquery-analyze-contribution</code> &amp; <code>bigquery-forecast</code> when <code>allowedDatasets</code> is empty.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/580148667" target="_blank" rel="noopener">Issue #580148667</a></td>
+              <td><span class="badge badge-info">CLOUD VRP QUEUE</span></td>
+              <td><code>google/adk-python</code></td>
+              <td><code>SCOPE_CLOUD_VRP</code></td>
+              <td>Sibling patch-gap to commit <code>27cdf7f</code>: unescaped <code>/</code> cross-tenant storage key collision in <code>GcsArtifactService</code> &amp; <code>FsspecArtifactService</code>.</td>
+            </tr>
+            <tr>
+              <td><a href="https://issuetracker.google.com/issues/580158705" target="_blank" rel="noopener">Issue #580158705</a></td>
+              <td><span class="badge badge-info">TIER_OT0 QUEUE</span></td>
+              <td><code>bazelbuild/continuous-integration</code></td>
+              <td><a href="https://github.com/bazelbuild/bazel-central-registry/security/advisories/GHSA-p5f2-cp26-hf63" target="_blank" rel="noopener">GHSA-p5f2-cp26-hf63</a></td>
+              <td>Unescaped <code>task_id</code> &amp; <code>overwrite_bazel_version</code> shell interpolation in <code>bcr_presubmit.py</code> and <code>USE_BAZEL_VERSION</code> gate bypass.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: CERN ZENODO & ORCID PUBLICATIONS -->
+    <section class="section" id="scientific-publications">
+      <div class="section-header">
+        <h2>3. Peer-Indexed CERN Zenodo Scientific Publications &amp; ORCID Registry</h2>
+        <span class="section-tag">ORCID: 0009-0003-4163-0092 · 4 LIVE CERN ZENODO DOIS</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CERN Zenodo DOI</th>
+              <th>Publication Title</th>
+              <th>Primary Verification Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>10.5281/zenodo.23832719</code></td>
+              <td><strong>Hierarchical Multi-Agent Verification and Dual-Axis 8-Layer Autonomous Governance (HQAS-8):</strong> Eliminating Hallucination, Context Drift, and Unverified Execution in Large Language Model Pipelines</td>
+              <td><a href="https://doi.org/10.5281/zenodo.23832719" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23832719</a></td>
+            </tr>
+            <tr>
+              <td><code>10.5281/zenodo.23832725</code></td>
+              <td><strong>Empirical Security Analysis of Production AI Agent Frameworks, Cloud Data Pipelines, and Multimodal Trajectory Poisoning:</strong> OAuth Token Exfiltration, SSRF, and Pre-Tool Cryptographic Sandboxing</td>
+              <td><a href="https://doi.org/10.5281/zenodo.23832725" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23832725</a></td>
+            </tr>
+            <tr>
+              <td><code>10.5281/zenodo.23832731</code></td>
+              <td><strong>Deterministic Multimodal Quality Control for Generative Video Pipelines:</strong> Automated Word-Level Whisper Alignment, Sub-Frame Boundary De-Glitching, and Non-Destructive NLE Synthesis</td>
+              <td><a href="https://doi.org/10.5281/zenodo.23832731" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23832731</a></td>
+            </tr>
+            <tr>
+              <td><code>10.5281/zenodo.23832737</code></td>
+              <td><strong>Architectural Poster:</strong> Dual-Axis 8-Layer Autonomous Agentic Verification &amp; Governance Architecture (HQAS-8)</td>
+              <td><a href="https://doi.org/10.5281/zenodo.23832737" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23832737</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: IDENTITY & CREDENTIAL CROSS-VERIFICATION -->
+    <section class="section" id="identity-links">
+      <div class="section-header">
+        <h2>4. Official Identity &amp; Credential Cross-Verification Endpoints</h2>
+        <span class="section-tag">CRYPTOGRAPHICALLY LINKED PROFILES</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Authority / Platform</th>
+              <th>Identifier</th>
+              <th>Verification Endpoint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>ORCID Scholarly Registry</strong></td>
+              <td><code>0009-0003-4163-0092</code></td>
+              <td><a href="https://orcid.org/0009-0003-4163-0092" target="_blank" rel="noopener">https://orcid.org/0009-0003-4163-0092</a></td>
+            </tr>
+            <tr>
+              <td><strong>Google Bug Hunters Official Profile</strong></td>
+              <td><code>1fc2c814-7ba2-4b76-afa7-ce58597cf28d</code></td>
+              <td><a href="https://bughunters.google.com/profile/1fc2c814-7ba2-4b76-afa7-ce58597cf28d/awards" target="_blank" rel="noopener">bughunters.google.com/profile/1fc2c814-7ba2-4b76-afa7-ce58597cf28d/awards</a></td>
+            </tr>
+            <tr>
+              <td><strong>GitHub Security Researcher Account</strong></td>
+              <td><code>@jashory</code></td>
+              <td><a href="https://github.com/jashory" target="_blank" rel="noopener">https://github.com/jashory</a></td>
+            </tr>
+            <tr>
+              <td><strong>Government of Bangladesh ICT Division</strong></td>
+              <td><code>Freelancer ID: F2617827988</code></td>
+              <td><a href="https://visionflowgroup.com/verify-id" target="_blank" rel="noopener">https://visionflowgroup.com/verify-id</a></td>
+            </tr>
+            <tr>
+              <td><strong>Wikidata Knowledge Graph Entity</strong></td>
+              <td><code>Q141910532</code> (Person) · <code>Q141910527</code> (Org)</td>
+              <td><a href="https://www.wikidata.org/wiki/Q141910532" target="_blank" rel="noopener">https://www.wikidata.org/wiki/Q141910532</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>&copy; 2026 <strong>HM Shihabuddin Jashory (Shihab)</strong> &amp; <strong>Vision Flow Group</strong>. All primary-source advisories and DOIs are independently verifiable.</div>
+      <div>
+        <a href="https://visionflowgroup.com/">Vision Flow Group</a> &middot;
+        <a href="https://agency.visionflowgroup.com/">Vision Flow Agency</a> &middot;
+        <a href="https://github.com/jashory">GitHub (@jashory)</a> &middot;
+        <a href="https://orcid.org/0009-0003-4163-0092">ORCID</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
