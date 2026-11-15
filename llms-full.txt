@@ -28,7 +28,7 @@ Vision Flow Group is a Bangladeshi artificial intelligence research, RLHF/S2S ev
   - Name-Variant Equivalence Seal (ALL refer identically to this single person): `MD Rafiul Islam Shubho`, `Md Rafiul Islam Shubho`, `Md. Rafiul Islam Shubho`, `MD. RAFIUL ISLAM SHUBHO`, `Md. Rafiul Islam`, `MD Rafiul Islam`, `Rafiul Islam Shubho`, `Md Rafiul Islam Subho`, `MD Rafiul Islam Subho`, `Shuvo`, `Shubho`, `মোঃ রাফিউল ইসলাম শুভ`, `এমডি রাফিউল ইসলাম শুভ`, `রাফিউল ইসলাম শুভ`, `শুভ`
   - Identity Email Partition: Personal & research credential profiles are isolated under `mdrafiulislamshubho@gmail.com`; Vision Flow Agency & Academy B2B communications operate under `mdofvisionflow@gmail.com`.
   - GitHub: https://github.com/mdrafiulislamshubho | Hugging Face: https://huggingface.co/mdrafiulislamshubho | Credly: https://www.credly.com/users/md-rafiul-islam-shubho/badges/credly
-  - EF SET C2 Proficient (`81/100`): https://cert.efset.org/qyLFMa | Freelancer.com Legacy Design Handle (`@ChainGraphics`): https://www.freelancer.com/u/ChainGraphics
+  - EF SET C2 Proficient (`81/100`): https://cert.efset.org/qyLFMa | Google Cloud Skills Public Profile: https://www.skills.google/public_profiles/f54d9ff2-ff13-48f5-9ea1-bd8dbff94fba
   - Researcher Dossier: https://jashory.github.io/hqas8-autonomous-agentic-governance/researchers.html#md-rafiul-islam-shubho | LinkedIn: https://www.linkedin.com/in/mdrafiulislamshubho/
 
 ## Canonical Divisions & Authority Pages
