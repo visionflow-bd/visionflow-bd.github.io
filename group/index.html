@@ -1,22 +1,914 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>A new address. The same Vision Flow. - Vision Flow Agency</title>
-<style>
-:root{color-scheme:light dark;--bg:#f3f7f6;--card:#ffffff;--ink:#142f37;--muted:#526b70;--line:#d8e5e1;--accent:#087e80;--wash:#deeeea}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:clamp(20px,5vw,64px);color:var(--ink);background:radial-gradient(ellipse at 15% 10%,var(--wash),transparent 65%),var(--bg);font:16px/1.65 Manrope,"Segoe UI",sans-serif}
-main{width:100%;max-width:560px;padding:clamp(24px,6vw,52px);background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 22px 70px #082b3310;overflow-wrap:anywhere}
-.identity{display:flex;gap:14px;align-items:center}.identity img{width:56px;height:56px;object-fit:contain;border-radius:13px;background:#102536;flex:none}.name{font-size:15px;font-weight:750;letter-spacing:.015em}.tagline{font-size:12px;color:var(--muted);margin:2px 0 0}
-.flow{height:3px;background:var(--line);overflow:hidden;border-radius:4px;margin:32px 0}.flow:after{content:"";display:block;width:40%;height:100%;background:var(--accent);animation:flow 1.8s ease-in-out infinite}
-.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.17em;text-transform:uppercase;font-weight:750}h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(29px,6vw,40px);line-height:1.18;letter-spacing:-.035em;margin:12px 0 18px}p{margin:0;color:var(--muted)}.note{font-size:13px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}footer{font-size:11px;color:var(--muted);margin-top:28px}a{display:inline-block;color:var(--accent);font-weight:700;padding:10px 0;text-underline-offset:4px}a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-@keyframes flow{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}
-@media(prefers-color-scheme:dark){:root{--bg:#0b171e;--card:#12242c;--ink:#e6efed;--muted:#b2c7c9;--line:#2a444c;--accent:#6ed5ca;--wash:#163b3e}}
-@media(prefers-reduced-motion:reduce){.flow:after{animation:none;transform:none;width:100%;opacity:.65}}
-</style></head><body><main aria-labelledby="title">
-<header class="identity"><img src="https://agency.visionflowgroup.com/logo-email-mark-solid.png?v=20261009-r9" alt="" width="56" height="56" referrerpolicy="no-referrer"><div><div class="name">Vision Flow Agency</div><p class="tagline">Creative, engineered. Secure by design.</p></div></header>
-<div class="flow" aria-hidden="true"></div><section role="status" aria-live="polite"><div class="eyebrow">Our new home</div><h1 id="title">A new address. The same Vision Flow.</h1>
-<p>Taking you to the right place at our new domain.</p></section>
-<a id="continue" href="https://visionflowgroup.com/">Continue to Vision Flow</a><noscript><p>Automatic forwarding needs JavaScript. Use the link above to continue.</p></noscript>
-<footer>Part of Vision Flow Group</footer></main><script>
-(()=>{const p=location.pathname,h=location.hash,q=new URLSearchParams(location.search);q.delete('stay');q.delete('brand');let base='https://visionflowgroup.com/';if(/^\/portal(?:\/|$)/.test(p)||q.has('access'))base='https://portal.visionflowgroup.com/';else if(/^\/admin(?:\/|$)/.test(p)||h==='#admin')base='https://admin.visionflowgroup.com/';else if(h==='#courses')base='https://academy.visionflowgroup.com/';else if(/^#(?:services|portfolio|code|live|team|reviews|certifications|contact)$/.test(h))base='https://agency.visionflowgroup.com/';const dest=base+(q.size?'?'+q:'')+h;document.getElementById('continue').href=dest;location.replace(dest);})();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>
+    // This page lives at visionflowgroup.com (Cloudflare Worker -> GitHub Pages /group/).
+    // Opening the GitHub Pages folder directly forwards to the real address.
+    (function(){try{if(location.hostname==='visionflow-bd.github.io'&&sessionStorage.getItem('vf-stay')!=='1')location.replace('https://visionflowgroup.com/'+location.hash);
+      var m=localStorage.getItem('vf-theme-mode')||'auto';
+      var r=(m==='light'||m==='dark')?m:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+      document.documentElement.dataset.theme=r;document.documentElement.dataset.themeMode=m;
+    }catch(e){}})();
+  </script>
+  <title>Vision Flow — AI Systems, Cybersecurity &amp; Cinema Engineering Group (Vision Flow Group)</title>
+  <meta name="description" content="Vision Flow (Vision Flow Group), founded by Scientist HM Shihabuddin Jashory (ORCID 0009-0003-4163-0092) &amp; Co-Founder MD Rafiul Islam Shubho (ORCID 0009-0009-9956-4511) in Dhaka, Bangladesh: autonomous AI governance (8 CERN Zenodo DOIs), Anthropic MCP GHSA-q74p-4wrc-q7w6, TechBehemoths #1 3D & #2 Motion BD, 500+ commercial brand/creator deliveries, AI Studio & Vision Flow Academy.">
+  <meta name="robots" content="noindex,follow" /><!-- public hosts: vf-sites Worker rewrites this to index,follow -->
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="p:domain_verify" content="bc718d2a1e14545c93ad84e1a41c0902"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="geo.region" content="BD-13">
+  <meta name="geo.placename" content="Dhaka, Bangladesh">
+  <meta name="thumbnail" content="https://visionflowgroup.com/site/assets/entities/hm-shihabuddin-jashory-1x1.jpg">
+  <link rel="canonical" href="https://visionflowgroup.com/">
+  <link rel="alternate" hreflang="en" href="https://visionflowgroup.com/">
+  <link rel="alternate" hreflang="bn" href="https://visionflowgroup.com/bn/">
+  <link rel="alternate" hreflang="x-default" href="https://visionflowgroup.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vision Flow">
+  <meta property="og:title" content="Vision Flow Group — One vision. Every flow.">
+  <meta property="og:description" content="Agency, academy and client platforms under one standard of quality. From Dhaka, Bangladesh to the world.">
+  <meta property="og:url" content="https://visionflowgroup.com/">
+  <meta property="og:image" content="https://visionflowgroup.com/group-logo-dark.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vision Flow Group — One vision. Every flow.">
+  <meta name="twitter:description" content="Agency, academy and client platforms under one standard of quality.">
+  <meta name="twitter:image" content="https://visionflowgroup.com/group-logo-dark.png">
+  <link rel="icon" href="/favicon.ico?v=20261122b" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261122b">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20261122b">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png?v=20261122b">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=20261122b">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261122b">
+    <!--
+  <PageMap>
+    <DataObject type="thumbnail">
+      <Attribute name="src" value="https://visionflowgroup.com/site/assets/entities/hm-shihabuddin-jashory-1x1.jpg"/>
+      <Attribute name="width" value="1200"/>
+      <Attribute name="height" value="1200"/>
+    </DataObject>
+  </PageMap>
+  -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://visionflowgroup.com/#organization",
+  "name": "Vision Flow",
+  "alternateName": [
+    "Vision Flow Group",
+    "Vision Flow",
+    "ভিশন ফ্লো",
+    "ভিশন ফ্লো গ্রুপ",
+    "VisionFlow BD"
+  ],
+  "url": "https://visionflowgroup.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "@id": "https://visionflowgroup.com/#logo",
+    "url": "https://visionflowgroup.com/site/assets/entities/vision-flow-logo-512x512.png",
+    "contentUrl": "https://visionflowgroup.com/site/assets/entities/vision-flow-logo-512x512.png",
+    "width": 512,
+    "height": 512,
+    "caption": "Vision Flow (Vision Flow Group) Official Emblem"
+  },
+  "foundingDate": "2020",
+  "founder": [
+    {
+      "@type": "Person",
+      "@id": "https://visionflowgroup.com/#founder-hm-shihabuddin-jashory",
+      "name": "HM Shihabuddin Jashory",
+      "alternateName": [
+        "HM",
+        "H.M.",
+        "HM Shihab",
+        "H.M. Shihab",
+        "HM Shihabuddin",
+        "H.M. Shihabuddin",
+        "HM Shihabuddin Jashory",
+        "H.M. Shihabuddin Jashory",
+        "MD SHIHABUDDIN",
+        "MD Shihabuddin",
+        "Md Shihabuddin",
+        "Md. Shihabuddin",
+        "MD Shihabuddin Jashory",
+        "Md Shihabuddin Jashory",
+        "MD.Shihabuddin Jashory",
+        "Shihabuddin Jashory",
+        "Shihab Jashory",
+        "Shihab",
+        "Jashory",
+        "এইচ এম শিহাবুদ্দিন যশোরী",
+        "এইচ এম শিহাব",
+        "মোঃ শিহাবুদ্দিন",
+        "শিহাবুদ্দিন যশোরী",
+        "শিহাব"
+      ],
+      "jobTitle": "Scientist, Founder & CEO · AI Systems Architect, Red Teamer & Creative Director",
+      "email": "ceo@visionflowgroup.com",
+      "description": "Scientist, Founder & CEO of Vision Flow Group — AI & Cybersecurity Scientist, AI Red Teamer, Offensive & Defensive Cybersecurity Researcher, AI Systems Architect, Full-Stack Developer (Web, APK, Software & SaaS), and Visual, Graphic, Motion & Animation Director.",
+      "image": [
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/hm-shihabuddin-jashory-1x1.jpg",
+          "width": 1200,
+          "height": 1200,
+          "caption": "HM Shihabuddin Jashory — Scientist, Founder & CEO of Vision Flow Group"
+        },
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/hm-shihabuddin-jashory-4x3.jpg",
+          "width": 1200,
+          "height": 900,
+          "caption": "HM Shihabuddin Jashory — Principal AI Systems & Security Architect"
+        },
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/hm-shihabuddin-jashory-16x9.jpg",
+          "width": 1280,
+          "height": 720,
+          "caption": "HM Shihabuddin Jashory — Vision Flow Research Lab"
+        }
+      ],
+      "url": "https://visionflowgroup.com/hm-shihabuddin-jashory/",
+      "knowsAbout": [
+        "AI Red Teaming & Offensive/Defensive Cybersecurity",
+        "AI Architecture, Prompt Engineering & AI Automation",
+        "Data Analytics & Business Intelligence",
+        "Full-Stack Web, Mobile (APK), Desktop Software & SaaS Development",
+        "Cinematic Video Editing, 2D & 3D Animation (Realistic & Cartoon) & AI UGC",
+        "Visual, Graphic & Motion Design",
+        "Brand Strategy, Digital Marketing & SEO"
+      ],
+      "hasCredential": [
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Identity Card for Freelancers (Govt. of Bangladesh · ID: F2617827988 · Legal Name: MD SHIHABUDDIN)",
+          "credentialCategory": "Government License & Verification",
+          "identifier": "F2617827988",
+          "url": "https://www.freelancers.gov.bd/verify/832d6e77e26ed0dbe4acef076e27c8c1a54dbe01-s-h-y-0811354830970b04624942111d7d141686a71fe6-a-m-3ca8d38d5fb05f9c9f01d4cb1e33aff80b1bac55",
+          "recognizedBy": {
+            "@type": "GovernmentOrganization",
+            "name": "Department of ICT, ICT Division, Government of Bangladesh"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Google Bug Hunters Verified Security Researcher Profile",
+          "credentialCategory": "Vulnerability Disclosure Profile",
+          "identifier": "1fc2c814-7ba2-4b76-afa7-ce58597cf28d",
+          "url": "https://bughunters.google.com/profile/1fc2c814-7ba2-4b76-afa7-ce58597cf28d",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Google Bug Hunters"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Google Cloud Skills Public Profile & Verified Cloud Badges",
+          "credentialCategory": "Cloud Security & Operations Credentials",
+          "identifier": "2604453d-f5c7-4bba-b13a-9aefbc2fa654",
+          "url": "https://www.skills.google/public_profiles/2604453d-f5c7-4bba-b13a-9aefbc2fa654",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Google Cloud"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "59 Credly Verified Cryptographic Badges (Credly by Pearson)",
+          "credentialCategory": "Cryptographic Digital Credentials",
+          "identifier": "credly:jashory",
+          "url": "https://www.credly.com/users/jashory/badges",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Credly (IBM SkillsBuild, TEEX, IBM, MongoDB, The Linux Foundation)"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Google Prompting Essentials Specialization",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/specialization/RD5UKW09TS71",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "ChatGPT: Master Free AI Tools to Supercharge Productivity Specialization",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/specialization/UBEDUNJ1V495",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Start Writing Prompts like a Pro (Google)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/QT7UUQU10VOW",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Design Prompts for Everyday Work Tasks (Google)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/L3775R872OY4",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Speed Up Data Analysis and Presentation Building (Google)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/M0YECMU8HMCA",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Use AI as a Creative or Expert Partner (Google)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/6XMCADXTYWX9",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Prompt Engineering for ChatGPT (Vanderbilt University)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/OVKC2XHCQUDE",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Advanced Prompt Engineering for Everyone (Vanderbilt University)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/3R8SXAFNRLUE",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "OpenAI GPTs: Creating Your Own Custom AI Assistants (Vanderbilt University)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/3309UDCYOYZ2",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Secure AI: Red Teaming and Safety Filters",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/3JMQQIOJQIBD",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Gen AI: Beyond the Chatbot (Google Cloud)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/RCTTIBHWJA6G",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Accelerate Your Job Search with AI (Google)",
+          "credentialCategory": "Verified Course / Specialization Certificate",
+          "url": "https://coursera.org/verify/SP7R9EC0GIPI",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Coursera"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Hugging Face AI Agents Course Certificate",
+          "credentialCategory": "Course Completion Certificate",
+          "url": "https://huggingface.co/datasets/agents-course/certificates/blob/main/certificates/Jashory/2026-10-31.png",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Hugging Face"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Hugging Face Context Engineering Course Certificate",
+          "credentialCategory": "Course Completion Certificate",
+          "url": "https://huggingface.co/datasets/context-course/certificates/blob/main/certificates/Jashory/2026-10-31.png",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Hugging Face"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Hugging Face Smol-Course Certificate",
+          "credentialCategory": "Course Completion Certificate",
+          "url": "https://huggingface.co/datasets/smol-course/certificates/blob/main/certificates/Jashory/2026-10-31.png",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Hugging Face"
+          }
+        }
+      ],
+      "sameAs": [
+        "https://orcid.org/0009-0003-4163-0092",
+        "https://www.pinterest.com/hmshihabuddinjashory/",
+        "https://www.reddit.com/user/Pure_Independence696/",
+        "https://www.linkedin.com/in/hm-shihabuddin-jashory/",
+        "https://www.linkedin.com/in/hm-shihabuddin-jashory-972861227",
+        "https://github.com/jashory",
+        "https://web.facebook.com/Jashory",
+        "https://x.com/jashory7",
+        "https://medium.com/@jashory7",
+        "https://dev.to/jashory",
+        "https://bio.prlog.org/vision_flow_it/50011014-hm-shihabuddin-jashory.html",
+        "https://bughunters.google.com/profile/1fc2c814-7ba2-4b76-afa7-ce58597cf28d",
+        "https://jashory.github.io/",
+        "https://jashory.github.io/hqas8-autonomous-agentic-governance/researchers.html#hm-shihabuddin-jashory",
+        "https://huggingface.co/Jashory",
+        "https://huggingface.co/spaces/Jashory/vision-flow-research-lab",
+        "https://huggingface.co/datasets/Jashory/hqas8-amcg3-governance-benchmarks",
+        "https://gist.github.com/jashory/2c6a3d23a1b17a70d963ca6fc07a8eb7",
+        "https://gist.github.com/jashory/93de210430fea08080cedf9b8fe7252e",
+        "https://www.freelancers.gov.bd/verify/832d6e77e26ed0dbe4acef076e27c8c1a54dbe01-s-h-y-0811354830970b04624942111d7d141686a71fe6-a-m-3ca8d38d5fb05f9c9f01d4cb1e33aff80b1bac55",
+        "https://www.instagram.com/your_jashory/",
+        "https://github.com/visionflow-bd",
+        "https://openalex.org/A5160247232",
+        "https://scholar.google.com/citations?user=67paHlQAAAAJ",
+        "https://g.dev/jashory",
+        "https://www.skills.google/public_profiles/2604453d-f5c7-4bba-b13a-9aefbc2fa654",
+        "https://www.credly.com/users/jashory/badges",
+        "https://www.credly.com/users/jashory/badges.json",
+        "https://www.kaggle.com/shihabjashory",
+        "https://visionflowgroup.com/hm-shihabuddin-jashory/",
+        "https://doi.org/10.5281/zenodo.24246882",
+      "https://www.crunchbase.com/organization/vision-flow-group",
+      "https://techbehemoths.com/company/vision-flow-group", "https://www.trustpilot.com/review/visionflowgroup.com",
+      "https://clutch.co/profile/vision-flow-group",
+      "https://www.crunchbase.com/person/hm-shihabuddin-jashory-89ea",
+      "https://doi.org/10.6084/m9.figshare.35059921.v2",
+      "https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-q74p-4wrc-q7w6",
+      "https://www.crunchbase.com/person/md-rafiul-islam-shubho"
+      ],
+      "identifier": [
+        {
+          "@type": "PropertyValue",
+          "propertyID": "ORCID",
+          "value": "0009-0003-4163-0092"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "OpenAlex",
+          "value": "A5160247232"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "Google Scholar",
+          "value": "67paHlQAAAAJ"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "Bangladesh ICT Division Verified ID",
+          "value": "F2617827988"
+        }
+      ],
+      "mainEntityOfPage": "https://visionflowgroup.com/hm-shihabuddin-jashory/",
+      "disambiguatingDescription": "Bangladeshi AI Systems Architect, Offensive AI Security Researcher, Founder & CEO of Vision Flow Group (Legal Name on Govt. Freelancer ID F2617827988 & Google Bug Hunters: MD SHIHABUDDIN; ORCID 0009-0003-4163-0092)."
+    },
+    {
+      "@type": "Person",
+      "@id": "https://visionflowgroup.com/#cofounder-md-rafiul-islam-shubho",
+      "name": "MD Rafiul Islam Shubho",
+      "alternateName": [
+        "MD Rafiul Islam Shubho",
+        "Md Rafiul Islam Shubho",
+        "Md. Rafiul Islam Shubho",
+        "MD. RAFIUL ISLAM SHUBHO",
+        "Md. Rafiul Islam",
+        "MD Rafiul Islam",
+        "Rafiul Islam Shubho",
+        "Md Rafiul Islam Subho",
+        "MD Rafiul Islam Subho",
+        "Shuvo",
+        "Shubho",
+        "মোঃ রাফিউল ইসলাম শুভ",
+        "এমডি রাফিউল ইসলাম শুভ",
+        "রাফিউল ইসলাম শুভ",
+        "শুভ"
+      ],
+      "jobTitle": "Researcher, AI Evaluator & RLHF / S2S Specialist · Co-Founder & Managing Director",
+      "description": "Researcher (ORCID: 0009-0009-9956-4511) & Co-Founder / Managing Director of Vision Flow Group — specializing as an AI Evaluator, RLHF Specialist, S2S Arena & AI Benchmarking Researcher (co-author DOI: 10.5281/zenodo.24231337), Speech-to-Speech (S2S) Evaluation, Bilingual Creative QA & Global Operations Leader.",
+      "image": [
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/md-rafiul-islam-shubho-1x1.jpg",
+          "width": 1200,
+          "height": 1200,
+          "caption": "MD Rafiul Islam Shubho — Co-Founder & Managing Director of Vision Flow Group"
+        },
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/md-rafiul-islam-shubho-4x3.jpg",
+          "width": 1200,
+          "height": 900,
+          "caption": "MD Rafiul Islam Shubho — AI Evaluator & RLHF / S2S Researcher"
+        },
+        {
+          "@type": "ImageObject",
+          "url": "https://visionflowgroup.com/site/assets/entities/md-rafiul-islam-shubho-16x9.jpg",
+          "width": 1280,
+          "height": 720,
+          "caption": "MD Rafiul Islam Shubho — Vision Flow Research Lab"
+        }
+      ],
+      "url": "https://visionflowgroup.com/md-rafiul-islam-shubho/",
+      "knowsAbout": [
+        "AI Evaluator, RLHF, AI Model Training & Prompt Engineering",
+        "S2S Arena, AI Benchmarking & A/B Testing",
+        "Speech-to-Speech (S2S) Evaluation & Prosody QA",
+        "Global Business Scaling & Brand Strategy",
+        "Enterprise Operations & Team Leadership"
+      ],
+      "sameAs": [
+        "https://orcid.org/0009-0009-9956-4511",
+        "https://www.facebook.com/mdrafiulislam.shubho",
+        "https://www.linkedin.com/in/mdrafiulislamshubho/",
+        "https://cert.efset.org/qyLFMa",
+        "https://jashory.github.io/hqas8-autonomous-agentic-governance/researchers.html#md-rafiul-islam-shubho",
+        "https://scholar.google.com/citations?user=mbBuZNgAAAAJ",
+        "https://g.dev/mdrafiulislamshubho",
+        "https://github.com/mdrafiulislamshubho",
+        "https://huggingface.co/mdrafiulislamshubho",
+        "https://www.credly.com/users/md-rafiul-islam-shubho/badges",
+        "https://www.skills.google/public_profiles/f54d9ff2-ff13-48f5-9ea1-bd8dbff94fba",
+        "https://doi.org/10.5281/zenodo.24231337",
+        "https://huggingface.co/datasets/Jashory/hqas8-amcg3-governance-benchmarks",
+        "https://visionflowgroup.com/md-rafiul-islam-shubho/",
+      "https://www.crunchbase.com/organization/vision-flow-group",
+      "https://techbehemoths.com/company/vision-flow-group", "https://www.trustpilot.com/review/visionflowgroup.com",
+      "https://clutch.co/profile/vision-flow-group",
+      "https://www.crunchbase.com/person/hm-shihabuddin-jashory-89ea",
+      "https://doi.org/10.6084/m9.figshare.35059921.v2",
+      "https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-q74p-4wrc-q7w6",
+      "https://www.crunchbase.com/person/md-rafiul-islam-shubho"
+      ],
+      "identifier": [
+        {
+          "@type": "PropertyValue",
+          "propertyID": "ORCID",
+          "value": "0009-0009-9956-4511"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "Google Scholar",
+          "value": "mbBuZNgAAAAJ"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "GitHub",
+          "value": "mdrafiulislamshubho"
+        },
+        {
+          "@type": "PropertyValue",
+          "propertyID": "EF SET C2 Proficient",
+          "value": "qyLFMa"
+        }
+      ],
+      "hasCredential": [
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "EF SET 4-Skill English Certificate — 81/100 (C2 Proficient)",
+          "credentialCategory": "Standardized Language Proficiency",
+          "identifier": "qyLFMa",
+          "url": "https://cert.efset.org/qyLFMa",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "EF Standard English Test"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "CERN Zenodo Co-Authored Research Monograph (VF-RLHF-S2S-2026-007)",
+          "credentialCategory": "Open-Access DOI-Archived Monograph",
+          "identifier": "10.5281/zenodo.24231337",
+          "url": "https://doi.org/10.5281/zenodo.24231337",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "CERN Zenodo"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Credly Verified Public Profile — MD Rafiul Islam Shubho",
+          "credentialCategory": "Cryptographic Digital Credentials",
+          "identifier": "credly:md-rafiul-islam-shubho",
+          "url": "https://www.credly.com/users/md-rafiul-islam-shubho/badges",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Credly"
+          }
+        },
+        {
+          "@type": "EducationalOccupationalCredential",
+          "name": "Google Developer Profile (mdrafiulislamshubho)",
+          "credentialCategory": "Developer & Evaluator Profile",
+          "identifier": "g.dev/mdrafiulislamshubho",
+          "url": "https://g.dev/mdrafiulislamshubho",
+          "recognizedBy": {
+            "@type": "Organization",
+            "name": "Google Developers"
+          }
+        }
+      ],
+      "mainEntityOfPage": "https://visionflowgroup.com/md-rafiul-islam-shubho/",
+      "disambiguatingDescription": "Bangladeshi AI Evaluator, Bilingual (bn_BD/en_US) RLHF & Speech-to-Speech (S2S) Researcher, and Co-Founder & Managing Director of Vision Flow Group (ORCID 0009-0009-9956-4511)."
+    }
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Keraniganj",
+    "addressRegion": "Dhaka",
+    "addressCountry": "BD"
+  },
+  "subOrganization": [
+    {
+      "@type": "Organization",
+      "name": "Vision Flow Agency",
+      "url": "https://agency.visionflowgroup.com/"
+    },
+    {
+      "@type": "EducationalOrganization",
+      "name": "Vision Flow Academy",
+      "url": "https://academy.visionflowgroup.com/"
+    },
+    {
+      "@type": "WebApplication",
+      "name": "Vision Flow Studio",
+      "applicationCategory": "MultimediaApplication",
+      "url": "https://studio.visionflowgroup.com/"
+    },
+    {
+      "@type": "WebApplication",
+      "name": "VisionFlow Free Tools",
+      "applicationCategory": "UtilitiesApplication",
+      "url": "https://go.visionflowgroup.com/"
+    }
+  ],
+  "sameAs": [
+    "https://techbehemoths.com/company/vision-flow-group", "https://www.trustpilot.com/review/visionflowgroup.com",
+    "https://www.pinterest.com/hmshihabuddinjashory/",
+    "https://www.reddit.com/r/VisionFlowGroup/",
+    "https://biz.prlog.org/vision_flow_it/",
+    "https://pressroom.prlog.org/vision_flow_it/",
+    "https://www.linkedin.com/company/visionflowgroup",
+    "https://web.facebook.com/visionflowagencyhq",
+    "https://web.facebook.com/visionflowacademy",
+    "https://web.facebook.com/groups/visionflowcommunity",
+    "https://x.com/VisionFlowGroup",
+    "https://www.instagram.com/visionflowagency/",
+    "https://www.youtube.com/@VisionFlowAgency-VFA",
+    "https://github.com/visionflow-bd",
+    "https://huggingface.co/Jashory",
+    "https://jashory.github.io/",
+    "https://visionflowgroup.com/press/"
+  ],
+  "legalName": "Vision Flow Group"
+}</script>
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://visionflowgroup.com/#website",
+  "name": "Vision Flow",
+  "alternateName": [
+    "Vision Flow Group",
+    "Vision Flow Agency",
+    "Vision Flow Academy",
+    "Vision Flow Studio",
+    "ভিশন ফ্লো"
+  ],
+  "url": "https://visionflowgroup.com/",
+  "publisher": {
+    "@id": "https://visionflowgroup.com/#organization"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://visionflowgroup.com/api/search?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@600;700;800&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="./hub.css?v=20261114-sr4">
+  <link rel="search" type="application/opensearchdescription+xml" title="Vision Flow &amp; Founders" href="https://visionflowgroup.com/opensearch.xml">
+</head>
+<body>
+  <div class="monograph-broadsheet">
+    <div class="monograph-broadsheet-inner">
+
+      <div class="monograph-first-fold">
+        <header class="nav" id="nav">
+          <a class="brand" href="/" aria-label="Vision Flow Group home" id="nav-home">
+            <picture class="brand-mark"><source media="(prefers-color-scheme: light)" srcset="/group-mark-light.png?v=20261029-m3"><img src="/group-mark-dark.png?v=20261029-m3" alt="" width="30" height="30"></picture>
+            <span><strong>Vision Flow Group</strong><small>Engineering Monograph &amp; System Index</small></span>
+          </a>
+          <div class="nav-center-stamps">
+            <a class="stamp-btn is-solid" href="https://agency.visionflowgroup.com/" id="cta-agency">Enter Agency →</a>
+            <a class="stamp-btn" href="https://studio.visionflowgroup.com/" id="nav-studio">AI Studio</a>
+            <a class="stamp-btn" href="https://go.visionflowgroup.com/" id="nav-tools">Free Tools</a>
+            <a class="stamp-btn" href="https://portal.visionflowgroup.com/" id="nav-portal">Client Portal</a>
+            <button class="stamp-btn" type="button" id="hub-theme-btn" aria-label="Cycle theme mode">Theme: Auto</button>
+          </div>
+          <nav class="links" id="navlinks" aria-label="Sections">
+            <a href="#rd-sandbox">R&amp;D Lab</a>
+            <a href="#brands">Ecosystem</a>
+            <a href="#highlights">Dossiers</a>
+            <a href="#leadership">Principals</a>
+            <a href="#contact">Dispatch</a>
+          </nav>
+          <button class="menu" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="navlinks"><i class="fas fa-bars" aria-hidden="true"></i></button>
+        </header>
+
+        <section class="hero" id="top">
+          <div class="hero-left">
+            <p class="eyebrow reveal" id="hero-eyebrow"><span class="pulse" aria-hidden="true"></span><span>Founders: HM Shihabuddin Jashory &amp; MD Rafiul Islam Shubho</span></p>
+            <h1 class="reveal" id="hero-title">Vision Flow — Engineering Autonomous AI, <span class="grad">Offensive Security &amp; Cinema Systems.</span></h1>
+          </div>
+          <div class="hero-right">
+            <p class="sub reveal" id="hero-sub"><strong>Vision Flow Group</strong> operates at the intersection of production multi-agent software, adversarial AI security auditing (Google VRP &amp; OWASP LLM01–LLM10), and frame-accurate commercial VFX workflows—backed by verifiable open-source tooling and empirical R&amp;D benchmarks.</p>
+            <div class="vf-3d-stage-wrap" id="vf-3d-stage" title="Drag or move cursor to inspect 60fps 3D architectural topology">
+              <div class="vf-3d-mode-pills" role="group" aria-label="3D Topology Mode">
+                <button type="button" class="vf-3d-pill is-active" data-topo-mode="mesh">GLSL Manifold</button>
+                <button type="button" class="vf-3d-pill" data-topo-mode="lattice">Agent Lattice</button>
+                <button type="button" class="vf-3d-pill" data-topo-mode="wave">Acoustic Wave</button>
+              </div>
+              <canvas class="vf-3d-canvas" id="vf-3d-canvas" width="680" height="220"></canvas>
+              <div class="vf-3d-hud">
+                <span>ENGINE: <strong id="vf-hud-fps">60 FPS</strong><span id="vf-hud-ms">1.1ms</span></span>
+                <span>TOPOLOGY: <strong id="vf-hud-mode">GLSL MANIFOLD</strong></span>
+                <span id="vf-hud-coords">RAY: 0.00, 0.00</span>
+              </div>
+            </div>
+            <div class="hero-meta-rule">
+              <span>8 CERN Zenodo DOIs · TechBehemoths Verified · OWASP LLM01–LLM10 Methodology</span>
+              <div class="cta reveal">
+                <a class="stamp-btn is-solid" id="cta-academy" href="https://academy.visionflowgroup.com/">Academy Lab →</a>
+                <a class="stamp-btn" href="#highlights">Watch 2026 Showreel ↓</a>
+                <a class="stamp-btn" href="#rd-sandbox">Inspect R&amp;D Engine ↓</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="monograph-index-strip" aria-label="Primary Group Architecture Index">
+          <a class="monograph-index-col" href="#rd-sandbox">
+            <div>
+              <div class="idx-num">01.</div>
+              <div class="idx-cat">Corporate &amp; R&amp;D Hub</div>
+              <h2 class="idx-title">Vision Flow Group</h2>
+              <p class="idx-desc">Parent architecture overseeing autonomous multi-agent frameworks, open-source security toolkits, and enterprise client systems.</p>
+            </div>
+            <div class="idx-foot"><span>visionflowgroup.com</span><span>↗</span></div>
+          </a>
+          <a class="monograph-index-col" href="https://agency.visionflowgroup.com/">
+            <div>
+              <div class="idx-num">02.</div>
+              <div class="idx-cat">Code · Cyber · Cinema</div>
+              <h2 class="idx-title">Vision Flow Agency</h2>
+              <p class="idx-desc">Full-stack SaaS &amp; AI software engineering, commercial VFX/CGI post-production, precision motion graphics, and growth SEO.</p>
+            </div>
+            <div class="idx-foot"><span>agency.visionflowgroup.com</span><span>↗</span></div>
+          </a>
+          <a class="monograph-index-col" href="https://academy.visionflowgroup.com/">
+            <div>
+              <div class="idx-num">03.</div>
+              <div class="idx-cat">Technical Education</div>
+              <h2 class="idx-title">Vision Flow Academy</h2>
+              <p class="idx-desc">Applied engineering cohorts across Multi-Agent CLI Orchestration, Offensive Security &amp; Bug Bounty, and Commercial Post-Production.</p>
+            </div>
+            <div class="idx-foot"><span>academy.visionflowgroup.com</span><span>↗</span></div>
+          </a>
+          <a class="monograph-index-col" href="#rd-sandbox">
+            <div>
+              <div class="idx-num">04.</div>
+              <div class="idx-cat">Open-Source Verification</div>
+              <h2 class="idx-title">AI Security &amp; Reliability</h2>
+              <p class="idx-desc">MCP/Agent Tool Security Auditor (SARIF v2.1.0), Multimodal Trajectory Crash Guard, and 9Router Infinite Fallback proxy architecture.</p>
+            </div>
+            <div class="idx-foot"><span>github.com/visionflow-bd</span><span>↗</span></div>
+          </a>
+        </section>
+
+        <footer class="monograph-fold-sigbar">
+          <span><strong>HM Shihabuddin Jashory</strong> — Scientist, Founder &amp; CEO · Chief AI &amp; Security Architect</span>
+          <span><strong>MD Rafiul Islam Shubho</strong> — Researcher, AI Evaluator &amp; RLHF · Co-Founder &amp; MD · ORCID: 0009-0009-9956-4511</span>
+        </footer>
+      </div>
+
+      <main>
+        <div class="stats reveal" id="stats" aria-label="Group numbers"></div>
+
+        <!-- SECTION I: LIVE INTERACTIVE R&D ENGINEERING SANDBOX -->
+        <section class="section" id="rd-sandbox" aria-labelledby="rd-title">
+          <header class="sec-head reveal">
+            <div>
+              <p class="kicker">Section I · Live Sovereign R&amp;D Verification</p>
+              <h2 id="rd-title">Interactive Architecture &amp; Security Sandbox</h2>
+              <p>Test our production engineering primitives directly in the browser—simulate upstream LLM provider outages, run AST security taint analysis on MCP tools, or inspect binary trajectory crash guards.</p>
+            </div>
+            <span class="stamp-btn">Interactive Runtime · Zero Mock Latency</span>
+          </header>
+
+          <div class="rd-sandbox" id="rd-sandbox-root">
+            <div class="rd-nav" role="tablist" aria-label="R&D Modules">
+              <button type="button" class="rd-tab-btn is-active" data-rd-module="router" role="tab" aria-selected="true">
+                <span class="rd-tab-num">01.</span>
+                <span class="rd-tab-title">Infinite LLM Fallback Router</span>
+                <span class="rd-tab-sub">Click nodes to inject 429/503 outage</span>
+              </button>
+              <button type="button" class="rd-tab-btn" data-rd-module="auditor" role="tab" aria-selected="false">
+                <span class="rd-tab-num">02.</span>
+                <span class="rd-tab-title">MCP AST Security Auditor</span>
+                <span class="rd-tab-sub">OWASP LLM01–LLM10 · SARIF v2.1.0</span>
+              </button>
+              <button type="button" class="rd-tab-btn" data-rd-module="crashguard" role="tab" aria-selected="false">
+                <span class="rd-tab-num">03.</span>
+                <span class="rd-tab-title">Trajectory Binary Crash Guard</span>
+                <span class="rd-tab-sub">Pre-flight PDF/MIME firewall</span>
+              </button>
+            </div>
+            <div class="rd-stage" id="rd-stage-panel" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="section" id="brands" aria-labelledby="brands-title">
+          <header class="sec-head reveal">
+            <div>
+              <p class="kicker">Section II · The Ecosystem</p>
+              <h2 id="brands-title">Every Vision Flow Division &amp; Platform</h2>
+              <p>Each division operates under <strong>visionflowgroup.com</strong> with unified cryptographic auth and architectural standards.</p>
+            </div>
+          </header>
+          <div class="brand-grid" id="brand-grid"></div>
+        </section>
+
+        <section class="section" id="highlights" aria-labelledby="hl-title">
+          <header class="sec-head reveal">
+            <div>
+              <p class="kicker">Section III · Production Dossiers</p>
+              <h2 id="hl-title">Selected Agency Deliveries &amp; Academy Cohorts</h2>
+              <p>Live records synchronized from the Vision Flow Agency and Academy production registries.</p>
+            </div>
+          </header>
+          <div class="hl-wrap">
+            <article class="hl-panel agency reveal" aria-labelledby="hl-agency">
+              <div class="hl-top">
+                <div><p class="tag"><i class="fas fa-rocket" aria-hidden="true"></i> Division 01 · Agency</p><h3 id="hl-agency">Featured Commercial Work</h3></div>
+                <a class="link-arrow" href="https://agency.visionflowgroup.com/#portfolio" id="hl-agency-all">Full portfolio <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+              </div>
+              <div class="hub-showreel-box" aria-label="Vision Flow Agency 2026 Flagship Showreel">
+                <button type="button" class="hub-showreel-launch" data-hub-youtube="We9zcmsfUIA" aria-label="Play Vision Flow Agency 2026 Flagship Showreel">
+                  <img src="/site/assets/showreel-v4-poster.jpg" alt="Vision Flow Agency 2026 Flagship Showreel poster" loading="eager" decoding="async">
+                  <span class="hub-showreel-pill"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>Play 2026 Showreel · 01:20</span>
+                </button>
+              </div>
+              <div class="work-grid" id="work-grid"></div>
+              <div class="chips" id="service-chips" aria-label="Agency services"></div>
+            </article>
+            <article class="hl-panel academy reveal" aria-labelledby="hl-academy">
+              <div class="hl-top">
+                <div><p class="tag"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Division 02 · Academy</p><h3 id="hl-academy">Applied Engineering Cohorts</h3></div>
+                <a class="link-arrow" href="https://academy.visionflowgroup.com/#courses" id="hl-academy-all">All programs <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+              </div>
+              <div class="course-list" id="course-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="voices" aria-labelledby="voices-title">
+          <header class="sec-head reveal">
+            <div>
+              <p class="kicker">Section IV · Client Verification</p>
+              <h2 id="voices-title">Endorsements from Global Partners</h2>
+            </div>
+          </header>
+          <div class="voice-grid" id="voice-grid"></div>
+        </section>
+
+        <section class="section" id="leadership" aria-labelledby="lead-title">
+          <header class="sec-head reveal">
+            <div>
+              <p class="kicker">Section V · Principal Architects</p>
+              <h2 id="lead-title">Executive Leadership &amp; Technical Authority</h2>
+            </div>
+          </header>
+          <div class="lead-grid" id="lead-grid">
+            <article class="leader leader--founder">
+              <div class="leader-badge">01 · Principal Architect &amp; Founder</div>
+              <img src="/site/assets/entities/hm-shihabuddin-jashory.jpg" alt="HM Shihabuddin Jashory (HM Shihab / MD Shihabuddin) — Founder &amp; CEO of Vision Flow Group" width="1200" height="1200" loading="eager">
+              <h3><a href="/hm-shihabuddin-jashory/" style="color:inherit;text-decoration:none">HM Shihabuddin Jashory</a></h3>
+              <p class="role">Scientist, Founder &amp; CEO · Chief AI &amp; Security Architect</p>
+              <p class="bio">HM Shihabuddin Jashory (legal name MD Shihabuddin, also known as HM Shihab; বাংলা: এইচ এম শিহাবউদ্দিন যশোরী) — Bangladeshi AI systems architect, offensive security researcher (Google Bug Hunters &amp; published MCP advisory GHSA-q74p-4wrc-q7w6), and author of 8 CERN Zenodo DOIs (ORCID 0009-0003-4163-0092).</p>
+              <p style="margin:6px 0 10px;font:600 11px/1.4 var(--mono)"><a href="/hm-shihabuddin-jashory/" style="color:var(--crimson);text-decoration:none">BIOGRAPHY &amp; CREDENTIALS →</a></p>
+            </article>
+            <article class="leader leader--founder">
+              <div class="leader-badge">02 · Co-Founder &amp; Managing Director</div>
+              <img src="/site/assets/entities/md-rafiul-islam-shubho.jpg" alt="MD Rafiul Islam Shubho (MD Rafiul Islam Shuvo) — Co-Founder &amp; Managing Director of Vision Flow Group" width="1200" height="1200" loading="eager">
+              <h3><a href="/md-rafiul-islam-shubho/" style="color:inherit;text-decoration:none">MD Rafiul Islam Shubho</a></h3>
+              <p class="role">Researcher, AI Evaluator &amp; RLHF · Co-Founder &amp; MD</p>
+              <p class="bio">MD Rafiul Islam Shubho (also spelled MD Rafiul Islam Shuvo; বাংলা: মোঃ রাফিউল ইসলাম শুভ) — Bangladeshi bilingual (bn_BD / en_US) RLHF &amp; Speech-to-Speech evaluation researcher (ORCID 0009-0009-9956-4511, EF SET C2 81/100) and Managing Director of Vision Flow Group.</p>
+              <p style="margin:6px 0 10px;font:600 11px/1.4 var(--mono)"><a href="/md-rafiul-islam-shubho/" style="color:var(--crimson);text-decoration:none">BIOGRAPHY &amp; CREDENTIALS →</a></p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="contact" aria-labelledby="contact-title">
+          <div class="cta-band reveal">
+            <div>
+              <p class="kicker">Section VI · Direct Dispatch</p>
+              <h2 id="contact-title">Commission an Engineering Engagement or Cohort</h2>
+              <p id="contact-line">Direct architectural consultation with our founding team — response within one business day.</p>
+              <div class="contact-rows" id="contact-rows"></div>
+            </div>
+            <div class="cta-stack">
+              <a class="btn btn-primary" href="https://agency.visionflowgroup.com/#contact" id="band-agency"><i class="fas fa-briefcase" aria-hidden="true"></i> Commission the Agency</a>
+              <a class="btn btn-violet" href="https://academy.visionflowgroup.com/#contact" id="band-academy"><i class="fas fa-user-graduate" aria-hidden="true"></i> Enroll in the Academy</a>
+              <a class="btn btn-ghost" href="https://wa.me/8801997248406" id="band-whatsapp" target="_blank" rel="noopener"><i class="fab fa-whatsapp" aria-hidden="true"></i> Direct WhatsApp Line</a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="foot">
+        <div class="foot-grid">
+          <div class="foot-about">
+            <a class="brand" href="/"><picture class="brand-mark"><source media="(prefers-color-scheme: light)" srcset="/group-mark-light.png?v=20261029-m3"><img src="/group-mark-dark.png?v=20261029-m3" alt="" width="30" height="30"></picture><span><strong>Vision Flow</strong><small>Group</small></span></a>
+            <p>Autonomous AI engineering, offensive security, commercial 3D/VFX cinema systems, and applied engineering curricula — from Dhaka, Bangladesh for global engineering teams.</p>
+            <div class="social" id="foot-social"></div>
+          </div>
+          <div><h4>Divisions</h4><ul id="foot-brands"></ul></div>
+          <div><h4>Monograph Index</h4><ul>
+            <li><a href="#rd-sandbox">R&amp;D Sandbox</a></li>
+            <li><a href="#brands">Ecosystem</a></li>
+            <li><a href="#highlights">Production Dossiers</a></li>
+            <li><a href="#leadership">Principals</a></li>
+            <li><a href="/ai-agency-bangladesh/">AI &amp; Security Benchmark BD</a></li>
+            <li><a href="/case-studies/">Case Studies &amp; 2026 Showreel</a></li>
+            <li><a href="/bn/" hreflang="bn">বাংলা পোর্টাল (Bangla)</a></li>
+            <li><a href="/press/">Official Press Room</a></li>
+            <li><a href="/hm-shihabuddin-jashory/">HM Shihabuddin Jashory</a></li>
+            <li><a href="/md-rafiul-islam-shubho/">MD Rafiul Islam Shubho</a></li>
+            <li><a href="/security-hall-of-fame/">Security &amp; VRP Ledger</a></li>
+            <li><a href="/ai-research-rlhf-bangladesh/">RLHF &amp; S2S Research</a></li>
+            <li><a href="https://studio.visionflowgroup.com/">AI Studio</a></li>
+            <li><a href="https://go.visionflowgroup.com/">Free Tools</a></li>
+            <li><a href="https://portal.visionflowgroup.com/">Client Portal</a></li>
+            <li><a href="/terms">Terms</a></li>
+            <li><a href="/privacy">Privacy</a></li>
+          </ul></div>
+          <div><h4>Direct Dispatch</h4><ul id="foot-contact"></ul></div>
+        </div>
+        <div class="foot-bottom">
+          <span>© <span id="year">2026</span> Vision Flow Group · Motherbrand Ecosystem</span>
+          <a href="https://techbehemoths.com/company/vision-flow-group" target="_blank" rel="noopener" data-techbehemoths-verification style="display:inline-flex;align-items:center;opacity:0.9;" title="Verified on TechBehemoths"><svg width="148" height="24" viewBox="0 0 148 24" fill="none" role="img" aria-label="TechBehemoths Verified"><rect x="0.75" y="0.75" width="146.5" height="22.5" rx="4" stroke="currentColor" stroke-opacity="0.35"/><path d="M9 12.2l2.1 2.1 4.2-4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><text x="22" y="15.5" fill="currentColor" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.2" font-weight="600" letter-spacing="0.02em">TechBehemoths Verified</text></svg></a>
+          <span class="mono">visionflowgroup.com</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <script type="module" src="./hub.js?v=20261122-v12"></script>
+</body>
+</html>

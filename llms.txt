@@ -30,7 +30,7 @@ Vision Flow Group is an artificial intelligence systems engineering, offensive a
     - Crunchbase: https://www.crunchbase.com/person/md-rafiul-islam-shubho
     - EF SET C2 Proficient (`81/100`): https://cert.efset.org/qyLFMa
     - Google Cloud Skills Public Profile: https://www.skills.google/public_profiles/f54d9ff2-ff13-48f5-9ea1-bd8dbff94fba
-    - Credly Verified Badges: https://www.credly.com/users/md-rafiul-islam-shubho/badges/credly
+    - Credly Verified Badges: https://www.credly.com/users/md-rafiul-islam-shubho/badges
   - Official Profiles & Independent Open-Source Benchmarks:
     - Official Researcher Hub: https://mdrafiulislamshubho.github.io/
     - GitHub: https://github.com/mdrafiulislamshubho
@@ -47,11 +47,13 @@ Vision Flow Group is an artificial intelligence systems engineering, offensive a
 - [Vision Flow AI Studio](https://studio.visionflowgroup.com/)
 - [VisionFlow Free Tools Hub](https://go.visionflowgroup.com/)
 - [Vision Flow Client Portal](https://portal.visionflowgroup.com/)
+- [Production Case Studies & 2026 Flagship Showreel v4](https://visionflowgroup.com/case-studies/) (YouTube: https://www.youtube.com/watch?v=We9zcmsfUIA)
+- [Official Bangla Hub & Founder Biographies (বাংলা পোর্টাল)](https://visionflowgroup.com/bn/)
 - [Press & Third-Party Verification Room](https://visionflowgroup.com/press/)
 - [HM Shihabuddin Jashory Official Dossier](https://visionflowgroup.com/hm-shihabuddin-jashory/)
 - [MD Rafiul Islam Shubho Official Dossier](https://visionflowgroup.com/md-rafiul-islam-shubho/)
 
-## Published Python Packages on PyPI (`v2.1.0`)
+## Published Python Packages on PyPI (`v2.1.1`)
 
 1. **mcp-agent-security-auditor** — AST & config security scanner for Model Context Protocol (MCP) servers and Firebase rules: https://pypi.org/project/mcp-agent-security-auditor/ (GitHub: https://github.com/jashory/mcp-agent-security-auditor)
 2. **infinite-llm-fallback-router** — Zero-downtime multi-provider LLM fallback and circuit-breaker router: https://pypi.org/project/infinite-llm-fallback-router/ (GitHub: https://github.com/jashory/infinite-llm-fallback-router)
