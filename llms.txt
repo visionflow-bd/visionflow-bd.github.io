@@ -53,13 +53,13 @@ Vision Flow Group is an artificial intelligence systems engineering, offensive a
 - [HM Shihabuddin Jashory Official Dossier](https://visionflowgroup.com/hm-shihabuddin-jashory/)
 - [MD Rafiul Islam Shubho Official Dossier](https://visionflowgroup.com/md-rafiul-islam-shubho/)
 
-## Published Python Packages on PyPI (`v2.1.1`)
+## Published Python Packages on PyPI (`v2.2.1` / `v2.1.1`) & Official Model Context Protocol Registry
 
 1. **mcp-agent-security-auditor** — AST & config security scanner for Model Context Protocol (MCP) servers and Firebase rules: https://pypi.org/project/mcp-agent-security-auditor/ (GitHub: https://github.com/jashory/mcp-agent-security-auditor)
 2. **infinite-llm-fallback-router** — Zero-downtime multi-provider LLM fallback and circuit-breaker router: https://pypi.org/project/infinite-llm-fallback-router/ (GitHub: https://github.com/jashory/infinite-llm-fallback-router)
 3. **agy-claude-crash-guard-kit** — Deterministic PreToolUse binary guard and post-compaction recovery toolkit for CLI agents: https://pypi.org/project/agy-claude-crash-guard-kit/ (GitHub: https://github.com/jashory/agy-claude-crash-guard-kit)
 
-## Open-Access DOI-Archived Publications (8 Zenodo DOIs, 1 Figshare DataCite DOI & 3 OSF MetaArXiv Preprints)
+## Open-Access DOI-Archived Publications (9 Zenodo DOIs, 1 Figshare DataCite DOI & 3 OSF MetaArXiv Preprints)
 
 1. **HQAS-8 Governance Specification** — https://doi.org/10.5281/zenodo.23832719 (OSF: https://osf.io/preprints/metaarxiv/rm5ab_v1)
 2. **Defense-in-Depth Security Hardening for Autonomous CLI Agents** — https://doi.org/10.5281/zenodo.23832725 (OSF: https://osf.io/preprints/metaarxiv/6sjmk_v1)
@@ -77,4 +77,5 @@ Vision Flow Group is an artificial intelligence systems engineering, offensive a
 - TechBehemoths Verified Company `#101215` (Ranked `#1` in 3D Design, `#2` in Motion Design, `#4` in Cybersecurity, `#14` in Artificial Intelligence in Bangladesh): https://techbehemoths.com/company/vision-flow-group
 - Trustpilot Claimed Business Profile: https://www.trustpilot.com/review/visionflowgroup.com
 - Clutch Vendor Profile: https://clutch.co/profile/vision-flow-group
+- Official Model Context Protocol Registry (`io.github.jashory/mcp-agent-security-auditor` `v2.2.1`): https://registry.modelcontextprotocol.io/v0/servers?search=jashory
 - Glama MCP Server Directory: https://glama.ai/mcp/servers
